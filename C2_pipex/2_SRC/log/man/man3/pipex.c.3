@@ -1,0 +1,62 @@
+.TH "pipex.c" 3 "Pipex" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+pipex.c
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'pipex\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBmain\fP (int argc, char **argv, char **env)"
+.br
+.RI "The pipex project is a simplified implementation of a Unix pipeline\&. "
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "int main (int argc, char ** argv, char ** env)"
+
+.PP
+The pipex project is a simplified implementation of a Unix pipeline\&. 
+.PP
+\fBDetails:\fP
+.RS 4
+Reads input from a file, processes this input through a series of commands, and then writes the processed output to another file\&. This project mimics the behavior of Unix pipelines, allowing for the chaining of commands where the output of one command becomes the input for the next\&. The project is designed to be run from the command line, utilizing command-line arguments and environment variables to specify the input file, commands, and output file\&.
+.RE
+.PP
+\fBUsage:\fP
+.RS 4
+
+.IP "\(bu" 2
+\fB\fP[parm1] argc: The number of command-line arguments\&.
+.IP "\(bu" 2
+\fB\fP[parm2] argv: An array of command-line arguments\&.
+.IP "\(bu" 2
+\fB\fP[parm3] env: An array of environment variables\&.
+.IP "\(bu" 2
+\fBreturn:\fP Returns 0 on successful execution\&.
+.PP
+.RE
+.PP
+\fBExample:\fP
+.RS 4
+
+.PP
+.nf
+env > infile\&.txt
+\&./pipex infile\&.txt "grep \-x "PATH=\&.*"" "cat" outfile\&.txt
+
+.fi
+.PP
+ 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Pipex from the source code\&.

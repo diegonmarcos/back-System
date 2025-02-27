@@ -1,0 +1,58 @@
+.TH "pipes/1.ft_piping.c" 3 "Pipex" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+pipes/1.ft_piping.c
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'pipex\&.h'\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBft_piping\fP (char **cmd, char **env)"
+.br
+.RI "Implementation of a Unix pipeline\&. "
+.in -1c
+.SH "Function Documentation"
+.PP 
+.SS "void ft_piping (char ** cmd, char ** env)"
+
+.PP
+Implementation of a Unix pipeline\&. 
+.PP
+\fBDetails:\fP
+.RS 4
+
+.IP "\(bu" 2
+pipe_fd[2] contains the file descriptors for the pipe, [0] for reading [1] for writing\&.
+.IP "\(bu" 2
+ft_fork() creates a parente and a child process that runs concurrently\&.
+.IP "\(bu" 2
+parent() sees PID != 0 and will read from the pipe and write output file\&.
+.IP "\(bu" 2
+child() sees PID = 0 and will execute the first command\&.
+.IP "\(bu" 2
+0 STD_IN, 1 STD_OUT, 2 STD_ERR\&.
+.IP "\(bu" 2
+dup2(fd, fd2) will duplicate the file descriptor fd to fd2, and will close fd2 if open\&.
+.PP
+.RE
+.PP
+\fBUsage:\fP
+.RS 4
+
+.IP "\(bu" 2
+\fB\fP[parm1] is a list of commdands
+.IP "\(bu" 2
+\fB\fP[parm2] is a list of environment variables 
+.PP
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for Pipex from the source code\&.
