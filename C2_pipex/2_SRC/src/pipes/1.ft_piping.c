@@ -6,15 +6,15 @@
 /*   By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/04 09:30:19 by dinepomu          #+#    #+#             */
-/*   Updated: 2025/02/27 16:00:49 by dinepomu         ###   ########.fr       */
+/*   Updated: 2025/02/27 16:38:52 by dinepomu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-static void	set_pipe_flow(int pid, char **cmd, int *pipe_fd, char **env);
-static void	data_client(char **cmd, char **env);
-static void	data_server(char **cmd, char **env);
+static void	set_pipe_flow(int pid, char **cmd, int *pipe_fd);
+static void	p_client(char **cmd, char **env);
+static void	p_server(char **cmd, char **env);
 
 /** @brief Implementation of a Unix pipeline.
  *
@@ -41,39 +41,39 @@ void	ft_piping(char **cmd, char **env)
 
 	ft_pipe(pipe_fd);
 	pid = ft_fork();
-	set_pipe_flow(pid, cmd, pipe_fd, env);
+	set_pipe_flow(pid, cmd, pipe_fd);
 	if (pid)
-		data_client(cmd, env);
+		p_client(cmd, env);
 	else
-		data_server(cmd, env);
+		p_server(cmd, env);
 }
 
-static void	set_pipe_flow(int pid, char **cmd, int *pipe_fd, char **env)
+static void	set_pipe_flow(int pid, char **cmd, int *pipe_fd)
 {
 	int	fd;
 
 	if (pid)
 	{
-		close(pipe_fd[0]);
+		close(pipe_fd[READ]);
 		fd = ft_open_readorwrite(cmd[1], 0);
-		dup2(fd, 0);
-		dup2(pipe_fd[1], 1);
+		dup2(fd, STD_IN);
+		dup2(pipe_fd[WRITE], STD_OUT);
 	}
 	else
 	{
-		close(pipe_fd[1]);
-		dup2(pipe_fd[0], 0);
+		close(pipe_fd[WRITE]);
+		dup2(pipe_fd[READ], STD_IN);
 		fd = ft_open_readorwrite(cmd[4], 1);
 		dup2(fd, 1);
 	}
 }
 
-static void	data_client(char **cmd, char **env)
+static void	p_client(char **cmd, char **env)
 {
 	ft_execve(cmd[2], env);
 }
 
-static void	data_server(char **cmd, char **env)
+static void	p_server(char **cmd, char **env)
 {
 	ft_execve(cmd[3], env);
 }

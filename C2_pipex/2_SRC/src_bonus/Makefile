@@ -6,7 +6,7 @@
 #    By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/02/04 09:31:09 by dinepomu          #+#    #+#              #
-#    Updated: 2025/02/27 12:04:59 by dinepomu         ###   ########.fr        #
+#    Updated: 2025/02/27 17:05:37 by dinepomu         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -47,7 +47,7 @@ SRCS = $(SRCS_MAIN) $(SRCS_FILES)
 OBJS = $(OBJS_1) $(OBJS_2) $(SRCS_LIBS)
 
 VPATH	=					\
-		src/main:			\
+		src:				\
 		src/pipes:			\
 		src/utils:			\
 		../src/shell:	

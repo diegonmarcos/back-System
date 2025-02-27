@@ -6,7 +6,7 @@
 /*   By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/04 09:30:32 by dinepomu          #+#    #+#             */
-/*   Updated: 2025/02/12 10:46:29 by dinepomu         ###   ########.fr       */
+/*   Updated: 2025/02/27 16:37:22 by dinepomu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,11 @@
 # ifndef SIZE_MAX
 #  define SIZE_MAX INT_MAX
 # endif
+
+# define READ 0
+# define WRITE 1
+# define STD_IN 0
+# define STD_OUT 1
 
 /*#####################################################################	*/
 /* HEADERS																*/

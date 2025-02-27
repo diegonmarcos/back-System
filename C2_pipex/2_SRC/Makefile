@@ -6,7 +6,7 @@
 #    By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/02/04 09:31:09 by dinepomu          #+#    #+#              #
-#    Updated: 2025/02/27 15:49:18 by dinepomu         ###   ########.fr        #
+#    Updated: 2025/02/27 16:07:31 by dinepomu         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -46,7 +46,6 @@ OBJS = $(OBJS_1) $(OBJS_2)
 
 VPATH	=						\
 		src:					\
-		src/main:				\
 		src/pipes:				\
 		src/shell:				\
 		src/utils:

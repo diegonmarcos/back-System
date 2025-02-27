@@ -6,34 +6,28 @@
 /*   By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/04 09:30:19 by dinepomu          #+#    #+#             */
-/*   Updated: 2025/02/11 16:18:49 by dinepomu         ###   ########.fr       */
+/*   Updated: 2025/02/27 16:02:56 by dinepomu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-char	*ft_my_getenv(char *name, char **env)
-{
-	int		i;
-	int		j;
-	char	*sub;
+char	*ft_my_getenv_(char *cmd, char **env);
+char	*ft_my_getenv(char *name, char **env);
 
-	i = 0;
-	while (env[i])
+void	ft_execve(char *cmd, char **env)
+{
+	char	**s_cmd;
+	char	*path;
+
+	s_cmd = ft_split(NAME_M, cmd, ' ');
+	path = ft_my_getenv_(s_cmd[0], env);
+	if (execve(path, s_cmd, env) == -1)
 	{
-		j = 0;
-		while (env[i][j] && env[i][j] != '=')
-			j++;
-		sub = ft_substr(NAME_M, env[i], 0, j);
-		if (ft_strcmp(sub, name) == 0)
-		{
-			free(sub);
-			return (env[i] + j + 1);
-		}
-		free(sub);
-		i++;
+		write(2, &s_cmd[0], ft_strlen(s_cmd[0]));
+		ft_free_array_2d(s_cmd);
+		halt_exit_fd(0);
 	}
-	return (NULL);
 }
 
 char	*ft_my_getenv_(char *cmd, char **env)
@@ -64,17 +58,26 @@ char	*ft_my_getenv_(char *cmd, char **env)
 	return (cmd);
 }
 
-void	ft_execve(char *cmd, char **env)
+char	*ft_my_getenv(char *name, char **env)
 {
-	char	**s_cmd;
-	char	*path;
+	int		i;
+	int		j;
+	char	*sub;
 
-	s_cmd = ft_split(NAME_M, cmd, ' ');
-	path = ft_my_getenv_(s_cmd[0], env);
-	if (execve(path, s_cmd, env) == -1)
+	i = 0;
+	while (env[i])
 	{
-		write(2, &s_cmd[0], ft_strlen(s_cmd[0]));
-		ft_free_array_2d(s_cmd);
-		halt_exit_fd(0);
+		j = 0;
+		while (env[i][j] && env[i][j] != '=')
+			j++;
+		sub = ft_substr(NAME_M, env[i], 0, j);
+		if (ft_strcmp(sub, name) == 0)
+		{
+			free(sub);
+			return (env[i] + j + 1);
+		}
+		free(sub);
+		i++;
 	}
+	return (NULL);
 }
