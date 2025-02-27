@@ -1,4 +1,2 @@
-42_Common/C2_push_swap/2.CODE/log/2.Memory_Check/allocs/malloc_allocs
-42_Common/C2_push_swap/2.CODE/log/2.Memory_Check/allocs/malloc_allocs.txt
-*/malloc_allocs
-*/malloc_allocs.txt
+**/malloc_alloc.txt
+**/malloc_allocs
