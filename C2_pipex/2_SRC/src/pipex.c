@@ -6,7 +6,7 @@
 /*   By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/04 09:30:19 by dinepomu          #+#    #+#             */
-/*   Updated: 2025/02/27 14:29:00 by dinepomu         ###   ########.fr       */
+/*   Updated: 2025/02/28 10:12:19 by dinepomu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,13 +16,13 @@
  *
  * 	@details
  * 	@par Details:
- * 	Reads input from a file, processes this input through a series of commands,
- * 	and then writes the processed output to another file. This project mimics the
- * 	behavior of Unix pipelines, allowing for the chaining of commands where the 
- * 	output of one command becomes the input for the next. The project is 
- *	designed to be run from the command line, utilizing command-line arguments
- *	and environment variables to specify the input file, commands, 
- *	and output file.
+ * 		Reads input from a file, processes this input through a series of 
+ *  commands, and then writes the processed output to another file. This 
+ *  project mimics the behavior of Unix pipelines, allowing for the chaining 
+ *  of commands where the output of one command becomes the input for the next.
+ *  The project is designed to be run from the command line, utilizing 
+ *  command-line argumentsand environment variables to specify the input file,
+ *  commands, and output file.
  * 
  * 	@par Usage:
  * 	- @b [parm1] argc: The number of command-line arguments.
