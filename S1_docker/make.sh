@@ -5,10 +5,10 @@
 
 case "$1" in
 	install)
-		./make_install.sh
+		./src/make_install.sh
 		;;
 	run)
-		./make_run.sh
+		./src/make_run.sh
 		;;
 	*)
 		echo "Invalid argument"
