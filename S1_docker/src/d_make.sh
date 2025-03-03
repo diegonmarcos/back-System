@@ -88,7 +88,7 @@ RUN apt update && \
 	git tar wget \
 	gcc gdb \
 	clang clang-tidy lldb \
-	valgrind \
+	valgrind kcachegrind\
 	xdotool bear \
 	doxygen graphviz \
 	libpq-dev libbsd-dev libncurses-dev libxext-dev \
@@ -135,6 +135,7 @@ elif [ "$1" == "list" ]; then
 elif [ "$1" == "dockerfile" ]; then
 	create_dockerfile
 else
+	clear
 	build
 	run
 fi
