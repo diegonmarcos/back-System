@@ -29,7 +29,7 @@ create_dockerfile
 docker build -t d_image .
 
 ### Run the docker image
-S_PATH="../../../2.CODE"
+S_PATH="../2.CODE"
 docker run -d -it \
 	--name d_container \
 	-v "$PWD/${S_PATH}:/program_root" \
@@ -135,8 +135,7 @@ elif [ "$1" == "list" ]; then
 elif [ "$1" == "dockerfile" ]; then
 	create_dockerfile
 else
-	clear
-	build
+	rebuild
 	run
 fi
 }
