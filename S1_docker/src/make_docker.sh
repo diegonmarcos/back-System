@@ -34,7 +34,7 @@ S_PATH="../2.CODE"
 docker run -d -it \
 	--name d_container \
 	-v "$PWD/${S_PATH}:/program_root/program" \
-	-v $PWD/../../../mylib/:program_root/mylib \
+	-v "$PWD/../../../mylib:/program_root/mylib" \
 	-e PATH="$PATH:$HOME/.local/bin" \
 	d_image \
 	bash
@@ -113,6 +113,7 @@ RUN pipx install \
 
 ### Entrypoint to run the login script
 ADD login.sh program_root/system/login.sh
+rm -rf login.sh
 RUN chmod +x program_root/system/login.sh
 #ENTRYPOINT ["program_root/system/login.sh"]
 
