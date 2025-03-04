@@ -33,7 +33,7 @@ S_PATH="../2.CODE"
 docker run -d -it \
 	--name d_container \
 	-v "$PWD/${S_PATH}:/program_root" \
-	-v /home/diego/Documents/Git/mylib/:/mylib \
+	-v $PWD/../../mylib/:/mylib \
 	-e PATH="$PATH:$HOME/.local/bin" \
 	d_image \
 	bash
