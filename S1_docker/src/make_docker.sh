@@ -23,6 +23,7 @@ build ()
 ######**BUILD AND RUN THE IMAGE**######
 ### Create the docker image
 create_dockerfile
+create_loginsh
 
 ### Build the docker image
 #export DOCKER_BUILDKIT=1
@@ -32,8 +33,8 @@ docker build -t d_image .
 S_PATH="../2.CODE"
 docker run -d -it \
 	--name d_container \
-	-v "$PWD/${S_PATH}:/program_root" \
-	-v $PWD/../../mylib/:/mylib \
+	-v "$PWD/${S_PATH}:/program_root/program" \
+	-v $PWD/../../../mylib/:program_root/mylib \
 	-e PATH="$PATH:$HOME/.local/bin" \
 	d_image_1 \
 	bash
@@ -103,6 +104,11 @@ RUN pipx install \
 	&& rm -rf /var/lib/apt/lists/*
 
 
+### Entrypoint to run the login script
+COPY login.sh program_root/system/login.sh
+RUN chmod +x program_root/system/login.sh
+ENTRYPOINT ["program_root/system/login.sh"]
+
 ### Additional packages (separately from the above layer to avoid re-processing)
 #RUN apt install -y \
 #	command-not-found less man-db time \
@@ -122,11 +128,21 @@ ENV PATH="\${PATH}:/root/.local/bin"
 
 
 ### Set the working directory
-WORKDIR /program_root
+WORKDIR /program_root/program
 EOF
 }
 
+function create_loginsh()
+{
+	cat <<EOF > login.sh
+wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh && chmod 777 install.sh && ./install.sh && \
+git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \"${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k\" && \
+sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"powerlevel10k\\/powerlevel10k\"/' ~/.zshrc && \
+exec /bin/bash"]
+EOF
 
+mv login.sh program_root/system
+}
 
 ###  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ###
 # ############################################################################ #
