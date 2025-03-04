@@ -35,7 +35,7 @@ docker run -d -it \
 	-v "$PWD/${S_PATH}:/program_root" \
 	-v $PWD/../../mylib/:/mylib \
 	-e PATH="$PATH:$HOME/.local/bin" \
-	d_image \
+	d_image_1 \
 	bash
 }
 # ************************************************************************ #
