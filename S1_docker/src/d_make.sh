@@ -79,16 +79,19 @@ function create_dockerfile()
 ### Ubuntu base image
 FROM ubuntu:latest
 
+
+
 ### Install necessary system packages
 RUN apt update && \
 	apt install -y \
 	build-essential bash-completion command-not-found less man-db time \
+	zsh \
 	vim nano \
 	make cmake \
 	git tar wget \
 	gcc gdb \
 	clang clang-tidy lldb \
-	valgrind kcachegrind\
+	valgrind kcachegrind \
 	xdotool bear \
 	doxygen graphviz \
 	libpq-dev libbsd-dev libncurses-dev libxext-dev \
@@ -99,17 +102,24 @@ RUN pipx install \
 	gdown \
 	&& rm -rf /var/lib/apt/lists/*
 
+
 ### Additional packages (separately from the above layer to avoid re-processing)
 #RUN apt install -y \
 #	command-not-found less man-db time \
 
+
+
 ### Set the environment variables
 ENV PATH="\${PATH}:/root/.local/bin"
+
+
 
 ### Folder source code
 #RUN git clone <GIT_REPO_URL> /push_swap
 #COPY push_swap /push_swap
 #RUN from mounted mirrored volume done in the docker-compose file
+
+
 
 ### Set the working directory
 WORKDIR /program_root
@@ -141,3 +151,10 @@ fi
 }
 
 main $@
+
+
+
+
+#RUN sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
+#	git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k" \
+#	sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="powerlevel10k/powerlevel10k"/' ~/.zshrc
