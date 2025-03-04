@@ -36,7 +36,7 @@ docker run -d -it \
 	-v "$PWD/${S_PATH}:/program_root/program" \
 	-v $PWD/../../../mylib/:program_root/mylib \
 	-e PATH="$PATH:$HOME/.local/bin" \
-	d_image_1 \
+	d_image \
 	bash
 }
 # ************************************************************************ #
@@ -112,9 +112,9 @@ RUN pipx install \
 
 
 ### Entrypoint to run the login script
-COPY login.sh program_root/system/login.sh
+ADD login.sh program_root/system/login.sh
 RUN chmod +x program_root/system/login.sh
-ENTRYPOINT ["program_root/system/login.sh"]
+#ENTRYPOINT ["program_root/system/login.sh"]
 
 
 
@@ -138,13 +138,14 @@ EOF
 function create_loginsh()
 {
 	cat <<EOF > login.sh
+#!/bin/bash
+
 wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh && chmod 777 install.sh && ./install.sh && \
 git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \"${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k\" && \
-sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"powerlevel10k\\/powerlevel10k\"/' ~/.zshrc && \
-exec /bin/bash"]
+sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"powerlevel10k\\/powerlevel10k\"/' ~/.zshrc
 EOF
 
-mv login.sh program_root/system
+
 }
 
 ###  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ###
