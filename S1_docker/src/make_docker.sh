@@ -104,14 +104,17 @@ RUN pipx install \
 	&& rm -rf /var/lib/apt/lists/*
 
 
+### Additional packages (separately from the above layer to avoid re-processing)
+#RUN apt install -y \
+#	command-not-found less man-db time \
+
+
+
+
 ### Entrypoint to run the login script
 COPY login.sh program_root/system/login.sh
 RUN chmod +x program_root/system/login.sh
 ENTRYPOINT ["program_root/system/login.sh"]
-
-### Additional packages (separately from the above layer to avoid re-processing)
-#RUN apt install -y \
-#	command-not-found less man-db time \
 
 
 
