@@ -6,7 +6,7 @@
 #    By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/02/04 09:31:09 by dinepomu          #+#    #+#              #
-#    Updated: 2025/03/10 10:09:06 by dinepomu         ###   ########.fr        #
+#    Updated: 2025/03/10 11:08:19 by dinepomu         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -29,7 +29,7 @@ AR		= ar rc
 
 # **************************************************************************** #
 # **************************************************************************** #
-CINCLUDE	= -Iinclude
+CINCLUDE	= -Iinc
 
 # **************************************************************************** #
 # **************************************************************************** #
@@ -109,7 +109,7 @@ test: fclean $(NAME)
 	mkdir -p tests
 
 	echo "\n### NORM ###"
-	norminette src include src_bonus | grep Error || true
+	norminette src inc src_bonus | grep Error || true
 	
 	env > tests/infile
 	
@@ -130,7 +130,7 @@ test_bonus: fclean bonus
 	mkdir -p tests
 
 	echo "\n### NORM ###"
-	norminette src include src_bonus | grep Error || true
+	norminette src inc src_bonus | grep Error || true
 
 	
 	env > tests/infile
