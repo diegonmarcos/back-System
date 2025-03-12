@@ -6,7 +6,7 @@
 /*   By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/04 09:30:47 by dinepomu          #+#    #+#             */
-/*   Updated: 2025/03/10 10:07:54 by dinepomu         ###   ########.fr       */
+/*   Updated: 2025/03/12 15:39:47 by dinepomu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,7 +56,7 @@ static void	child(char **cmd, int *pipe_fd)
 	char	**lines_interator;
 
 	ft_bzero(lines, sizeof(lines));
-	get_next_line2(0, lines);
+	get_next_line_split(0, lines);
 	lines_interator = lines;
 	while (*lines)
 	{
