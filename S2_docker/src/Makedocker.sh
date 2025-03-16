@@ -43,6 +43,7 @@ docker run -d -it \
 # *** Run *** #
 run ()
 {
+build
 docker exec -it d_container bash
 }
 
@@ -113,7 +114,7 @@ RUN pipx install \
 
 ### Entrypoint to run the login script
 ADD login.sh program_root/system/login.sh
-rm -rf login.sh
+RUN rm -rf login.sh
 RUN chmod +x program_root/system/login.sh
 #ENTRYPOINT ["program_root/system/login.sh"]
 
