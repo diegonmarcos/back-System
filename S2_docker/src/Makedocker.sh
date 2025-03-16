@@ -27,7 +27,7 @@ create_loginsh
 
 ### Build the docker image
 #export DOCKER_BUILDKIT=1
-docker build -t d_image .
+docker build -t d_image log/8.Docker
 
 ### Run the docker image
 S_PATH="../2.CODE"
@@ -77,7 +77,7 @@ docker ps -a
 
 function create_dockerfile() 
 {
-	cat <<EOF > Dockerfile
+	cat <<EOF > log/8.Docker/Dockerfile
 ### Ubuntu base image
 FROM ubuntu:latest
 
@@ -139,7 +139,7 @@ EOF
 
 function create_loginsh()
 {
-	cat <<EOF > login.sh
+	cat <<EOF > log/8.Docker/login.sh
 #!/bin/bash
 
 wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh && chmod 777 install.sh && ./install.sh && \
