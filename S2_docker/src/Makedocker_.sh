@@ -87,6 +87,7 @@ FROM ubuntu:latest
 RUN apt update && \
 	apt install -y \
 	build-essential bash-completion command-not-found less man-db time \
+	sudo \
 	zsh \
 	vim nano \
 	make cmake \
@@ -99,11 +100,30 @@ RUN apt update && \
 	libpq-dev libbsd-dev libncurses-dev libxext-dev \
 	python3 pipx python3-pip python3-dev python3-venv python3-wheel \
 	&& rm -rf /var/lib/apt/lists/*
+
+RUN 	libsfml-dev \
+		reetype \
+		x11 \
+		xrandr \
+		xcursor \
+		xi \ 
+		udev \
+		opengl \
+		flac \ 
+		ogg \ 
+		vorbis \
+		vorbisenc \
+		vorbisfile \
+		pthread \
+
 RUN pipx install \
 	pipenv \
 	gdown \
 	&& rm -rf /var/lib/apt/lists/*
 
+RUN apt update \
+	pipx ensurepath \
+	 source ~/.bashrc 
 
 ### Additional packages (separately from the above layer to avoid re-processing)
 #RUN apt install -y \
