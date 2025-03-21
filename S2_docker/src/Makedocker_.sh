@@ -19,7 +19,7 @@ create_loginsh
 docker build -t d_image log/8.Docker
 
 ### Run the docker image
-S_PATH="../2.CODE"
+S_PATH="../2_CODE"
 docker run -d -it \
 	--name d_container \
 	-v "$PWD/${S_PATH}:/program_root/program" \
@@ -72,7 +72,7 @@ FROM ubuntu:latest
 
 
 
-### Install necessary system packages
+### Install necessary system packages each run a layer
 RUN apt update && \
 	apt install -y \
 	build-essential bash-completion command-not-found less man-db time \
@@ -98,18 +98,14 @@ RUN pipx install \
 
 RUN apt update && apt upgrade -y
 
-### Additional packages (separately from the above layer to avoid re-processing)
-#RUN apt install -y \
-#	command-not-found less man-db time \
-
-
-
-
 ### Entrypoint to run the login script
 ADD login.sh program_root/system/login.sh
 RUN rm -rf login.sh
 RUN chmod +x program_root/system/login.sh
 RUN bash /program_root/system/login.sh
+RUN bash install.sh || true
+RUN zsh
+
 
 #ENTRYPOINT ["program_root/system/login.sh"]
 
@@ -120,15 +116,13 @@ ENV PATH="\${PATH}:/root/.local/bin"
 
 
 
-### Folder source code
-#RUN git clone <GIT_REPO_URL> /push_swap
-#COPY push_swap /push_swap
-#RUN from mounted mirrored volume done in the docker-compose file
-
-
-
 ### Set the working directory
 WORKDIR /program_root/program
+
+### Start zsh shell
+CMD ["zsh"]
+
+
 EOF
 }
 
@@ -138,8 +132,8 @@ function create_loginsh()
 #!/bin/bash
 
 wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh && chmod 777 install.sh && ./install.sh && \
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \"${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k\" && \
-sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"powerlevel10k\\/powerlevel10k\"/' ~/.zshrc
+#git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \"${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k\" && \
+#sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"powerlevel10k\\/powerlevel10k\"/' ~/.zshrc
 chsh -s $(which zsh)
 EOF
 
