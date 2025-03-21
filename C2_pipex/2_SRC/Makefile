@@ -6,7 +6,7 @@
 #    By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/02/04 09:31:09 by dinepomu          #+#    #+#              #
-#    Updated: 2025/03/12 15:49:15 by dinepomu         ###   ########.fr        #
+#    Updated: 2025/03/21 13:32:19 by dinepomu         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -23,7 +23,7 @@ MAKEFLAGS += --no-print-directory
 # **************************************************************************** #
 # **************************************************************************** #
 CC 		= clang -g3
-CFLAGS	= -Wall -Wextra 
+CFLAGS	= -Wall -Wextra
 RM		= rm -rf
 AR		= ar rc
 
@@ -101,13 +101,57 @@ endif
 
 folders:
 	mkdir -p objs
-	mkdir -p log/2.Memory_Check/allocs
+	mkdir -p log
 
 # **************************************************************************** #
 # **************************************************************************** #
-test: fclean $(NAME)
+help:
+	echo "make all clean fclean re bonus"
+	echo "make valgrind"
+	echo "make test test_bonus"
+
+VALGRIND = valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s --log-file=log/2.Memory_Leak.log
+valgrind:
+	$(MAKE) fclean 
+	$(MAKE) CC="clang" CFLAGS=" -g3 -Wall -Wextra -fno-omit-frame-pointer"
+
 	mkdir -p tests
 
+	echo "\n### Wall Wextra Flags ###"
+
+	echo "\n### NORM ###"
+	norminette src inc src_bonus > log/1.Norm.log || true
+	grep "Error" log/1.Norm.log && echo "Norm errors" || true
+	
+	env > tests/infile
+	
+	echo "\n\n### VALGRIND ###"
+	$(VALGRIND) ./pipex tests/infile > /dev/null 2>&1 || true
+	grep -q "no leaks are possible" log/2.Memory_Leak.log && echo "no leaks" || true
+	grep -q "RROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)" log/2.Memory_Leak.log && echo "no errors" || true
+
+
+# **************************************************************************** #
+# TESTS																	   	   #
+# **************************************************************************** #
+
+# grep [options] [pattern] [file] |or it can be piped from another command| > grep [options] [pattern]
+## grep -x is a commmand that matches the whole line, withou the -x it would match only the pattern
+## grep matches "XPATH=.*" the * is a wildcard, so it matches anything after the equal sign
+
+# cat {file} |or if piped from another| command > cat
+## cat is a command that reads files and prints them to the terminal
+
+# sed s/{pattern}/{replacement}/ |or if piped from another| command > sed s/{pattern}/{replacement}
+## sed is a commmand that searches for a pattern and replaces it with another pattern
+## sed s/.*PATH=// searches for anything before PATH= and replaces it with nothing
+
+test: 
+	$(MAKE) fclean 
+	$(MAKE) CC="clang -g3" CFLAGS="-Wall -Wextra "
+	mkdir -p tests
+
+	echo "\n### Wall Wextra Flags ###"
 	echo "\n### NORM ###"
 	norminette src inc src_bonus | grep Error || true
 	
@@ -125,6 +169,8 @@ test: fclean $(NAME)
 	echo "\n\n### TESTS ###"
 	if [ "$$(cat tests/outfile_grep_cat.sys)" = "$$(cat tests/outfile_grep_cat.pipex)" ]; then echo "Test 1$(GREEN) OK$(RESET)"; else echo "$(RED)Test 1 FAILED$(RESET)"; fi
 	if [ "$$(cat tests/outfile_grep_sed.sys)" = "$$(cat tests/outfile_grep_sed.pipex)" ]; then echo "Test 2$(GREEN) OK$(RESET)"; else echo "$(RED)Test 2 FAILED$(RESET)"; fi
+
+	$(MAKE) clean
 
 test_bonus: fclean bonus
 	mkdir -p tests

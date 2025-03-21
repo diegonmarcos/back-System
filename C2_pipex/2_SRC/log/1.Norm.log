@@ -1,0 +1,10 @@
+src/pipex.c: OK!
+src/shell/2.ft_execve.c: OK!
+src/utils/3.error_handling.c: OK!
+src/pipes/1.ft_piping.c: OK!
+inc/pipex.h: OK!
+src_bonus/include/pipex_bonus.h: OK!
+src_bonus/src/pipex_bonus.c: OK!
+src_bonus/src/utils/3.error_handling_bonus.c: OK!
+src_bonus/src/pipes/1.ft_piping_bonus.c: OK!
+src_bonus/src/pipes/1.ft_piping_heredoc_bonus.c: OK!
