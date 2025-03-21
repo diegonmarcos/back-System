@@ -1,15 +1,4 @@
 #!/bin/bash
-# **************************************************************************** #
-#                                                                              #
-#                                                         :::      ::::::::    #
-#    make.sh                                            :+:      :+:    :+:    #
-#                                                     +:+ +:+         +:+      #
-#    By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+         #
-#                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2025/03/02 12:30:02 by dinepomu          #+#    #+#              #
-#    Updated: 2025/03/03 06:51:52 by dinepomu         ###   ########.fr        #
-#                                                                              #
-# **************************************************************************** #
 
 ###  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ###
 # ############################################################################ #
@@ -91,7 +80,7 @@ RUN apt update && \
 	zsh \
 	vim nano \
 	make cmake \
-	git tar wget \
+	git tar wget curl \
 	gcc gdb \
 	clang clang-tidy lldb \
 	valgrind kcachegrind \
@@ -101,29 +90,13 @@ RUN apt update && \
 	python3 pipx python3-pip python3-dev python3-venv python3-wheel \
 	&& rm -rf /var/lib/apt/lists/*
 
-RUN 	libsfml-dev \
-		reetype \
-		x11 \
-		xrandr \
-		xcursor \
-		xi \ 
-		udev \
-		opengl \
-		flac \ 
-		ogg \ 
-		vorbis \
-		vorbisenc \
-		vorbisfile \
-		pthread \
-
 RUN pipx install \
 	pipenv \
 	gdown \
-	&& rm -rf /var/lib/apt/lists/*
+	&& rm -rf /var/lib/apt/lists/* \
+	&& pipx ensurepath
 
-RUN apt update \
-	pipx ensurepath \
-	 source ~/.bashrc 
+RUN apt update && apt upgrade -y
 
 ### Additional packages (separately from the above layer to avoid re-processing)
 #RUN apt install -y \
@@ -136,6 +109,8 @@ RUN apt update \
 ADD login.sh program_root/system/login.sh
 RUN rm -rf login.sh
 RUN chmod +x program_root/system/login.sh
+RUN bash /program_root/system/login.sh
+
 #ENTRYPOINT ["program_root/system/login.sh"]
 
 
@@ -165,6 +140,7 @@ function create_loginsh()
 wget https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh && chmod 777 install.sh && ./install.sh && \
 git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \"${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k\" && \
 sed -i 's/ZSH_THEME=\"robbyrussell\"/ZSH_THEME=\"powerlevel10k\\/powerlevel10k\"/' ~/.zshrc
+chsh -s $(which zsh)
 EOF
 
 
