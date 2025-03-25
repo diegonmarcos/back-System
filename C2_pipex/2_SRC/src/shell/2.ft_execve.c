@@ -6,7 +6,7 @@
 /*   By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/04 09:30:19 by dinepomu          #+#    #+#             */
-/*   Updated: 2025/03/25 16:12:51 by dinepomu         ###   ########.fr       */
+/*   Updated: 2025/03/25 16:13:43 by dinepomu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,6 +55,8 @@ void	ft_execve(char *cmd, char **env)
  * is executable. If the command is found,
  * the full path to the command is returned. If the command is not found, 
  * the original command is returned.
+ * 
+ * access is used to check if the file exists and is executable.
  *
  * @param cmd The command to search for.
  * @param env The environment variables.
