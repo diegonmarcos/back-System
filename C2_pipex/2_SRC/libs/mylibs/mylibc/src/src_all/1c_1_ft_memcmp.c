@@ -1,0 +1,1 @@
+../1c_string_manip/2_search_cmp/1c_1_ft_memcmp.c

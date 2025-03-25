@@ -1,6 +1,6 @@
 # Folders ignore
 doc/
-libs/
+#libs/
 log/
 objs/
 testers/

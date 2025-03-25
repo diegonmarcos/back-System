@@ -1,0 +1,1 @@
+../1c_string_manip/3_converters_math/1c_ft_atoi.c

@@ -1,0 +1,1 @@
+../1c_string_manip/0_copy_set/1c_0_ft_memcpy.c
