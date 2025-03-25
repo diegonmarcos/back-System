@@ -1,0 +1,24 @@
+# Folders ignore
+doc/
+libs/
+log/
+objs/
+testers/
+tests/
+maps/
+
+# Files ignore
+**/malloc_alloc.txt
+**/malloc_allocs
+**/rclone.log
+**/*.o
+**/*.d
+**/*.a
+
+# Files ignore 42
+#**/*.so
+#**/*.out
+#**/*.log
+#**/*.txt
+#**/*.md
+#pipex
