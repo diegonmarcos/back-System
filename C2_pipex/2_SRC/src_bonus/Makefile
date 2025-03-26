@@ -6,7 +6,7 @@
 #    By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/02/04 09:31:09 by dinepomu          #+#    #+#              #
-#    Updated: 2025/03/25 13:11:50 by dinepomu         ###   ########.fr        #
+#    Updated: 2025/03/26 17:32:35 by dinepomu         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -64,14 +64,16 @@ LIB1_A = ../libs/mylibs/mylibc/libmylibc.a
 
 # **************************************************************************** #
 # **************************************************************************** #
-all : $(NAME)
+all : make_lib $(NAME)
 
 objs/%.o: %.c
 	mkdir -p objs
 	$(CC) $(CFLAGS) $(CINCLUDE) -c $< -o $@
 
 $(LIB1_A):
-#	$(MAKE) -C $(LIB1_DIR)
+	$(MAKE) -C $(LIB1_DIR)
+make_lib:
+	$(MAKE) -C $(LIB1_DIR)
 
 $(NAME) : $(OBJS) $(LIB1_A)
 	$(CC) $(CFLAGS) $(CINCLUDE) $(OBJS) $(LIB1_A) -o $(NAME)
@@ -82,11 +84,11 @@ $(NAME) : $(OBJS) $(LIB1_A)
 fclean : clean
 	$(RM) $(NAME)
 	$(RM) tests
-#	$(MAKE) fclean -C $(LIB1_DIR)
+	$(MAKE) fclean -C $(LIB1_DIR)
 
 clean :
 	$(RM) $(OBJS)
-#	$(MAKE) clean -C $(LIB1_DIR)
+	$(MAKE) clean -C $(LIB1_DIR)
 
 re : fclean all
 

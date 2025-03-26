@@ -6,7 +6,7 @@
 #    By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/02/04 09:31:09 by dinepomu          #+#    #+#              #
-#    Updated: 2025/03/26 17:26:21 by dinepomu         ###   ########.fr        #
+#    Updated: 2025/03/26 17:41:23 by dinepomu         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -67,7 +67,7 @@ all : make_lib $(NAME)
 objs/%.o: %.c
 	mkdir -p objs
 	$(CC) $(CFLAGS) $(CINCLUDE) -c $< -o $@
-	echo "$(GRAY)obj:$< compiled$(RESET)"
+	echo "$(GREEN)✔ $(GRAY)obj:$< compiled$(RESET)"
 
 $(LIB1_A):
 	$(MAKE) -C $(LIB1_DIR)
@@ -77,7 +77,7 @@ make_lib:
 $(NAME) : $(OBJS) $(LIB1_A)
 	$(MAKE) folders
 	$(CC) $(CFLAGS) $(CINCLUDE) $(OBJS) $(LIB1_A) -o $(NAME)
-	echo "$(GREEN)$(NAME) bin linked$(RESET)"
+	echo "$(GREEN)(•̀ᴗ•́)و $(NAME) bin linked$(RESET)"
 
 
 # **************************************************************************** #
@@ -87,11 +87,13 @@ fclean : clean
 	$(RM) tests
 	$(RM) objs
 	$(RM) log
-#	$(MAKE) fclean -C $(LIB1_DIR)
+	$(MAKE) fclean_all -C $(LIB1_DIR)
+	echo "$(RED)✖ $(NAME) bin deleted$(RESET)"
 
 clean :
 	$(RM) objs
-#	$(MAKE) clean -C $(LIB1_DIR)
+	$(MAKE) clean -C $(LIB1_DIR)
+	echo "$(RED)✖ objs deleted$(RESET)"
 
 re : fclean all
 
