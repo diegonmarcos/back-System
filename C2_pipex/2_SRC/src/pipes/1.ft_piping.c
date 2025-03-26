@@ -6,7 +6,7 @@
 /*   By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/04 09:30:19 by dinepomu          #+#    #+#             */
-/*   Updated: 2025/03/10 10:07:21 by dinepomu         ###   ########.fr       */
+/*   Updated: 2025/03/26 17:14:10 by dinepomu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,6 +52,12 @@ void	ft_piping(char **cmd, char **env)
 		p_server(cmd, env);
 }
 
+/**
+ * ./pipex [dup2] {infile.txt} [dup2] {"grep -x "PATH=.*""} [dup2] {"cat"} 
+ * [dup2] {outfile.txt}
+ * ./pipex {infile.txt} {"grep -x "PATH=.*""} {"cat"} {outfile.txt}
+ * env | grep -x "PATH=.*" | cat > outfile.txt
+ */
 static void	set_pipe_flow(int pid, char **cmd, int *pipe_fd)
 {
 	int	fd;

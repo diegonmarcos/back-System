@@ -6,7 +6,7 @@
 #    By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/02/04 09:31:09 by dinepomu          #+#    #+#              #
-#    Updated: 2025/03/25 13:10:49 by dinepomu         ###   ########.fr        #
+#    Updated: 2025/03/26 17:26:21 by dinepomu         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -56,23 +56,28 @@ VPATH	=						\
 
 # **************************************************************************** #
 # **************************************************************************** #
-LIB1_DIR = libs/mylibs/mylibc
-LIB1_A = libs/mylibs/mylibc/libmylibc.a
+LIB1_DIR 	= libs/mylibs/mylibc
+LIB1_A 		= libs/mylibs/mylibc/libmylibc.a
+LIB_OBJS 	= $(LIB1_DIR)/objs/*.d
 
 # **************************************************************************** #
 # **************************************************************************** #
-all : $(NAME)
+all : make_lib $(NAME)
 
 objs/%.o: %.c
 	mkdir -p objs
 	$(CC) $(CFLAGS) $(CINCLUDE) -c $< -o $@
+	echo "$(GRAY)obj:$< compiled$(RESET)"
 
 $(LIB1_A):
+	$(MAKE) -C $(LIB1_DIR)
+make_lib:
 	$(MAKE) -C $(LIB1_DIR)
 
 $(NAME) : $(OBJS) $(LIB1_A)
 	$(MAKE) folders
 	$(CC) $(CFLAGS) $(CINCLUDE) $(OBJS) $(LIB1_A) -o $(NAME)
+	echo "$(GREEN)$(NAME) bin linked$(RESET)"
 
 
 # **************************************************************************** #

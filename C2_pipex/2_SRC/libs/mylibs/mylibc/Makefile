@@ -6,7 +6,7 @@
 #    By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/01/23 11:09:01 by dinepomu          #+#    #+#              #
-#    Updated: 2025/03/21 08:43:28 by dinepomu         ###   ########.fr        #
+#    Updated: 2025/03/26 17:22:25 by dinepomu         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -103,7 +103,7 @@ IS_PROGRAM_AND_NOT_LIB 	= 0# 0 or 1
 INCLUDE_LIB 			= 0# 0 or 1
 BUILD_LIBRARY 			= 0# 0 or 1
 BONUS 					= 0# 0 or 1
-VERBOSE 				= 1# 0, 1 or 2 - Vebosity of the makefile
+VERBOSE 				= 0# 0, 1 or 2 - Vebosity of the makefile
 DOCKER					= 0# 0 or 1
 DBG 					= 0# 0 or 1 - Debug mode for the program
 
