@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   0c_ft_fprintf1.c                                   :+:      :+:    :+:   */
+/*   1e_ft_fprintf1.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: dinepomu <dinepomu@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/07/17 17:23:43 by dinepomu          #+#    #+#             */
-/*   Updated: 2025/03/05 12:31:17 by dinepomu         ###   ########.fr       */
+/*   Updated: 2025/03/27 15:41:49 by dinepomu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,12 +85,12 @@ int	ft_fprintf1(char *filename, const char *str, ...)
 	if (output_file == NULL)
 		return (1);
 	fd = fileno(output_file);
-	if (flock(fd, LOCK_EX) == -1)
+/* 	if (flock(fd, LOCK_EX) == -1)
 	{
 		perror("Failed to lock file");
 		close(fd);
 		return (1);
-	}
+	} */
 	char_count = 0;
 	va_start(item, str);
 	char_count = w_str(fd, str, item, char_count);
@@ -117,12 +117,12 @@ int	ft_fprintf2(char *fopenmode, char *filename, const char *str, ...)
 		fd = fileno(stdout);
 	else
 		fd = fileno(output_file);
-	if (flock(fd, LOCK_EX) == -1)
+/* 	if (flock(fd, LOCK_EX) == -1)
 	{
 		perror("Failed to lock file");
 		close(fd);
 		return (1);
-	}
+	} */
 	char_count = 0;
 	va_start(item, str);
 	char_count = w_str(fd, str, item, char_count);
