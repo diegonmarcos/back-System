@@ -1,360 +1,359 @@
 # Installed Libraries and Dependencies
 
 ## Python Packages (pip)
-- **aiodns**: 3.1.1 - An asynchronous DNS resolver.
-- **aiohttp**: 3.9.1 - An asynchronous HTTP client/server framework.
-- **aiosignal**: 1.3.1 - A library for aiohttp signals.
-- **argcomplete**: 3.1.4 - Bash tab completion for argparse.
-- **asn1crypto**: 1.5.1 - A Python library for parsing and serializing ASN.1 structures.
-- **async-timeout**: 4.0.3 - An asynchronous timeout context manager.
-- **attrs**: 23.2.0 - Classes without boilerplate.
-- **Babel**: 2.10.3 - An internationalization library for Python.
-- **bcc**: 0.29.1 - A toolkit for creating efficient kernel tracing and manipulation programs.
-- **bcrypt**: 3.2.2 - A password hashing library.
-- **blinker**: 1.7.0 - A fast, simple way to add object-to-object and broadcast signals to your Python applications.
-- **Brlapi**: 0.8.5 - A Python binding for BrlAPI.
-- **Brotli**: 1.1.0 - A Python binding for the Brotli compression algorithm.
-- **certifi**: 2023.11.17 - A carefully curated collection of Root Certificates for validating the trustworthiness of SSL certificates.
-- **chardet**: 5.2.0 - Universal character encoding detector.
-- **click**: 8.1.6 - A composable command line interface toolkit.
-- **colorama**: 0.4.6 - Cross-platform colored terminal text.
-- **command-not-found**: 0.3 - Suggests installation of packages in interactive bash sessions.
-- **cryptography**: 41.0.7 - A Python library for cryptographic recipes and primitives.
-- **cupshelpers**: 1.0 - Helper utilities for CUPS.
-- **dbus-fast**: 2.44.1 - A fast D-Bus library for Python.
-- **dbus-python**: 1.3.2 - Python bindings for the D-Bus message bus system.
-- **defer**: 1.0.6 - A Python library for deferred execution.
-- **distro**: 1.9.0 - Linux OS distribution information.
-- **distro-info**: 1.7+build1 - Provides information about the distributions' releases.
-- **et_xmlfile**: 2.0.0 - An efficient way to write large XML files.
-- **fido2**: 1.1.2 - A Python library for FIDO2.
-- **frozenlist**: 1.4.0 - A list-like structure that can be made immutable.
-- **fuse-python**: 1.0.7 - Python bindings for FUSE.
-- **GDAL**: 3.8.4 - Geospatial Data Abstraction Library.
-- **gpg**: 1.18.0 - A Python wrapper for GnuPG.
-- **gyp**: 0.1 - Generate Your Projects.
-- **html5lib**: 1.1 - A Python library for parsing HTML.
-- **httplib2**: 0.20.4 - A comprehensive HTTP client library.
-- **idna**: 3.6 - Internationalized Domain Names in Applications (IDNA).
-- **importlib-metadata**: 4.12.0 - Read metadata from Python packages.
-- **jaraco.classes**: 3.2.1 - A collection of Python classes.
-- **jeepney**: 0.8.0 - A pure Python D-Bus library.
-- **Jinja2**: 3.1.2 - A modern and designer-friendly templating language for Python.
-- **keyring**: 24.3.1 - Access the system keyring service.
-- **language-selector**: 0.1 - Language selector for Ubuntu.
-- **launchpadlib**: 1.11.0 - A Python client library for Launchpad.
-- **lazr.restfulclient**: 0.14.6 - A Python client for RESTful web services.
-- **lazr.uri**: 1.0.6 - A Python library for URI manipulation.
-- **libvirt-python**: 10.0.0 - Python bindings for the libvirt virtualization management library.
-- **louis**: 3.29.0 - Python bindings for Liblouis Braille translator.
-- **lxml**: 6.0.2 - A Pythonic XML and HTML processing library.
-- **Markdown**: 3.5.2 - A Python implementation of John Gruber's Markdown.
-- **markdown-it-py**: 3.0.0 - Markdown parser done right. Fast and easy to extend.
-- **MarkupSafe**: 2.1.5 - Implements a MarkupSafe string class that can be used to escape strings.
-- **mdurl**: 0.1.2 - Markdown URL parsing and encoding.
-- **mechanize**: 0.4.9 - Stateful programmatic web browsing.
-- **more-itertools**: 10.2.0 - More routines for operating on iterables than `itertools`.
-- **multidict**: 6.0.4 - Multidict implementation.
-- **mutagen**: 1.46.0 - Python module to handle audio metadata.
-- **netaddr**: 0.8.0 - A Python library for network address manipulation.
-- **netifaces**: 0.11.0 - Portable network interface information.
-- **numpy**: 1.26.4 - Fundamental package for scientific computing with Python.
-- **oauthlib**: 3.2.2 - A generic, spec-compliant, thorough implementation of the OAuth request signing logic.
-- **olefile**: 0.46 - Python package to parse, read and write Microsoft OLE2 files.
-- **openpyxl**: 3.1.5 - A Python library to read/write Excel 2010 xlsx/xlsm files.
-- **packaging**: 24.0 - Core utilities for Python packages.
-- **pexpect**: 4.9.0 - Pexpect allows easy control of interactive console applications.
-- **pillow**: 10.2.0 - The friendly PIL fork (Python Imaging Library).
-- **pip**: 24.0 - The package installer for Python.
-- **pipx**: 1.4.3 - Install and run Python applications in isolated environments.
-- **platformdirs**: 4.2.0 - A Python library for determining platform-specific directories.
-- **proton-core**: 0.7.0 - Core components for Proton applications.
-- **proton-keyring-linux**: 0.2.0 - Linux keyring integration for Proton applications.
-- **proton-vpn-api-core**: 0.46.1 - Core API for Proton VPN.
-- **proton-vpn-daemon**: 0.13.2 - Daemon for Proton VPN.
-- **proton-vpn-gtk-app**: 4.11.0 - GTK application for Proton VPN.
-- **proton-vpn-lib**: 0.1.1 - Library for Proton VPN.
-- **proton-vpn-network-manager**: 0.13.0 - Network manager integration for Proton VPN.
-- **psutil**: 5.9.8 - Cross-platform process and system utilities.
-- **ptyprocess**: 0.7.0 - Run a subprocess in a pseudo terminal.
-- **pycairo**: 1.25.1 - Python bindings for Cairo.
-- **pycares**: 4.4.0 - Python interface for c-ares.
-- **pycryptodomex**: 3.20.0 - A self-contained Python package of cryptographic primitives.
-- **pycups**: 2.0.1 - Python bindings for CUPS.
-- **Pygments**: 2.17.2 - A generic syntax highlighter.
-- **PyGObject**: 3.48.2 - Python bindings for GObject.
-- **PyJWT**: 2.7.0 - JSON Web Token implementation in Python.
-- **pylibacl**: 0.7.0 - Python bindings for POSIX access control lists.
-- **PyNaCl**: 1.5.0 - Python binding to the Networking and Cryptography (NaCl) library.
-- **pyOpenSSL**: 23.2.0 - Python wrapper around a subset of the OpenSSL library.
-- **pyparsing**: 3.1.1 - A powerful, flexible, and extensible parsing library for Python.
-- **PyQt5**: 5.15.10 - Python bindings for the Qt cross-platform application and UI framework.
-- **PyQt5-sip**: 12.13.0 - Python bindings for SIP.
-- **python-apt**: 2.7.7+ubuntu5 - Python bindings for APT.
-- **python-debian**: 0.1.49+ubuntu2 - Python modules for Debian-specific things.
-- **python-docx**: 1.2.0 - Create and modify Word documents (.docx).
-- **python-gnupg**: 0.5.2 - A Python wrapper for GnuPG.
-- **pytz**: 2024.1 - World timezone definitions for Python.
-- **pyxattr**: 0.8.1 - Python bindings for extended attributes.
-- **pyxdg**: 0.28 - Python library for XDG Base Directory Specification.
-- **PyYAML**: 6.0.1 - YAML parser and emitter for Python.
-- **requests**: 2.31.0 - Python HTTP for Humans.
-- **reverse_geocoder**: 1.5.1 - A fast, offline reverse geocoder.
-- **rich**: 13.7.1 - A Python library for rich text and beautiful formatting in the terminal.
-- **scipy**: 1.16.2 - Scientific tools for Python.
-- **SecretStorage**: 3.3.3 - Python bindings for the Secret Service API.
-- **sentry-sdk**: 1.39.2 - Sentry SDK for Python.
-- **setuptools**: 68.1.2 - Easily download, build, install, upgrade, and uninstall Python packages.
-- **six**: 1.16.0 - Python 2 and 3 compatibility utilities.
-- **systemd-python**: 235 - Python bindings for systemd.
-- **tornado**: 6.4 - A Python web framework and asynchronous networking library.
-- **typing_extensions**: 4.10.0 - Backported and experimental type hints for Python.
-- **ubuntu-drivers-common**: 0.0.0 - Common utilities for Ubuntu drivers.
-- **ubuntu-pro-client**: 8001 - Client for Ubuntu Pro.
-- **ufw**: 0.36.2 - Uncomplicated Firewall.
-- **unattended-upgrades**: 0.1 - Automatic installation of security (and other) updates.
-- **urllib3**: 2.0.7 - A powerful, user-friendly HTTP client for Python.
-- **usb-creator**: 0.3.16 - Create a bootable USB startup disk.
-- **userpath**: 1.9.1 - Cross-platform tool for managing the user's PATH.
-- **vboxapi**: 1.0 - VirtualBox API.
-- **wadllib**: 1.3.6 - Python library for parsing WADL documents.
-- **webencodings**: 0.5.1 - Character encoding aliases for legacy web content.
-- **websockets**: 10.4 - A library for building WebSocket servers and clients.
-- **wheel**: 0.42.0 - A built-package format for Python.
-- **xdg**: 5 - Python library for XDG Base Directory Specification.
-- **xkit**: 0.0.0 - X.Org X server utilities.
-- **yarl**: 1.8.2 - Yet another URL library.
-- **yt-dlp**: 2024.4.9 - A youtube-dl fork with additional features and fixes.
-- **zipp**: 1.0.0 - Pathlib-compatible object wrapper for zip files.
+- `pip install aiodns==3.1.1`: **aiodns** (3.1.1) - An asynchronous DNS resolver.
+- `pip install aiohttp==3.9.1`: **aiohttp** (3.9.1) - An asynchronous HTTP client/server framework.
+- `pip install aiosignal==1.3.1`: **aiosignal** (1.3.1) - A library for aiohttp signals.
+- `pip install argcomplete==3.1.4`: **argcomplete** (3.1.4) - Bash tab completion for argparse.
+- `pip install asn1crypto==1.5.1`: **asn1crypto** (1.5.1) - A Python library for parsing and serializing ASN.1 structures.
+- `pip install async-timeout==4.0.3`: **async-timeout** (4.0.3) - An asynchronous timeout context manager.
+- `pip install attrs==23.2.0`: **attrs** (23.2.0) - Classes without boilerplate.
+- `pip install Babel==2.10.3`: **Babel** (2.10.3) - An internationalization library for Python.
+- `pip install bcc==0.29.1`: **bcc** (0.29.1) - A toolkit for creating efficient kernel tracing and manipulation programs.
+- `pip install bcrypt==3.2.2`: **bcrypt** (3.2.2) - A password hashing library.
+- `pip install blinker==1.7.0`: **blinker** (1.7.0) - A fast, simple way to add object-to-object and broadcast signals to your Python applications.
+- `pip install Brlapi==0.8.5`: **Brlapi** (0.8.5) - A Python binding for BrlAPI.
+- `pip install Brotli==1.1.0`: **Brotli** (1.1.0) - A Python binding for the Brotli compression algorithm.
+- `pip install certifi==2023.11.17`: **certifi** (2023.11.17) - A carefully curated collection of Root Certificates for validating the trustworthiness of SSL certificates.
+- `pip install chardet==5.2.0`: **chardet** (5.2.0) - Universal character encoding detector.
+- `pip install click==8.1.6`: **click** (8.1.6) - A composable command line interface toolkit.
+- `pip install colorama==0.4.6`: **colorama** (0.4.6) - Cross-platform colored terminal text.
+- `pip install command-not-found==0.3`: **command-not-found** (0.3) - Suggests installation of packages in interactive bash sessions.
+- `pip install cryptography==41.0.7`: **cryptography** (41.0.7) - A Python library for cryptographic recipes and primitives.
+- `pip install cupshelpers==1.0`: **cupshelpers** (1.0) - Helper utilities for CUPS.
+- `pip install dbus-fast==2.44.1`: **dbus-fast** (2.44.1) - A fast D-Bus library for Python.
+- `pip install dbus-python==1.3.2`: **dbus-python** (1.3.2) - Python bindings for the D-Bus message bus system.
+- `pip install defer==1.0.6`: **defer** (1.0.6) - A Python library for deferred execution.
+- `pip install distro==1.9.0`: **distro** (1.9.0) - Linux OS distribution information.
+- `pip install distro-info==1.7+build1`: **distro-info** (1.7+build1) - Provides information about the distributions' releases.
+- `pip install et_xmlfile==2.0.0`: **et_xmlfile** (2.0.0) - An efficient way to write large XML files.
+- `pip install fido2==1.1.2`: **fido2** (1.1.2) - A Python library for FIDO2.
+- `pip install frozenlist==1.4.0`: **frozenlist** (1.4.0) - A list-like structure that can be made immutable.
+- `pip install fuse-python==1.0.7`: **fuse-python** (1.0.7) - Python bindings for FUSE.
+- `pip install GDAL==3.8.4`: **GDAL** (3.8.4) - Geospatial Data Abstraction Library.
+- `pip install gpg==1.18.0`: **gpg** (1.18.0) - A Python wrapper for GnuPG.
+- `pip install gyp==0.1`: **gyp** (0.1) - Generate Your Projects.
+- `pip install html5lib==1.1`: **html5lib** (1.1) - A Python library for parsing HTML.
+- `pip install httplib2==0.20.4`: **httplib2** (0.20.4) - A comprehensive HTTP client library.
+- `pip install idna==3.6`: **idna** (3.6) - Internationalized Domain Names in Applications (IDNA).
+- `pip install importlib-metadata==4.12.0`: **importlib-metadata** (4.12.0) - Read metadata from Python packages.
+- `pip install jaraco.classes==3.2.1`: **jaraco.classes** (3.2.1) - A collection of Python classes.
+- `pip install jeepney==0.8.0`: **jeepney** (0.8.0) - A pure Python D-Bus library.
+- `pip install Jinja2==3.1.2`: **Jinja2** (3.1.2) - A modern and designer-friendly templating language for Python.
+- `pip install keyring==24.3.1`: **keyring** (24.3.1) - Access the system keyring service.
+- `pip install language-selector==0.1`: **language-selector** (0.1) - Language selector for Ubuntu.
+- `pip install launchpadlib==1.11.0`: **launchpadlib** (1.11.0) - A Python client library for Launchpad.
+- `pip install lazr.restfulclient==0.14.6`: **lazr.restfulclient** (0.14.6) - A Python client for RESTful web services.
+- `pip install lazr.uri==1.0.6`: **lazr.uri** (1.0.6) - A Python library for URI manipulation.
+- `pip install libvirt-python==10.0.0`: **libvirt-python** (10.0.0) - Python bindings for the libvirt virtualization management library.
+- `pip install louis==3.29.0`: **louis** (3.29.0) - Python bindings for Liblouis Braille translator.
+- `pip install lxml==6.0.2`: **lxml** (6.0.2) - A Pythonic XML and HTML processing library.
+- `pip install Markdown==3.5.2`: **Markdown** (3.5.2) - A Python implementation of John Gruber's Markdown.
+- `pip install markdown-it-py==3.0.0`: **markdown-it-py** (3.0.0) - Markdown parser done right. Fast and easy to extend.
+- `pip install MarkupSafe==2.1.5`: **MarkupSafe** (2.1.5) - Implements a MarkupSafe string class that can be used to escape strings.
+- `pip install mdurl==0.1.2`: **mdurl** (0.1.2) - Markdown URL parsing and encoding.
+- `pip install mechanize==0.4.9`: **mechanize** (0.4.9) - Stateful programmatic web browsing.
+- `pip install more-itertools==10.2.0`: **more-itertools** (10.2.0) - More routines for operating on iterables than `itertools`.
+- `pip install multidict==6.0.4`: **multidict** (6.0.4) - Multidict implementation.
+- `pip install mutagen==1.46.0`: **mutagen** (1.46.0) - Python module to handle audio metadata.
+- `pip install netaddr==0.8.0`: **netaddr** (0.8.0) - A Python library for network address manipulation.
+- `pip install netifaces==0.11.0`: **netifaces** (0.11.0) - Portable network interface information.
+- `pip install numpy==1.26.4`: **numpy** (1.26.4) - Fundamental package for scientific computing with Python.
+- `pip install oauthlib==3.2.2`: **oauthlib** (3.2.2) - A generic, spec-compliant, thorough implementation of the OAuth request signing logic.
+- `pip install olefile==0.46`: **olefile** (0.46) - Python package to parse, read and write Microsoft OLE2 files.
+- `pip install openpyxl==3.1.5`: **openpyxl** (3.1.5) - A Python library to read/write Excel 2010 xlsx/xlsm files.
+- `pip install packaging==24.0`: **packaging** (24.0) - Core utilities for Python packages.
+- `pip install pexpect==4.9.0`: **pexpect** (4.9.0) - Pexpect allows easy control of interactive console applications.
+- `pip install pillow==10.2.0`: **pillow** (10.2.0) - The friendly PIL fork (Python Imaging Library).
+- `pip install pip==24.0`: **pip** (24.0) - The package installer for Python.
+- `pip install pipx==1.4.3`: **pipx** (1.4.3) - Install and run Python applications in isolated environments.
+- `pip install platformdirs==4.2.0`: **platformdirs** (4.2.0) - A Python library for determining platform-specific directories.
+- `pip install proton-core==0.7.0`: **proton-core** (0.7.0) - Core components for Proton applications.
+- `pip install proton-keyring-linux==0.2.0`: **proton-keyring-linux** (0.2.0) - Linux keyring integration for Proton applications.
+- `pip install proton-vpn-api-core==0.46.1`: **proton-vpn-api-core** (0.46.1) - Core API for Proton VPN.
+- `pip install proton-vpn-daemon==0.13.2`: **proton-vpn-daemon** (0.13.2) - Daemon for Proton VPN.
+- `pip install proton-vpn-gtk-app==4.11.0`: **proton-vpn-gtk-app** (4.11.0) - GTK application for Proton VPN.
+- `pip install proton-vpn-lib==0.1.1`: **proton-vpn-lib** (0.1.1) - Library for Proton VPN.
+- `pip install proton-vpn-network-manager==0.13.0`: **proton-vpn-network-manager** (0.13.0) - Network manager integration for Proton VPN.
+- `pip install psutil==5.9.8`: **psutil** (5.9.8) - Cross-platform process and system utilities.
+- `pip install ptyprocess==0.7.0`: **ptyprocess** (0.7.0) - Run a subprocess in a pseudo terminal.
+- `pip install pycairo==1.25.1`: **pycairo** (1.25.1) - Python bindings for Cairo.
+- `pip install pycares==4.4.0`: **pycares** (4.4.0) - Python interface for c-ares.
+- `pip install pycryptodomex==3.20.0`: **pycryptodomex** (3.20.0) - A self-contained Python package of cryptographic primitives.
+- `pip install pycups==2.0.1`: **pycups** (2.0.1) - Python bindings for CUPS.
+- `pip install Pygments==2.17.2`: **Pygments** (2.17.2) - A generic syntax highlighter.
+- `pip install PyGObject==3.48.2`: **PyGObject** (3.48.2) - Python bindings for GObject.
+- `pip install PyJWT==2.7.0`: **PyJWT** (2.7.0) - JSON Web Token implementation in Python.
+- `pip install pylibacl==0.7.0`: **pylibacl** (0.7.0) - Python bindings for POSIX access control lists.
+- `pip install PyNaCl==1.5.0`: **PyNaCl** (1.5.0) - Python binding to the Networking and Cryptography (NaCl) library.
+- `pip install pyOpenSSL==23.2.0`: **pyOpenSSL** (23.2.0) - Python wrapper around a subset of the OpenSSL library.
+- `pip install pyparsing==3.1.1`: **pyparsing** (3.1.1) - A powerful, flexible, and extensible parsing library for Python.
+- `pip install PyQt5==5.15.10`: **PyQt5** (5.15.10) - Python bindings for the Qt cross-platform application and UI framework.
+- `pip install PyQt5-sip==12.13.0`: **PyQt5-sip** (12.13.0) - Python bindings for SIP.
+- `pip install python-apt==2.7.7+ubuntu5`: **python-apt** (2.7.7+ubuntu5) - Python bindings for APT.
+- `pip install python-debian==0.1.49+ubuntu2`: **python-debian** (0.1.49+ubuntu2) - Python modules for Debian-specific things.
+- `pip install python-docx==1.2.0`: **python-docx** (1.2.0) - Create and modify Word documents (.docx).
+- `pip install python-gnupg==0.5.2`: **python-gnupg** (0.5.2) - A Python wrapper for GnuPG.
+- `pip install pytz==2024.1`: **pytz** (2024.1) - World timezone definitions for Python.
+- `pip install pyxattr==0.8.1`: **pyxattr** (0.8.1) - Python bindings for extended attributes.
+- `pip install pyxdg==0.28`: **pyxdg** (0.28) - Python library for XDG Base Directory Specification.
+- `pip install PyYAML==6.0.1`: **PyYAML** (6.0.1) - YAML parser and emitter for Python.
+- `pip install requests==2.31.0`: **requests** (2.31.0) - Python HTTP for Humans.
+- `pip install reverse_geocoder==1.5.1`: **reverse_geocoder** (1.5.1) - A fast, offline reverse geocoder.
+- `pip install rich==13.7.1`: **rich** (13.7.1) - A Python library for rich text and beautiful formatting in the terminal.
+- `pip install scipy==1.16.2`: **scipy** (1.16.2) - Scientific tools for Python.
+- `pip install SecretStorage==3.3.3`: **SecretStorage** (3.3.3) - Python bindings for the Secret Service API.
+- `pip install sentry-sdk==1.39.2`: **sentry-sdk** (1.39.2) - Sentry SDK for Python.
+- `pip install setuptools==68.1.2`: **setuptools** (68.1.2) - Easily download, build, install, upgrade, and uninstall Python packages.
+- `pip install six==1.16.0`: **six** (1.16.0) - Python 2 and 3 compatibility utilities.
+- `pip install systemd-python==235`: **systemd-python** (235) - Python bindings for systemd.
+- `pip install tornado==6.4`: **tornado** (6.4) - A Python web framework and asynchronous networking library.
+- `pip install typing_extensions==4.10.0`: **typing_extensions** (4.10.0) - Backported and experimental type hints for Python.
+- `pip install ubuntu-drivers-common==0.0.0`: **ubuntu-drivers-common** (0.0.0) - Common utilities for Ubuntu drivers.
+- `pip install ubuntu-pro-client==8001`: **ubuntu-pro-client** (8001) - Client for Ubuntu Pro.
+- `pip install ufw==0.36.2`: **ufw** (0.36.2) - Uncomplicated Firewall.
+- `pip install unattended-upgrades==0.1`: **unattended-upgrades** (0.1) - Automatic installation of security (and other) updates.
+- `pip install urllib3==2.0.7`: **urllib3** (2.0.7) - A powerful, user-friendly HTTP client for Python.
+- `pip install usb-creator==0.3.16`: **usb-creator** (0.3.16) - Create a bootable USB startup disk.
+- `pip install userpath==1.9.1`: **userpath** (1.9.1) - Cross-platform tool for managing the user's PATH.
+- `pip install vboxapi==1.0`: **vboxapi** (1.0) - VirtualBox API.
+- `pip install wadllib==1.3.6`: **wadllib** (1.3.6) - Python library for parsing WADL documents.
+- `pip install webencodings==0.5.1`: **webencodings** (0.5.1) - Character encoding aliases for legacy web content.
+- `pip install websockets==10.4`: **websockets** (10.4) - A library for building WebSocket servers and clients.
+- `pip install wheel==0.42.0`: **wheel** (0.42.0) - A built-package format for Python.
+- `pip install xdg==5`: **xdg** (5) - Python library for XDG Base Directory Specification.
+- `pip install xkit==0.0.0`: **xkit** (0.0.0) - X.Org X server utilities.
+- `pip install yarl==1.8.2`: **yarl** (1.8.2) - Yet another URL library.
+- `pip install yt-dlp==2024.4.9`: **yt-dlp** (2024.4.9) - A youtube-dl fork with additional features and fixes.
+- `pip install zipp==1.0.0`: **zipp** (1.0.0) - Pathlib-compatible object wrapper for zip files.
 
 ## Node.js Packages (npm)
-- **@anthropic-ai/claude-code**: 2.0.26 - Anthropic AI Claude Code package.
-- **@google/gemini-cli**: 0.10.0 - Google Gemini CLI package.
-- **corepack**: 0.34.0 - Corepack manages your package managers.
-- **npm**: 10.9.3 - Node.js package manager.
+- `npm install -g @anthropic-ai/claude-code@2.0.26`: **@anthropic-ai/claude-code** (2.0.26) - Anthropic AI Claude Code package.
+- `npm install -g @google/gemini-cli@0.10.0`: **@google/gemini-cli** (0.10.0) - Google Gemini CLI package.
+- `npm install -g corepack@0.34.0`: **corepack** (0.34.0) - Corepack manages your package managers.
+- `npm install -g npm@10.9.3`: **npm** (10.9.3) - Node.js package manager.
 
 ## Snap Packages
-- **bare**: 1.0 - A minimal snap package.
-- **core18**: 20250910 - Core snap runtime for Ubuntu 18.04 LTS.
-- **core20**: 20250730 - Core snap runtime for Ubuntu 20.04 LTS.
-- **core22**: 20250923 - Core snap runtime for Ubuntu 22.04 LTS.
-- **core24**: 20251001 - Core snap runtime for Ubuntu 24.04 LTS.
-- **curl**: 8.16.0 - Command-line tool for transferring data with URL syntax.
-- **custom-screen-resolution**: 2.0.0 - Custom screen resolution utility.
-- **element-desktop**: 1.12.2 - Desktop client for Element (Matrix chat).
-- **ffmpeg-2204**: 7.0 - Multimedia framework for audio and video processing.
-- **firmware-updater**: 0+git.0052f6b - Utility for updating firmware.
-- **gnome-3-34-1804**: 0+git.3556cb3 - GNOME 3.34 runtime for snaps on Ubuntu 18.04.
-- **gnome-3-38-2004**: 0+git.efb213a - GNOME 3.38 runtime for snaps on Ubuntu 20.04.
-- **gnome-42-2204**: 0+git.38ea591 - GNOME 42 runtime for snaps on Ubuntu 22.04.
-- **gnome-46-2404**: 0+git.4ca00c0-sdk0+git.df43897 - GNOME 46 runtime for snaps on Ubuntu 24.04.
-- **google-cloud-cli**: 544.0.0 - Command-line interface for Google Cloud.
-- **gtk-common-themes**: 0.1-81-g442e511 - Common GTK themes for snaps.
-- **htop**: 3.4.1 - Interactive process viewer.
-- **kf5-5-113-qt-5-15-11-core22**: 5.113 - KDE Frameworks 5 runtime for snaps.
-- **kf5-core22**: 5.116.0 - KDE Frameworks 5 core runtime for snaps.
-- **krita**: 5.2.11 - Digital painting and sketching application.
-- **mesa-2404**: 24.2.8-snap185 - Mesa 3D graphics library for snaps.
-- **ollama**: v0.12.3 - Ollama AI model runner.
-- **slack**: 4.46.99 - Slack desktop application.
-- **snapd**: 2.72 - Snap daemon for managing snap packages.
-- **thunderbird**: 140.3.1esr-1 - Thunderbird email client.
+- `snap install bare`: **bare** (1.0) - A minimal snap package.
+- `snap install core18`: **core18** (20250910) - Core snap runtime for Ubuntu 18.04 LTS.
+- `snap install core20`: **core20** (20250730) - Core snap runtime for Ubuntu 20.04 LTS.
+- `snap install core22`: **core22** (20250923) - Core snap runtime for Ubuntu 22.04 LTS.
+- `snap install core24`: **core24** (20251001) - Core snap runtime for Ubuntu 24.04 LTS.
+- `snap install curl`: **curl** (8.16.0) - Command-line tool for transferring data with URL syntax.
+- `snap install custom-screen-resolution`: **custom-screen-resolution** (2.0.0) - Custom screen resolution utility.
+- `snap install element-desktop`: **element-desktop** (1.12.2) - Desktop client for Element (Matrix chat).
+- `snap install ffmpeg-2204`: **ffmpeg-2204** (7.0) - Multimedia framework for audio and video processing.
+- `snap install firmware-updater`: **firmware-updater** (0+git.0052f6b) - Utility for updating firmware.
+- `snap install gnome-3-34-1804`: **gnome-3-34-1804** (0+git.3556cb3) - GNOME 3.34 runtime for snaps on Ubuntu 18.04.
+- `snap install gnome-3-38-2004`: **gnome-3-38-2004** (0+git.efb213a) - GNOME 3.38 runtime for snaps on Ubuntu 20.04.
+- `snap install gnome-42-2204`: **gnome-42-2204** (0+git.38ea591) - GNOME 42 runtime for snaps on Ubuntu 22.04.
+- `snap install gnome-46-2404`: **gnome-46-2404** (0+git.4ca00c0-sdk0+git.df43897) - GNOME 46 runtime for snaps on Ubuntu 24.04.
+- `snap install google-cloud-cli`: **google-cloud-cli** (544.0.0) - Command-line interface for Google Cloud.
+- `snap install gtk-common-themes`: **gtk-common-themes** (0.1-81-g442e511) - Common GTK themes for snaps.
+- `snap install htop`: **htop** (3.4.1) - Interactive process viewer.
+- `snap install kf5-5-113-qt-5-15-11-core22`: **kf5-5-113-qt-5-15-11-core22** (5.113) - KDE Frameworks 5 runtime for snaps.
+- `snap install kf5-core22`: **kf5-core22** (5.116.0) - KDE Frameworks 5 core runtime for snaps.
+- `snap install krita`: **krita** (5.2.11) - Digital painting and sketching application.
+- `snap install mesa-2404`: **mesa-2404** (24.2.8-snap185) - Mesa 3D graphics library for snaps.
+- `snap install ollama`: **ollama** (v0.12.3) - Ollama AI model runner.
+- `snap install slack`: **slack** (4.46.99) - Slack desktop application.
+- `snap install snapd`: **snapd** (2.72) - Snap daemon for managing snap packages.
+- `snap install thunderbird`: **thunderbird** (140.3.1esr-1) - Thunderbird email client.
 
 ## RubyGems Packages (gem)
-- **abbrev**: 0.1.1 - A Ruby library for abbreviating strings.
-- **addressable**: 2.8.5 - A Ruby library for URI manipulation.
-- **base64**: 0.1.1 - A Ruby library for Base64 encoding/decoding.
-- **benchmark**: 0.2.1 - A Ruby library for benchmarking code.
-- **bigdecimal**: 3.1.3 - A Ruby library for arbitrary-precision decimal floating-point arithmetic.
-- **bundler**: 2.4.20 - The best way to manage your Ruby application's dependencies.
-- **cgi**: 0.3.6 - A Ruby library for CGI programming.
-- **classifier-reborn**: 2.2.0 - A general purpose classifier library for Ruby.
-- **coderay**: 1.1.3 - Fast and easy syntax highlighting for Ruby.
-- **colorator**: 1.1.0 - Colorize your Ruby output.
-- **concurrent-ruby**: 1.2.3 - Modern concurrency tools for Ruby.
-- **concurrent-ruby-edge**: 0.7.0 - Edge features for concurrent-ruby.
-- **csv**: 3.2.6 - A Ruby library for CSV parsing and generation.
-- **date**: 3.3.3 - A Ruby library for date and time manipulation.
-- **debug**: 1.7.1 - A Ruby debugger.
-- **delegate**: 0.3.0 - A Ruby library for delegation.
-- **did_you_mean**: 1.6.3 - A Ruby library for suggesting possible corrections for typos.
-- **digest**: 3.1.1 - A Ruby library for cryptographic digests.
-- **drb**: 2.1.1 - A Ruby library for distributed Ruby.
-- **em-websocket**: 0.5.1 - EventMachine-based WebSocket server and client.
-- **english**: 0.7.2 - A Ruby library for English language utilities.
-- **erb**: 4.0.2 - Embedded Ruby.
-- **error_highlight**: 0.5.1 - A Ruby library for highlighting errors.
-- **etc**: 1.4.2 - A Ruby library for accessing system information.
-- **eventmachine**: 1.3.0.dev.1 - A Ruby event-driven I/O and concurrency library.
-- **fast-stemmer**: 1.0.2 - A fast stemmer for Ruby.
-- **fcntl**: 1.0.2 - A Ruby library for fcntl.
-- **ffi**: 1.16.3 - Ruby FFI library.
-- **fiddle**: 1.1.1 - A Ruby library for Fiddle.
-- **fileutils**: 1.7.0 - A Ruby library for file utility methods.
-- **find**: 0.1.1 - A Ruby library for finding files.
-- **forwardable**: 1.3.3 - A Ruby library for delegation.
-- **forwardable-extended**: 2.6.0 - Extended Forwardable module for Ruby.
-- **getoptlong**: 0.2.0 - A Ruby library for parsing command-line options.
-- **http_parser.rb**: 0.6.0 - A Ruby wrapper for the Node.js HTTP parser.
-- **i18n**: 1.14.1 - Ruby Internationalization library.
-- **io-console**: 0.6.0 - A Ruby library for console I/O.
-- **io-nonblock**: 0.2.0 - A Ruby library for non-blocking I/O.
-- **io-wait**: 0.3.0 - A Ruby library for waiting on I/O.
-- **ipaddr**: 1.2.5 - A Ruby library for IP address manipulation.
-- **irb**: 1.6.2 - Interactive Ruby.
-- **jekyll**: 4.3.2 - A simple, blog-aware, static site generator in Ruby.
-- **jekyll-feed**: 0.17.0 - A Jekyll plugin to generate an Atom feed.
-- **jekyll-sass-converter**: 2.2.0 - A Jekyll plugin for Sass conversion.
-- **jekyll-seo-tag**: 2.8.0 - A Jekyll plugin to add SEO metadata to your site.
-- **jekyll-watch**: 2.2.1 - A Jekyll plugin for watching file changes.
-- **json**: 2.6.3 - A Ruby library for JSON parsing and generation.
-- **kramdown**: 2.4.0 - A free MIT-licensed Ruby library for parsing and converting a subset of Markdown.
-- **kramdown-parser-gfm**: 1.1.0 - A Kramdown parser for GitHub Flavored Markdown.
-- **liquid**: 5.4.0 - A Ruby templating language.
-- **listen**: 3.9.0 - Listens to file modifications.
-- **logger**: 1.5.3 - A Ruby library for logging.
-- **matrix**: 0.4.2 - A Ruby library for matrix operations.
-- **mercenary**: 0.4.0 - A Ruby library for building command-line tools.
-- **mime-types**: 3.5.2 - A Ruby library for MIME type manipulation.
-- **mime-types-data**: 3.2024.0206 - Data for the mime-types library.
-- **minima**: 2.5.1 - A beautiful, minimal, and responsive Jekyll theme.
-- **minitest**: 5.16.3 - A Ruby testing framework.
-- **mutex_m**: 0.1.2 - A Ruby library for mutexes.
-- **net-ftp**: 0.2.1 - A Ruby library for FTP.
-- **net-http**: 0.4.1 - A Ruby library for HTTP.
-- **net-imap**: 0.3.4.1 - A Ruby library for IMAP.
-- **net-pop**: 0.1.2 - A Ruby library for POP3.
-- **net-protocol**: 0.2.1 - A Ruby library for network protocols.
-- **net-smtp**: 0.3.4 - A Ruby library for SMTP.
-- **net-telnet**: 0.2.0 - A Ruby library for Telnet.
-- **nkf**: 0.1.2 - A Ruby library for Network Kanji Filter.
-- **observer**: 0.1.1 - A Ruby library for the Observer pattern.
-- **open-uri**: 0.3.0 - A Ruby library for opening URIs.
-- **open3**: 0.1.2 - A Ruby library for opening subprocesses.
-- **openssl**: 3.1.0 - A Ruby library for OpenSSL.
-- **optparse**: 0.3.1 - A Ruby library for parsing command-line options.
-- **ostruct**: 0.5.5 - A Ruby library for OpenStruct.
-- **pathname**: 0.2.1 - A Ruby library for path manipulation.
-- **pathutil**: 0.16.1 - A Ruby library for path utilities.
-- **power_assert**: 2.0.3 - A Ruby library for power assertions.
-- **pp**: 0.4.0 - A Ruby library for pretty printing.
-- **prettyprint**: 0.1.1 - A Ruby library for pretty printing.
-- **prime**: 0.1.2 - A Ruby library for prime numbers.
-- **pstore**: 0.1.2 - A Ruby library for persistent storage.
-- **psych**: 5.0.1 - A YAML parser and emitter for Ruby.
-- **public_suffix**: 4.0.6 - A Ruby library for public suffix list.
-- **pygments.rb**: 2.4.1 - A Ruby wrapper for Pygments.
-- **racc**: 1.6.2 - A Ruby LALR parser generator.
-- **rake**: 13.0.6 - A Ruby build program with capabilities similar to Make.
-- **rb-inotify**: 0.10.1 - A Ruby wrapper for inotify.
-- **rbs**: 2.8.2 - A Ruby type signature language.
-- **rdiscount**: 2.1.8 - A Ruby wrapper for Discount, a Markdown parser.
-- **rdoc**: 6.5.0 - Ruby documentation system.
-- **readline**: 0.0.3 - A Ruby library for Readline.
-- **readline-ext**: 0.1.5 - A Ruby library for Readline extensions.
-- **redcarpet**: 3.6.0 - A fast, safe and extensible Markdown to HTML parser for Ruby.
-- **reline**: 0.3.2 - A Ruby library for Readline-like functionality.
-- **resolv**: 0.2.2 - A Ruby library for DNS resolution.
-- **resolv-replace**: 0.1.1 - A Ruby library for replacing Resolv.
-- **rexml**: 3.2.5 - A Ruby library for XML parsing.
-- **rinda**: 0.1.1 - A Ruby library for Rinda.
-- **rouge**: 4.2.0 - A pure Ruby code highlighter.
-- **rss**: 0.2.9 - A Ruby library for RSS parsing.
-- **ruby2_keywords**: 0.0.5 - A Ruby library for Ruby 2 keywords.
-- **rubygems-update**: 3.4.20 - Updates RubyGems.
-- **sassc**: 2.4.0 - A Ruby wrapper for LibSass.
-- **sdbm**: 1.0.0 - A Ruby library for SDBM.
-- **securerandom**: 0.2.2 - A Ruby library for secure random number generation.
-- **set**: 0.1.1 - A Ruby library for Set.
-- **singleton**: 0.1.1 - A Ruby library for the Singleton pattern.
-- **stringio**: 3.0.4 - A Ruby library for StringIO.
-- **strscan**: 3.0.5 - A Ruby library for StringScanner.
-- **syntax_suggest**: 1.1.0 - A Ruby library for syntax suggestions.
-- **syslog**: 0.1.1 - A Ruby library for syslog.
-- **tempfile**: 0.1.3 - A Ruby library for temporary files.
-- **terminal-table**: 3.0.2 - A Ruby library for creating tables in the terminal.
-- **test-unit**: 3.5.7 - A Ruby testing framework.
-- **time**: 0.2.2 - A Ruby library for time manipulation.
-- **timeout**: 0.3.1 - A Ruby library for timeouts.
-- **tmpdir**: 0.1.3 - A Ruby library for temporary directories.
-- **tomlrb**: 1.3.0 - A Ruby TOML parser.
-- **tsort**: 0.1.1 - A Ruby library for topological sort.
-- **typeprof**: 0.21.3 - A Ruby type profiler.
-- **un**: 0.2.1 - A Ruby library for un.
-- **unicode-display_width**: 1.6.1 - A Ruby library for Unicode display width.
-- **uri**: 0.12.2 - A Ruby library for URI manipulation.
-- **weakref**: 0.1.2 - A Ruby library for weak references.
-- **webrick**: 1.8.1 - A Ruby library for WEBrick.
-- **xmlrpc**: 0.3.2 - A Ruby library for XML-RPC.
-- **yajl-ruby**: 1.4.3 - A Ruby wrapper for YAJL.
-- **yaml**: 0.2.1 - A Ruby library for YAML parsing and generation.
-- **zlib**: 3.0.0 - A Ruby library for Zlib.
+- `gem install abbrev -v 0.1.1`: **abbrev** (0.1.1) - A Ruby library for abbreviating strings.
+- `gem install addressable -v 2.8.5`: **addressable** (2.8.5) - A Ruby library for URI manipulation.
+- `gem install base64 -v 0.1.1`: **base64** (0.1.1) - A Ruby library for Base64 encoding/decoding.
+- `gem install benchmark -v 0.2.1`: **benchmark** (0.2.1) - A Ruby library for benchmarking code.
+- `gem install bigdecimal -v 3.1.3`: **bigdecimal** (3.1.3) - A Ruby library for arbitrary-precision decimal floating-point arithmetic.
+- `gem install bundler -v 2.4.20`: **bundler** (2.4.20) - The best way to manage your Ruby application's dependencies.
+- `gem install cgi -v 0.3.6`: **cgi** (0.3.6) - A Ruby library for CGI programming.
+- `gem install classifier-reborn -v 2.2.0`: **classifier-reborn** (2.2.0) - A general purpose classifier library for Ruby.
+- `gem install coderay -v 1.1.3`: **coderay** (1.1.3) - Fast and easy syntax highlighting for Ruby.
+- `gem install colorator -v 1.1.0`: **colorator** (1.1.0) - Colorize your Ruby output.
+- `gem install concurrent-ruby -v 1.2.3`: **concurrent-ruby** (1.2.3) - Modern concurrency tools for Ruby.
+- `gem install concurrent-ruby-edge -v 0.7.0`: **concurrent-ruby-edge** (0.7.0) - Edge features for concurrent-ruby.
+- `gem install csv -v 3.2.6`: **csv** (3.2.6) - A Ruby library for CSV parsing and generation.
+- `gem install date -v 3.3.3`: **date** (3.3.3) - A Ruby library for date and time manipulation.
+- `gem install debug -v 1.7.1`: **debug** (1.7.1) - A Ruby debugger.
+- `gem install delegate -v 0.3.0`: **delegate** (0.3.0) - A Ruby library for delegation.
+- `gem install did_you_mean -v 1.6.3`: **did_you_mean** (1.6.3) - A Ruby library for suggesting possible corrections for typos.
+- `gem install digest -v 3.1.1`: **digest** (3.1.1) - A Ruby library for cryptographic digests.
+- `gem install drb -v 2.1.1`: **drb** (2.1.1) - A Ruby library for distributed Ruby.
+- `gem install em-websocket -v 0.5.1`: **em-websocket** (0.5.1) - EventMachine-based WebSocket server and client.
+- `gem install english -v 0.7.2`: **english** (0.7.2) - A Ruby library for English language utilities.
+- `gem install erb -v 4.0.2`: **erb** (4.0.2) - Embedded Ruby.
+- `gem install error_highlight -v 0.5.1`: **error_highlight** (0.5.1) - A Ruby library for highlighting errors.
+- `gem install etc -v 1.4.2`: **etc** (1.4.2) - A Ruby library for accessing system information.
+- `gem install eventmachine -v 1.3.0.dev.1`: **eventmachine** (1.3.0.dev.1) - A Ruby event-driven I/O and concurrency library.
+- `gem install fast-stemmer -v 1.0.2`: **fast-stemmer** (1.0.2) - A fast stemmer for Ruby.
+- `gem install fcntl -v 1.0.2`: **fcntl** (1.0.2) - A Ruby library for fcntl.
+- `gem install ffi -v 1.16.3`: **ffi** (1.16.3) - Ruby FFI library.
+- `gem install fiddle -v 1.1.1`: **fiddle** (1.1.1) - A Ruby library for Fiddle.
+- `gem install fileutils -v 1.7.0`: **fileutils** (1.7.0) - A Ruby library for file utility methods.
+- `gem install find -v 0.1.1`: **find** (0.1.1) - A Ruby library for finding files.
+- `gem install forwardable -v 1.3.3`: **forwardable** (1.3.3) - A Ruby library for delegation.
+- `gem install forwardable-extended -v 2.6.0`: **forwardable-extended** (2.6.0) - Extended Forwardable module for Ruby.
+- `gem install getoptlong -v 0.2.0`: **getoptlong** (0.2.0) - A Ruby library for parsing command-line options.
+- `gem install http_parser.rb -v 0.6.0`: **http_parser.rb** (0.6.0) - A Ruby wrapper for the Node.js HTTP parser.
+- `gem install i18n -v 1.14.1`: **i18n** (1.14.1) - Ruby Internationalization library.
+- `gem install io-console -v 0.6.0`: **io-console** (0.6.0) - A Ruby library for console I/O.
+- `gem install io-nonblock -v 0.2.0`: **io-nonblock** (0.2.0) - A Ruby library for non-blocking I/O.
+- `gem install io-wait -v 0.3.0`: **io-wait** (0.3.0) - A Ruby library for waiting on I/O.
+- `gem install ipaddr -v 1.2.5`: **ipaddr** (1.2.5) - A Ruby library for IP address manipulation.
+- `gem install irb -v 1.6.2`: **irb** (1.6.2) - Interactive Ruby.
+- `gem install jekyll -v 4.3.2`: **jekyll** (4.3.2) - A simple, blog-aware, static site generator in Ruby.
+- `gem install jekyll-feed -v 0.17.0`: **jekyll-feed** (0.17.0) - A Jekyll plugin to generate an Atom feed.
+- `gem install jekyll-sass-converter -v 2.2.0`: **jekyll-sass-converter** (2.2.0) - A Jekyll plugin for Sass conversion.
+- `gem install jekyll-seo-tag -v 2.8.0`: **jekyll-seo-tag** (2.8.0) - A Jekyll plugin to add SEO metadata to your site.
+- `gem install jekyll-watch -v 2.2.1`: **jekyll-watch** (2.2.1) - A Jekyll plugin for watching file changes.
+- `gem install json -v 2.6.3`: **json** (2.6.3) - A Ruby library for JSON parsing and generation.
+- `gem install kramdown -v 2.4.0`: **kramdown** (2.4.0) - A free MIT-licensed Ruby library for parsing and converting a subset of Markdown.
+- `gem install kramdown-parser-gfm -v 1.1.0`: **kramdown-parser-gfm** (1.1.0) - A Kramdown parser for GitHub Flavored Markdown.
+- `gem install liquid -v 5.4.0`: **liquid** (5.4.0) - A Ruby templating language.
+- `gem install listen -v 3.9.0`: **listen** (3.9.0) - Listens to file modifications.
+- `gem install logger -v 1.5.3`: **logger** (1.5.3) - A Ruby library for logging.
+- `gem install matrix -v 0.4.2`: **matrix** (0.4.2) - A Ruby library for matrix operations.
+- `gem install mercenary -v 0.4.0`: **mercenary** (0.4.0) - A Ruby library for building command-line tools.
+- `gem install mime-types -v 3.5.2`: **mime-types** (3.5.2) - A Ruby library for MIME type manipulation.
+- `gem install mime-types-data -v 3.2024.0206`: **mime-types-data** (3.2024.0206) - Data for the mime-types library.
+- `gem install minima -v 2.5.1`: **minima** (2.5.1) - A beautiful, minimal, and responsive Jekyll theme.
+- `gem install minitest -v 5.16.3`: **minitest** (5.16.3) - A Ruby testing framework.
+- `gem install mutex_m -v 0.1.2`: **mutex_m** (0.1.2) - A Ruby library for mutexes.
+- `gem install net-ftp -v 0.2.1`: **net-ftp** (0.2.1) - A Ruby library for FTP.
+- `gem install net-http -v 0.4.1`: **net-http** (0.4.1) - A Ruby library for HTTP.
+- `gem install net-imap -v 0.3.4.1`: **net-imap** (0.3.4.1) - A Ruby library for IMAP.
+- `gem install net-pop -v 0.1.2`: **net-pop** (0.1.2) - A Ruby library for POP3.
+- `gem install net-protocol -v 0.2.1`: **net-protocol** (0.2.1) - A Ruby library for network protocols.
+- `gem install net-smtp -v 0.3.4`: **net-smtp** (0.3.4) - A Ruby library for SMTP.
+- `gem install net-telnet -v 0.2.0`: **net-telnet** (0.2.0) - A Ruby library for Telnet.
+- `gem install nkf -v 0.1.2`: **nkf** (0.1.2) - A Ruby library for Network Kanji Filter.
+- `gem install observer -v 0.1.1`: **observer** (0.1.1) - A Ruby library for the Observer pattern.
+- `gem install open-uri -v 0.3.0`: **open-uri** (0.3.0) - A Ruby library for opening URIs.
+- `gem install open3 -v 0.1.2`: **open3** (0.1.2) - A Ruby library for opening subprocesses.
+- `gem install openssl -v 3.1.0`: **openssl** (3.1.0) - A Ruby library for OpenSSL.
+- `gem install optparse -v 0.3.1`: **optparse** (0.3.1) - A Ruby library for parsing command-line options.
+- `gem install ostruct -v 0.5.5`: **ostruct** (0.5.5) - A Ruby library for OpenStruct.
+- `gem install pathname -v 0.2.1`: **pathname** (0.2.1) - A Ruby library for path manipulation.
+- `gem install pathutil -v 0.16.1`: **pathutil** (0.16.1) - A Ruby library for path utilities.
+- `gem install power_assert -v 2.0.3`: **power_assert** (2.0.3) - A Ruby library for power assertions.
+- `gem install pp -v 0.4.0`: **pp** (0.4.0) - A Ruby library for pretty printing.
+- `gem install prettyprint -v 0.1.1`: **prettyprint** (0.1.1) - A Ruby library for pretty printing.
+- `gem install prime -v 0.1.2`: **prime** (0.1.2) - A Ruby library for prime numbers.
+- `gem install pstore -v 0.1.2`: **pstore** (0.1.2) - A Ruby library for persistent storage.
+- `gem install psych -v 5.0.1`: **psych** (5.0.1) - A YAML parser and emitter for Ruby.
+- `gem install public_suffix -v 4.0.6`: **public_suffix** (4.0.6) - A Ruby library for public suffix list.
+- `gem install pygments.rb -v 2.4.1`: **pygments.rb** (2.4.1) - A Ruby wrapper for Pygments.
+- `gem install racc -v 1.6.2`: **racc** (1.6.2) - A Ruby LALR parser generator.
+- `gem install rake -v 13.0.6`: **rake** (13.0.6) - A Ruby build program with capabilities similar to Make.
+- `gem install rb-inotify -v 0.10.1`: **rb-inotify** (0.10.1) - A Ruby wrapper for inotify.
+- `gem install rbs -v 2.8.2`: **rbs** (2.8.2) - A Ruby type signature language.
+- `gem install rdiscount -v 2.1.8`: **rdiscount** (2.1.8) - A Ruby wrapper for Discount, a Markdown parser.
+- `gem install rdoc -v 6.5.0`: **rdoc** (6.5.0) - Ruby documentation system.
+- `gem install readline -v 0.0.3`: **readline** (0.0.3) - A Ruby library for Readline.
+- `gem install readline-ext -v 0.1.5`: **readline-ext** (0.1.5) - A Ruby library for Readline extensions.
+- `gem install redcarpet -v 3.6.0`: **redcarpet** (3.6.0) - A fast, safe and extensible Markdown to HTML parser for Ruby.
+- `gem install reline -v 0.3.2`: **reline** (0.3.2) - A Ruby library for Readline-like functionality.
+- `gem install resolv -v 0.2.2`: **resolv** (0.2.2) - A Ruby library for DNS resolution.
+- `gem install resolv-replace -v 0.1.1`: **resolv-replace** (0.1.1) - A Ruby library for replacing Resolv.
+- `gem install rexml -v 3.2.5`: **rexml** (3.2.5) - A Ruby library for XML parsing.
+- `gem install rinda -v 0.1.1`: **rinda** (0.1.1) - A Ruby library for Rinda.
+- `gem install rouge -v 4.2.0`: **rouge** (4.2.0) - A pure Ruby code highlighter.
+- `gem install rss -v 0.2.9`: **rss** (0.2.9) - A Ruby library for RSS parsing.
+- `gem install ruby2_keywords -v 0.0.5`: **ruby2_keywords** (0.0.5) - A Ruby library for Ruby 2 keywords.
+- `gem install rubygems-update -v 3.4.20`: **rubygems-update** (3.4.20) - Updates RubyGems.
+- `gem install sassc -v 2.4.0`: **sassc** (2.4.0) - A Ruby wrapper for LibSass.
+- `gem install sdbm -v 1.0.0`: **sdbm** (1.0.0) - A Ruby library for SDBM.
+- `gem install securerandom -v 0.2.2`: **securerandom** (0.2.2) - A Ruby library for secure random number generation.
+- `gem install set -v 0.1.1`: **set** (0.1.1) - A Ruby library for Set.
+- `gem install singleton -v 0.1.1`: **singleton** (0.1.1) - A Ruby library for the Singleton pattern.
+- `gem install stringio -v 3.0.4`: **stringio** (3.0.4) - A Ruby library for StringIO.
+- `gem install strscan -v 3.0.5`: **strscan** (3.0.5) - A Ruby library for StringScanner.
+- `gem install syntax_suggest -v 1.1.0`: **syntax_suggest** (1.1.0) - A Ruby library for syntax suggestions.
+- `gem install syslog -v 0.1.1`: **syslog** (0.1.1) - A Ruby library for syslog.
+- `gem install tempfile -v 0.1.3`: **tempfile** (0.1.3) - A Ruby library for temporary files.
+- `gem install terminal-table -v 3.0.2`: **terminal-table** (3.0.2) - A Ruby library for creating tables in the terminal.
+- `gem install test-unit -v 3.5.7`: **test-unit** (3.5.7) - A Ruby testing framework.
+- `gem install time -v 0.2.2`: **time** (0.2.2) - A Ruby library for time manipulation.
+- `gem install timeout -v 0.3.1`: **timeout** (0.3.1) - A Ruby library for timeouts.
+- `gem install tmpdir -v 0.1.3`: **tmpdir** (0.1.3) - A Ruby library for temporary directories.
+- `gem install tomlrb -v 1.3.0`: **tomlrb** (1.3.0) - A Ruby TOML parser.
+- `gem install tsort -v 0.1.1`: **tsort** (0.1.1) - A Ruby library for topological sort.
+- `gem install typeprof -v 0.21.3`: **typeprof** (0.21.3) - A Ruby type profiler.
+- `gem install un -v 0.2.1`: **un** (0.2.1) - A Ruby library for un.
+- `gem install unicode-display_width -v 1.6.1`: **unicode-display_width** (1.6.1) - A Ruby library for Unicode display width.
+- `gem install uri -v 0.12.2`: **uri** (0.12.2) - A Ruby library for URI manipulation.
+- `gem install weakref -v 0.1.2`: **weakref** (0.1.2) - A Ruby library for weak references.
+- `gem install webrick -v 1.8.1`: **webrick** (1.8.1) - A Ruby library for WEBrick.
+- `gem install xmlrpc -v 0.3.2`: **xmlrpc** (0.3.2) - A Ruby library for XML-RPC.
+- `gem install yajl-ruby -v 1.4.3`: **yajl-ruby** (1.4.3) - A Ruby wrapper for YAJL.
+- `gem install yaml -v 0.2.1`: **yaml** (0.2.1) - A Ruby library for YAML parsing and generation.
+- `gem install zlib -v 3.0.0`: **zlib** (3.0.0) - A Ruby library for Zlib.
 
 ## Essential Tools
-- **git**: git version 2.43.0 - Version control system for tracking changes in computer files.
-- **docker**: Docker version 28.2.2, build 28.2.2-0ubuntu1~24.04.1 - Platform for developing, shipping, and running applications in containers.
-- **node**: v22.20.0 - JavaScript runtime built on Chrome's V8 JavaScript engine.
-- **java**: openjdk version "21.0.8" 2025-07-15 - Programming language and computing platform.
-- **gcc**: gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0 - GNU Compiler Collection for C.
-- **g++**: g++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0 - GNU Compiler Collection for C++.
-- **make**: GNU Make 4.3 - A utility for directing compilation.
-- **cmake**: cmake version 3.28.3 - Cross-platform family of tools designed to build, test, and package software.
-- **curl**: curl 8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.7 - Command-line tool for transferring data with URL syntax.
-- **wget**: GNU Wget 1.21.4 built on linux-gnu. - Free utility for non-interactive download of files from the web.
-- **vim**: VIM - Vi IMproved 9.1 (2024 Jan 02, compiled Sep 05 2025 19:44:46) - Highly configurable text editor.
-- **code**: 1.105.1 - Visual Studio Code, a code editor redefined and optimized for building and debugging modern web and cloud applications.
+- `apt install git`: **git** (version 2.43.0) - Version control system for tracking changes in computer files.
+- `apt install docker.io`: **docker** (version 28.2.2, build 28.2.2-0ubuntu1~24.04.1) - Platform for developing, shipping, and running applications in containers.
+- `apt install nodejs`: **node** (v22.20.0) - JavaScript runtime built on Chrome's V8 JavaScript engine.
+- `apt install openjdk-21-jdk`: **java** (openjdk version "21.0.8" 2025-07-15) - Programming language and computing platform.
+- `apt install gcc`: **gcc** (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0 - GNU Compiler Collection for C.
+- `apt install g++`: **g++** (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0 - GNU Compiler Collection for C++.
+- `apt install make`: **make** (GNU Make 4.3) - A utility for directing compilation.
+- `apt install cmake`: **cmake** (version 3.28.3) - Cross-platform family of tools designed to build, test, and package software.
+- `apt install curl`: **curl** (8.5.0 (x86_64-pc-linux-gnu) libcurl/8.5.0 OpenSSL/3.0.13 zlib/1.3 brotli/1.1.0 zstd/1.5.5 libidn2/2.3.7 libpsl/0.21.2 (+libidn2/2.3.7) libssh/0.10.6/openssl/zlib nghttp2/1.59.0 librtmp/2.3 OpenLDAP/2.6.7) - Command-line tool for transferring data with URL syntax.
+- `apt install wget`: **wget** (GNU Wget 1.21.4 built on linux-gnu.) - Free utility for non-interactive download of files from the web.
+- `apt install vim`: **vim** (VIM - Vi IMproved 9.1 (2024 Jan 02, compiled Sep 05 2025 19:44:46)) - Highly configurable text editor.
+- `snap install code --classic`: **code** (1.105.1) - Visual Studio Code, a code editor redefined and optimized for building and debugging modern web and cloud applications.
 
 ## VS Code Extensions
-- **anthropic.claude-code-2.0.26-linux-x64**: Claude Code extension for Anthropic AI.
-- **bierner.markdown-mermaid-1.29.0**: Markdown Mermaid extension for VS Code.
-- **cs128.cs128-clang-tidy-0.5.1**: Clang-Tidy integration for CS128.
-- **cschlosser.doxdocgen-1.4.0**: Doxygen documentation generator.
-- **docker.docker-0.18.0-linux-x64**: Docker extension for VS Code.
-- **dokca.42-ft-count-line-0.5.0**: 42-ft-count-line extension for VS Code.
-- **donjayamanne.githistory-0.6.20**: Git History extension for VS Code.
-- **eamodio.gitlens-17.6.2**: GitLens extension for VS Code.
-- **evilcat.norminette-42-1.0.8**: Norminette 42 extension for VS Code.
-- **extensions.json**: VS Code extensions configuration file.
-- **geddski.macros-1.2.1**: Macros extension for VS Code.
-- **github.copilot-1.387.0**: GitHub Copilot extension for VS Code.
-- **github.copilot-chat-0.32.3**: GitHub Copilot Chat extension for VS Code.
-- **golang.go-0.50.0**: Go language support for VS Code.
-- **google.gemini-cli-vscode-ide-companion-0.7.0**: Gemini CLI VS Code IDE Companion.
-- **google.geminicodeassist-2.55.0**: Gemini Code Assist extension for VS Code.
-- **hars.cppsnippets-0.0.15**: C++ snippets for VS Code.
-- **hediet.debug-visualizer-2.4.0**: Debug Visualizer extension for VS Code.
-- **hediet.realtime-debugging-0.1.0**: Realtime Debugging extension for VS Code.
-- **jakub-beranek.memviz-0.3.1-linux-x64**: Memory Visualizer extension for VS Code.
-- **jurajstefanic.md-commands-0.0.16**: Markdown Commands extension for VS Code.
-- **kube.42header-0.42.9**: 42 Header extension for VS Code.
-- **llvm-vs-code-extensions.lldb-dap-0.2.18**: LLDB-DAP extension for VS Code.
-- **lwxyfer.new-markdown-editor-1.0.3**: New Markdown Editor extension for VS Code.
-- **mariusvanwijk-joppekoers.codam-norminette-3-4.7.0**: Codam Norminette 3 extension for VS Code.
-- **ms-azuretools.vscode-containers-2.2.0**: VS Code Containers extension for Azure Tools.
-- **ms-azuretools.vscode-docker-2.0.0**: VS Code Docker extension for Azure Tools.
-- **ms-python.debugpy-2025.14.1-linux-x64**: Debugger for Python in VS Code.
-- **ms-python.python-2025.16.0-linux-x64**: Python extension for VS Code.
-- **ms-python.vscode-pylance-2025.9.1**: Pylance extension for VS Code.
-- **ms-python.vscode-python-envs-1.10.0-linux-x64**: Python Environments extension for VS Code.
-- **ms-toolsai.jupyter-2025.9.1-linux-x64**: Jupyter extension for VS Code.
-- **ms-toolsai.jupyter-keymap-1.1.2**: Jupyter Keymap extension for VS Code.
-- **ms-toolsai.jupyter-renderers-1.3.0**: Jupyter Renderers extension for VS Code.
-- **ms-toolsai.vscode-jupyter-cell-tags-0.1.9**: Jupyter Cell Tags extension for VS Code.
-- **ms-toolsai.vscode-jupyter-slideshow-0.1.6**: Jupyter Slideshow extension for VS Code.
-- **ms-vscode-remote.remote-containers-0.427.0**: Remote - Containers extension for VS Code.
-- **ms-vscode.cmake-tools-1.21.36**: CMake Tools extension for VS Code.
-- **ms-vscode.cpptools-1.28.3-linux-x64**: C/C++ extension for VS Code.
-- **ms-vscode.cpptools-extension-pack-1.3.1**: C/C++ Extension Pack for VS Code.
-- **ms-vscode.cpptools-themes-2.0.0**: C/C++ Themes for VS Code.
-- **ms-vscode.live-server-0.4.16**: Live Server extension for VS Code.
-- **ms-vscode.makefile-tools-0.12.17**: Makefile Tools extension for VS Code.
-- **psioniq.psi-header-1.25.1**: PSI Header extension for VS Code.
-- **ritwickdey.liveserver-5.7.9**: Live Server extension for VS Code.
-- **technosophos.vscode-make-1.0.2**: Make extension for VS Code.
-- **tomoki1207.pdf-1.2.2**: PDF Viewer extension for VS Code.
-- **twxs.cmake-0.0.17**: CMake extension for VS Code.
-- **vadimcn.vscode-lldb-1.11.4**: LLDB Debugger extension for VS Code.
-- **wakatime.vscode-wakatime-25.3.3**: WakaTime extension for VS Code.
+- `code --install-extension anthropic.claude-code`: **anthropic.claude-code** (2.0.26-linux-x64) - Claude Code extension for Anthropic AI.
+- `code --install-extension bierner.markdown-mermaid`: **bierner.markdown-mermaid** (1.29.0) - Markdown Mermaid extension for VS Code.
+- `code --install-extension cs128.cs128-clang-tidy`: **cs128.cs128-clang-tidy** (0.5.1) - Clang-Tidy integration for CS128.
+- `code --install-extension cschlosser.doxdocgen`: **cschlosser.doxdocgen** (1.4.0) - Doxygen documentation generator.
+- `code --install-extension docker.docker`: **docker.docker** (0.18.0-linux-x64) - Docker extension for VS Code.
+- `code --install-extension dokca.42-ft-count-line`: **dokca.42-ft-count-line** (0.5.0) - 42-ft-count-line extension for VS Code.
+- `code --install-extension donjayamanne.githistory`: **donjayamanne.githistory** (0.6.20) - Git History extension for VS Code.
+- `code --install-extension eamodio.gitlens`: **eamodio.gitlens** (17.6.2) - GitLens extension for VS Code.
+- `code --install-extension evilcat.norminette-42`: **evilcat.norminette-42** (1.0.8) - Norminette 42 extension for VS Code.
+- `code --install-extension geddski.macros`: **geddski.macros** (1.2.1) - Macros extension for VS Code.
+- `code --install-extension github.copilot`: **github.copilot** (1.387.0) - GitHub Copilot extension for VS Code.
+- `code --install-extension github.copilot-chat`: **github.copilot-chat** (0.32.3) - GitHub Copilot Chat extension for VS Code.
+- `code --install-extension golang.go`: **golang.go** (0.50.0) - Go language support for VS Code.
+- `code --install-extension google.gemini-cli-vscode-ide-companion`: **google.gemini-cli-vscode-ide-companion** (0.7.0) - Gemini CLI VS Code IDE Companion.
+- `code --install-extension google.geminicodeassist`: **google.geminicodeassist** (2.55.0) - Gemini Code Assist extension for VS Code.
+- `code --install-extension hars.cppsnippets`: **hars.cppsnippets** (0.0.15) - C++ snippets for VS Code.
+- `code --install-extension hediet.debug-visualizer`: **hediet.debug-visualizer** (2.4.0) - Debug Visualizer extension for VS Code.
+- `code --install-extension hediet.realtime-debugging`: **hediet.realtime-debugging** (0.1.0) - Realtime Debugging extension for VS Code.
+- `code --install-extension jakub-beranek.memviz`: **jakub-beranek.memviz** (0.3.1-linux-x64) - Memory Visualizer extension for VS Code.
+- `code --install-extension jurajstefanic.md-commands`: **jurajstefanic.md-commands** (0.0.16) - Markdown Commands extension for VS Code.
+- `code --install-extension kube.42header`: **kube.42header** (0.42.9) - 42 Header extension for VS Code.
+- `code --install-extension llvm-vs-code-extensions.lldb-dap`: **llvm-vs-code-extensions.lldb-dap** (0.2.18) - LLDB-DAP extension for VS Code.
+- `code --install-extension lwxyfer.new-markdown-editor`: **lwxyfer.new-markdown-editor** (1.0.3) - New Markdown Editor extension for VS Code.
+- `code --install-extension mariusvanwijk-joppekoers.codam-norminette-3`: **mariusvanwijk-joppekoers.codam-norminette-3** (4.7.0) - Codam Norminette 3 extension for VS Code.
+- `code --install-extension ms-azuretools.vscode-containers`: **ms-azuretools.vscode-containers** (2.2.0) - VS Code Containers extension for Azure Tools.
+- `code --install-extension ms-azuretools.vscode-docker`: **ms-azuretools.vscode-docker** (2.0.0) - VS Code Docker extension for Azure Tools.
+- `code --install-extension ms-python.debugpy`: **ms-python.debugpy** (2025.14.1-linux-x64) - Debugger for Python in VS Code.
+- `code --install-extension ms-python.python`: **ms-python.python** (2025.16.0-linux-x64) - Python extension for VS Code.
+- `code --install-extension ms-python.vscode-pylance`: **ms-python.vscode-pylance** (2025.9.1) - Pylance extension for VS Code.
+- `code --install-extension ms-python.vscode-python-envs`: **ms-python.vscode-python-envs** (1.10.0-linux-x64) - Python Environments extension for VS Code.
+- `code --install-extension ms-toolsai.jupyter`: **ms-toolsai.jupyter** (2025.9.1-linux-x64) - Jupyter extension for VS Code.
+- `code --install-extension ms-toolsai.jupyter-keymap`: **ms-toolsai.jupyter-keymap** (1.1.2) - Jupyter Keymap extension for VS Code.
+- `code --install-extension ms-toolsai.jupyter-renderers`: **ms-toolsai.jupyter-renderers** (1.3.0) - Jupyter Renderers extension for VS Code.
+- `code --install-extension ms-toolsai.vscode-jupyter-cell-tags`: **ms-toolsai.vscode-jupyter-cell-tags** (0.1.9) - Jupyter Cell Tags extension for VS Code.
+- `code --install-extension ms-toolsai.vscode-jupyter-slideshow`: **ms-toolsai.vscode-jupyter-slideshow** (0.1.6) - Jupyter Slideshow extension for VS Code.
+- `code --install-extension ms-vscode-remote.remote-containers`: **ms-vscode-remote.remote-containers** (0.427.0) - Remote - Containers extension for VS Code.
+- `code --install-extension ms-vscode.cmake-tools`: **ms-vscode.cmake-tools** (1.21.36) - CMake Tools extension for VS Code.
+- `code --install-extension ms-vscode.cpptools`: **ms-vscode.cpptools** (1.28.3-linux-x64) - C/C++ extension for VS Code.
+- `code --install-extension ms-vscode.cpptools-extension-pack`: **ms-vscode.cpptools-extension-pack** (1.3.1) - C/C++ Extension Pack for VS Code.
+- `code --install-extension ms-vscode.cpptools-themes`: **ms-vscode.cpptools-themes** (2.0.0) - C/C++ Themes for VS Code.
+- `code --install-extension ms-vscode.live-server`: **ms-vscode.live-server** (0.4.16) - Live Server extension for VS Code.
+- `code --install-extension ms-vscode.makefile-tools`: **ms-vscode.makefile-tools** (0.12.17) - Makefile Tools extension for VS Code.
+- `code --install-extension psioniq.psi-header`: **psioniq.psi-header** (1.25.1) - PSI Header extension for VS Code.
+- `code --install-extension ritwickdey.liveserver`: **ritwickdey.liveserver** (5.7.9) - Live Server extension for VS Code.
+- `code --install-extension technosophos.vscode-make`: **technosophos.vscode-make** (1.0.2) - Make extension for VS Code.
+- `code --install-extension tomoki1207.pdf`: **tomoki1207.pdf** (1.2.2) - PDF Viewer extension for VS Code.
+- `code --install-extension twxs.cmake`: **twxs.cmake** (0.0.17) - CMake extension for VS Code.
+- `code --install-extension vadimcn.vscode-lldb`: **vadimcn.vscode-lldb** (1.11.4) - LLDB Debugger extension for VS Code.
+- `code --install-extension wakatime.vscode-wakatime`: **wakatime.vscode-wakatime** (25.3.3) - WakaTime extension for VS Code.
 
 ## Development Tools
 - (Content would be populated from dpkg query)
