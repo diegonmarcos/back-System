@@ -342,3 +342,56 @@ zlib (default: 3.0.0)
 - **wget**: GNU Wget 1.21.4 built on linux-gnu.
 - **vim**: VIM - Vi IMproved 9.1 (2024 Jan 02, compiled Sep 05 2025 19:44:46)
 - **code**: 1.105.1
+
+## VS Code Extensions
+
+- anthropic.claude-code-2.0.26-linux-x64
+- bierner.markdown-mermaid-1.29.0
+- cs128.cs128-clang-tidy-0.5.1
+- cschlosser.doxdocgen-1.4.0
+- docker.docker-0.18.0-linux-x64
+- dokca.42-ft-count-line-0.5.0
+- donjayamanne.githistory-0.6.20
+- eamodio.gitlens-17.6.2
+- evilcat.norminette-42-1.0.8
+- extensions.json
+- geddski.macros-1.2.1
+- github.copilot-1.387.0
+- github.copilot-chat-0.32.3
+- golang.go-0.50.0
+- google.gemini-cli-vscode-ide-companion-0.7.0
+- google.geminicodeassist-2.55.0
+- hars.cppsnippets-0.0.15
+- hediet.debug-visualizer-2.4.0
+- hediet.realtime-debugging-0.1.0
+- jakub-beranek.memviz-0.3.1-linux-x64
+- jurajstefanic.md-commands-0.0.16
+- kube.42header-0.42.9
+- llvm-vs-code-extensions.lldb-dap-0.2.18
+- lwxyfer.new-markdown-editor-1.0.3
+- mariusvanwijk-joppekoers.codam-norminette-3-4.7.0
+- ms-azuretools.vscode-containers-2.2.0
+- ms-azuretools.vscode-docker-2.0.0
+- ms-python.debugpy-2025.14.1-linux-x64
+- ms-python.python-2025.16.0-linux-x64
+- ms-python.vscode-pylance-2025.9.1
+- ms-python.vscode-python-envs-1.10.0-linux-x64
+- ms-toolsai.jupyter-2025.9.1-linux-x64
+- ms-toolsai.jupyter-keymap-1.1.2
+- ms-toolsai.jupyter-renderers-1.3.0
+- ms-toolsai.vscode-jupyter-cell-tags-0.1.9
+- ms-toolsai.vscode-jupyter-slideshow-0.1.6
+- ms-vscode-remote.remote-containers-0.427.0
+- ms-vscode.cmake-tools-1.21.36
+- ms-vscode.cpptools-1.28.3-linux-x64
+- ms-vscode.cpptools-extension-pack-1.3.1
+- ms-vscode.cpptools-themes-2.0.0
+- ms-vscode.live-server-0.4.16
+- ms-vscode.makefile-tools-0.12.17
+- psioniq.psi-header-1.25.1
+- ritwickdey.liveserver-5.7.9
+- technosophos.vscode-make-1.0.2
+- tomoki1207.pdf-1.2.2
+- twxs.cmake-0.0.17
+- vadimcn.vscode-lldb-1.11.4
+- wakatime.vscode-wakatime-25.3.3
