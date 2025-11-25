@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const serviceUrls = {
             // Active Services
             'proxy': 'http://130.110.251.193:81',           // Nginx Proxy Manager Admin
-            'analytics': 'http://130.110.251.193:8080',     // Matomo Direct Access
+            'analytics': 'https://analytics.diegonmarcos.com', // Matomo HTTPS Access
             'firewall': '../vps_oracle/spec.md',            // Infrastructure Spec
 
             // Active VPS
