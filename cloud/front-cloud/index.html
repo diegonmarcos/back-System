@@ -13,6 +13,11 @@
             <p class="subtitle">Manage your infrastructure</p>
         </header>
 
+        <!-- Active Services -->
+        <section class="section-header">
+            <h2>Active Services</h2>
+        </section>
+
         <div class="cards-grid">
             <div class="card" data-service="proxy">
                 <div class="card-icon">
@@ -22,8 +27,19 @@
                         <path d="M2 12l10 5 10-5"/>
                     </svg>
                 </div>
-                <h3>Proxy</h3>
-                <p>Reverse proxy and load balancing</p>
+                <h3>Proxy Manager</h3>
+                <p>Nginx Proxy Manager Admin :81</p>
+                <div class="card-status online">Online</div>
+            </div>
+
+            <div class="card" data-service="analytics">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                </div>
+                <h3>Matomo Analytics</h3>
+                <p>Direct access to Matomo :8080</p>
                 <div class="card-status online">Online</div>
             </div>
 
@@ -36,10 +52,85 @@
                     </svg>
                 </div>
                 <h3>Firewall</h3>
-                <p>Network security and protection</p>
+                <p>Oracle security lists & iptables</p>
+                <div class="card-status online">Online</div>
+            </div>
+        </div>
+
+        <!-- Active VPS -->
+        <section class="section-header" style="margin-top: 4rem;">
+            <h2>Active VPS</h2>
+        </section>
+
+        <div class="cards-grid">
+            <div class="card" data-service="vps-oracle-console">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                    </svg>
+                </div>
+                <h3>Oracle Cloud</h3>
+                <p>Cloud console & infrastructure</p>
                 <div class="card-status online">Online</div>
             </div>
 
+            <div class="card" data-service="vps-gcloud-console">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </div>
+                <h3>Google Cloud</h3>
+                <p>GCP console & infrastructure</p>
+                <div class="card-status online">Online</div>
+            </div>
+        </div>
+
+        <!-- Active VMs -->
+        <section class="section-header" style="margin-top: 4rem;">
+            <h2>Active VMs</h2>
+        </section>
+
+        <div class="cards-grid">
+            <div class="card" data-service="vm-ubuntu1">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <path d="M8 21h8"/>
+                        <path d="M12 17v4"/>
+                        <circle cx="12" cy="10" r="3" fill="currentColor"/>
+                    </svg>
+                </div>
+                <h3>Oracle/Ubuntu1</h3>
+                <p>matomo-server • 130.110.251.193</p>
+                <div class="card-status online">Online</div>
+            </div>
+
+            <div class="card" data-service="vm-arch1">
+                <div class="card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <path d="M8 21h8"/>
+                        <path d="M12 17v4"/>
+                        <path d="M7 10l5-5 5 5M12 5v8" stroke-width="2.5"/>
+                    </svg>
+                </div>
+                <h3>GCloud/Arch1</h3>
+                <p>arch-server • [IP pending]</p>
+                <div class="card-status pending">Pending</div>
+            </div>
+        </div>
+
+        <!-- Under Development -->
+        <section class="section-header" style="margin-top: 4rem;">
+            <h2>Under Development</h2>
+        </section>
+
+        <div class="cards-grid">
             <div class="card" data-service="mail">
                 <div class="card-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -49,7 +140,7 @@
                 </div>
                 <h3>Mail</h3>
                 <p>Email server and management</p>
-                <div class="card-status online">Online</div>
+                <div class="card-status pending">Pending</div>
             </div>
 
             <div class="card" data-service="sync">
@@ -62,7 +153,7 @@
                 </div>
                 <h3>Sync</h3>
                 <p>File synchronization service</p>
-                <div class="card-status online">Online</div>
+                <div class="card-status pending">Pending</div>
             </div>
 
             <div class="card" data-service="drive">
@@ -73,31 +164,7 @@
                 </div>
                 <h3>Drive</h3>
                 <p>Cloud storage and file management</p>
-                <div class="card-status online">Online</div>
-            </div>
-
-            <div class="card" data-service="vps-oracle">
-                <div class="card-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="3" width="20" height="4" rx="1"/>
-                        <rect x="2" y="10" width="20" height="4" rx="1"/>
-                        <rect x="2" y="17" width="20" height="4" rx="1"/>
-                    </svg>
-                </div>
-                <h3>VPS Oracle</h3>
-                <p>Oracle Cloud virtual server</p>
-                <div class="card-status online">Online</div>
-            </div>
-
-            <div class="card" data-service="analytics">
-                <div class="card-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                    </svg>
-                </div>
-                <h3>Analytics</h3>
-                <p>Traffic and usage statistics</p>
-                <div class="card-status online">Online</div>
+                <div class="card-status pending">Pending</div>
             </div>
 
             <div class="card" data-service="vps-local">
@@ -109,7 +176,7 @@
                 </div>
                 <h3>VPS Local</h3>
                 <p>Local virtual private server</p>
-                <div class="card-status online">Online</div>
+                <div class="card-status pending">Pending</div>
             </div>
 
             <div class="card" data-service="terminal">
@@ -120,8 +187,8 @@
                     </svg>
                 </div>
                 <h3>OS Terminal</h3>
-                <p>Command line interface access</p>
-                <div class="card-status online">Online</div>
+                <p>Web-based terminal access</p>
+                <div class="card-status pending">Pending</div>
             </div>
 
             <div class="card" data-service="dashboard">
@@ -135,7 +202,7 @@
                 </div>
                 <h3>Ops Dashboard</h3>
                 <p>Operations monitoring and control</p>
-                <div class="card-status online">Online</div>
+                <div class="card-status pending">Pending</div>
             </div>
         </div>
     </div>

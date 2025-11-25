@@ -42,27 +42,143 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleCardClick(service) {
         const serviceUrls = {
-            'proxy': '/proxy',
-            'firewall': '/firewall',
-            'mail': '/mail',
-            'sync': '/sync',
-            'drive': '/drive',
-            'vps-oracle': '/vps/oracle',
-            'analytics': '/analytics',
-            'vps-local': '/vps/local',
-            'terminal': '/terminal',
-            'dashboard': '/ops/dashboard'
+            // Active Services
+            'proxy': 'http://130.110.251.193:81',           // Nginx Proxy Manager Admin
+            'analytics': 'http://130.110.251.193:8080',     // Matomo Direct Access
+            'firewall': '../vps_oracle/spec.md',            // Infrastructure Spec
+
+            // Active VPS
+            'vps-oracle-console': 'https://cloud.oracle.com/',      // Oracle Cloud Console
+            'vps-gcloud-console': 'https://console.cloud.google.com/', // Google Cloud Console
+
+            // Active VMs
+            'vm-ubuntu1': 'ssh://ubuntu@130.110.251.193',   // SSH to Ubuntu1 VM (Oracle)
+            'vm-arch1': 'ssh://user@pending',               // SSH to Arch1 VM (GCloud) - placeholder
+
+            // Under Development
+            'mail': '../mail/index.html',
+            'sync': '../sync/index.html',
+            'drive': '../drive/index.html',
+            'vps-local': '../vps_google/index.html',
+            'terminal': '../1.ops/index.html',
+            'dashboard': '../0.spec/index.html'
         };
 
         const url = serviceUrls[service];
         if (url) {
             console.log(`Navigating to ${service}: ${url}`);
-            // window.location.href = url;
 
-            // For now, show a notification
-            showNotification(`Opening ${service.replace('-', ' ').toUpperCase()}...`);
+            // Handle SSH protocol
+            if (url.startsWith('ssh://')) {
+                handleSSH(url);
+            }
+            // Open external URLs in new tab
+            else if (url.startsWith('http')) {
+                window.open(url, '_blank');
+            }
+            // Navigate to local files
+            else {
+                window.location.href = url;
+            }
         }
     }
+
+    function handleSSH(sshUrl) {
+        // Extract username and host from ssh://ubuntu@130.110.251.193
+        const match = sshUrl.match(/ssh:\/\/(.+)@(.+)/);
+        if (!match) return;
+
+        const username = match[1];
+        const host = match[2];
+
+        // Check if this is a pending VM
+        if (host === 'pending' || host.includes('pending')) {
+            showNotification('This VM is not yet configured. IP address pending.');
+            return;
+        }
+
+        const sshCommand = `ssh -i ~/.ssh/matomo_key ${username}@${host}`;
+
+        // Show modal with SSH command and options
+        showSSHModal(sshCommand, host);
+    }
+
+    function showSSHModal(sshCommand, host) {
+        // Create modal overlay
+        const modal = document.createElement('div');
+        modal.className = 'ssh-modal-overlay';
+        modal.innerHTML = `
+            <div class="ssh-modal">
+                <h3>SSH Connection to ${host}</h3>
+                <div class="ssh-command">
+                    <code>${sshCommand}</code>
+                    <button class="copy-btn" onclick="copyToClipboard('${sshCommand}')">Copy</button>
+                </div>
+                <p class="ssh-instruction">Choose how to connect:</p>
+                <div class="ssh-options">
+                    <button class="ssh-option-btn" onclick="openTerminalProtocol('${sshCommand}')">
+                        Open in Terminal
+                    </button>
+                    <button class="ssh-option-btn" onclick="openVSCode('${sshCommand}')">
+                        Open in VS Code
+                    </button>
+                </div>
+                <button class="close-modal-btn" onclick="closeSSHModal()">Close</button>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeSSHModal();
+            }
+        });
+    }
+
+    // Global functions for modal buttons
+    window.closeSSHModal = function() {
+        const modal = document.querySelector('.ssh-modal-overlay');
+        if (modal) modal.remove();
+    };
+
+    window.copyToClipboard = function(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            showNotification('SSH command copied to clipboard!');
+        });
+    };
+
+    window.openTerminalProtocol = function(sshCommand) {
+        // Try different terminal protocols based on OS
+        const isLinux = /Linux/.test(navigator.userAgent);
+        const isMac = /Mac/.test(navigator.userAgent);
+
+        if (isLinux) {
+            // Try gnome-terminal, konsole, xterm
+            window.location.href = `gnome-terminal://execute/${encodeURIComponent(sshCommand)}`;
+        } else if (isMac) {
+            // macOS Terminal
+            window.location.href = `terminal://execute/${encodeURIComponent(sshCommand)}`;
+        } else {
+            // Fallback: copy to clipboard
+            copyToClipboard(sshCommand);
+            showNotification('Command copied! Paste it in your terminal.');
+        }
+        closeSSHModal();
+    };
+
+    window.openVSCode = function(sshCommand) {
+        // Extract host for VS Code remote SSH
+        const match = sshCommand.match(/(.+)@([^\s]+)/);
+        if (match) {
+            const username = match[1].split(' ').pop();
+            const host = match[2];
+            // VS Code Remote SSH extension URL
+            window.open(`vscode://vscode-remote/ssh-remote+${username}@${host}/home/${username}`, '_blank');
+        }
+        closeSSHModal();
+    };
 
     function showNotification(message) {
         const notification = document.createElement('div');
