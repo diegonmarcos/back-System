@@ -10,78 +10,56 @@ Visual representation of all VPS instances, VMs, and services.
 graph TD
     subgraph CLOUD["☁️ Cloud Infrastructure"]
 
-        subgraph ORACLE["🟠 Oracle Cloud<br/>Always Free Tier"]
-            VPS_ORACLE["📦 VPS Oracle<br/>130.110.251.193<br/>EU-Marseille-1<br/>2 vCPU | 1GB RAM | 50GB"]
-
-            subgraph ORACLE_OS["🖥️ Ubuntu 24.04 LTS"]
-                DOCKER_ORACLE["🐳 Docker Engine"]
-
-                subgraph CONTAINERS["Docker Containers"]
-                    MATOMO["📊 matomo-app<br/>Matomo Analytics<br/>Port: 8080"]
-                    MARIADB["🗄️ matomo-db<br/>MariaDB Database<br/>Port: 3306 internal"]
-                    NGINX["🔀 nginx-proxy<br/>Nginx Proxy Manager<br/>Port: 80, 443, 81"]
+        subgraph ORACLE["🟠 Oracle Cloud - Always Free"]
+            subgraph UBUNTU["🖥️ Ubuntu1 - 130.110.251.193"]
+                subgraph DOCKER["🐳 Docker Engine"]
+                    NGINX["🔀 Nginx Proxy<br/>:80, :443, :81"]
+                    MATOMO["📊 Matomo<br/>:8080"]
+                    MARIADB["🗄️ MariaDB<br/>:3306"]
+                end
+                subgraph PLANNED["⏳ Planned"]
+                    SYNC["🔄 Sync Service"]
+                    MAIL["📧 Mail Server"]
+                    DRIVE["💾 Nextcloud"]
                 end
             end
+        end
 
-            subgraph ORACLE_PLANNED["⏳ Planned Services"]
-                SYNC_PLAN["🔄 Sync Service<br/>Desktop/Mobile/Garmin"]
-                WEB_PLAN["🌐 Web Hosting<br/>Static/Dynamic Sites"]
-                MAIL_PLAN["📧 Mail Server<br/>Postfix/Dovecot"]
-                DRIVE_PLAN["💾 Drive<br/>Nextcloud"]
+        subgraph GCLOUD["🔵 Google Cloud - €5/month"]
+            subgraph SERVERLESS["⚡ Serverless"]
+                FUNC["⚡ Cloud Function"]
+                PUBSUB["📨 Pub/Sub"]
+                BUDGET["💰 Budget Alert"]
+            end
+            subgraph ARCH["🖥️ Arch1"]
+                N8N["🔧 n8n<br/>:5678"]
             end
         end
 
-        subgraph GCLOUD["🔵 Google Cloud Platform"]
-            VPS_GCLOUD["📦 VPS GCloud<br/>gen-lang-client-0167192380<br/>Budget: €5/month"]
-
-            subgraph GCLOUD_SERVICES["GCP Services"]
-                BILLING_FUNC["⚡ Cloud Function<br/>billing-disabler<br/>Python 3.11"]
-                PUBSUB["📨 Pub/Sub<br/>budget-disable-trigger"]
-                BUDGET["💰 Budget Alert<br/>€5/month threshold"]
-                N8N["🔧 n8n<br/>Automation Platform"]
-            end
-
-            subgraph GCLOUD_OS["🖥️ OS: Arch Linux"]
-                ARCH_SYS["System Services"]
-            end
+        subgraph AI1["🤖 VPS AI 1 - Planned"]
+            AI1_VM["🖥️ AI VM<br/>TBD"]
         end
 
-        subgraph AI_VPS["🤖 AI Infrastructure"]
-            VPS_AI1["📦 VPS AI 1<br/>AI Services"]
-            VPS_AI2["📦 VPS AI 2<br/>AI Services"]
+        subgraph AI2["🤖 VPS AI 2 - Planned"]
+            AI2_VM["🖥️ AI VM<br/>TBD"]
         end
 
-    end
-
-    subgraph SERVICES["🔌 Service Domains"]
-        S_ANALYTICS["📊 s_analytics<br/>analytics.diegonmarcos.com"]
-        S_PROXY["🔀 s_proxy<br/>Reverse Proxy"]
-        S_FIREWALL["🛡️ s_firewall<br/>Security"]
-        S_DRIVE["💾 s_drive<br/>Cloud Storage"]
-        D_SYNC["🔄 d_sync<br/>Data Sync"]
-        D_MAIL["📧 d_mail<br/>Email"]
     end
 
     subgraph EXTERNAL["🌍 External Access"]
         INTERNET["🌐 Internet"]
         DOMAIN["🔗 diegonmarcos.com"]
+        ANALYTICS["🔗 analytics.diegonmarcos.com"]
     end
 
     %% Connections
     INTERNET --> DOMAIN
-    DOMAIN --> NGINX
+    INTERNET --> ANALYTICS
+    ANALYTICS --> NGINX
     NGINX --> MATOMO
     MATOMO --> MARIADB
-
     BUDGET --> PUBSUB
-    PUBSUB --> BILLING_FUNC
-
-    S_ANALYTICS -.-> MATOMO
-    S_PROXY -.-> NGINX
-
-    VPS_ORACLE --> ORACLE_OS
-    VPS_GCLOUD --> GCLOUD_SERVICES
-    VPS_GCLOUD --> GCLOUD_OS
+    PUBSUB --> FUNC
 ```
 
 ---
