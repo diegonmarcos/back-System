@@ -1,0 +1,98 @@
+version: '3.8'
+
+# n8n Orchestrator - Lightweight Edition for Oracle VPS
+# Designed for 1GB RAM constraint
+# Part of Multi-Agent RAG Orchestrator v4.2
+
+services:
+  # ============================================================================
+  # n8n Workflow Orchestration
+  # ============================================================================
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # Authentication
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}
+
+      # Database (SQLite for low memory usage)
+      - DB_TYPE=sqlite
+      - DB_SQLITE_DATABASE=/home/node/.n8n/database.sqlite
+
+      # Webhook URL for external triggers
+      - WEBHOOK_URL=https://n8n.diegonmarcos.com/
+      - N8N_HOST=n8n.diegonmarcos.com
+      - N8N_PROTOCOL=https
+
+      # Execution settings (optimized for low memory)
+      - EXECUTIONS_PROCESS=main
+      - EXECUTIONS_MODE=regular
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+
+      # Timezone
+      - GENERIC_TIMEZONE=Europe/Paris
+      - TZ=Europe/Paris
+
+      # Security
+      - N8N_SECURE_COOKIE=true
+
+      # Memory optimization
+      - NODE_OPTIONS=--max-old-space-size=256
+
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/home/node/workflows
+    networks:
+      - orchestrator
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+        reservations:
+          memory: 150M
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+# ============================================================================
+# Volumes
+# ============================================================================
+volumes:
+  n8n_data:
+    name: n8n_data
+
+# ============================================================================
+# Networks
+# ============================================================================
+networks:
+  orchestrator:
+    name: orchestrator
+    driver: bridge
+
+# ============================================================================
+# Usage Instructions
+# ============================================================================
+# 1. Create .env file:
+#    N8N_USER=admin
+#    N8N_PASSWORD=your_secure_password
+#
+# 2. Start services:
+#    docker compose up -d
+#
+# 3. Access n8n:
+#    - Direct: http://130.110.251.193:5678
+#    - Via proxy: https://n8n.diegonmarcos.com (after Nginx setup)
+#
+# 4. Import workflows from ./workflows directory
+#
+# Memory Usage: ~200-300 MB
+# ============================================================================
