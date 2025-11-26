@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure VPS Architecture - Hardening Guide</title>
+    <style>
+        :root {
+            /* Dark Theme Palette */
+            --bg-color: #121212;           /* Main Background */
+            --vps-bg: #1e1e1e;             /* VPS Box Background */
+            --container-bg: #2c2c2c;       /* Inner Container Background */
+            --text-main: #ecf0f1;          /* Main Text Color */
+            --text-muted: #bdc3c7;         /* Secondary Text */
+
+            /* Semantic Colors (Brightened for Dark Mode) */
+            --firewall-color: #e74c3c;
+            --doors-color: #c0392b;        /* Darker Red for Doors Layer */
+            --nginx-color: #f39c12;
+            --nginx-bg-tint: #2d2618;      /* Dark Orange Tint */
+
+            --public-color: #2ecc71;       /* Bright Green */
+            --public-bg-tint: #14231a;     /* Dark Green Tint */
+
+            --private-color: #3498db;      /* Bright Blue */
+            --private-bg-tint: #15202b;    /* Dark Blue Tint */
+
+            --mail-color: #9b59b6;         /* Purple for Mail */
+            --db-color: #f1c40f;           /* Yellow for DBs */
+
+            --os-color: #9b59b6;           /* Purple for System/OS */
+
+            --storage-header: #34495e;
+            --tooltip-bg: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Main Container for Top-Down Flow */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        /* --- 1. THE INTERNET ZONE --- */
+        .internet-zone {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .cloud-icon {
+            font-size: 50px;
+            color: var(--text-main);
+        }
+        .arrow-down {
+            font-size: 24px;
+            color: var(--text-main);
+            animation: pulse-down 2s infinite;
+            margin-top: 5px;
+        }
+
+        /* --- 2. DOORS LAYER --- */
+        .doors-layer {
+            background-color: var(--doors-color);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            width: 90%;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(192, 57, 43, 0.4);
+            position: relative;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .door-box {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 15px;
+            border-radius: 4px;
+            border: 2px solid #e74c3c;
+            text-align: center;
+            position: relative;
+            min-width: 80px;
+        }
+        .door-ssh { border-color: var(--os-color); }
+        .door-web { border-color: var(--nginx-color); }
+        .door-mail { border-color: var(--mail-color); }
+
+        .door-connector {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            z-index: 10;
+        }
+        .conn-ssh { color: var(--os-color); }
+        .conn-web { color: var(--nginx-color); }
+        .conn-mail { color: var(--mail-color); }
+
+
+        /* --- 3. UFW LAYER --- */
+        .firewall-wall {
+            background-color: var(--firewall-color);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            width: 80%;
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 2px;
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+            z-index: 5;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .firewall-wall:hover { transform: scale(1.02); }
+
+        /* --- 4. THE VPS SERVER BOX --- */
+        .vps-box {
+            background: var(--vps-bg);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 30px 20px 20px 20px; /* Extra top padding for label */
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative;
+            width: 100%;
+        }
+        .vps-label {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #34495e;
+            color: #ecf0f1;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Host NGINX Layer */
+        .nginx-layer {
+            background: var(--nginx-bg-tint);
+            border: 2px dashed var(--nginx-color);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            color: var(--nginx-color);
+            position: relative;
+            margin-left: 80px; /* Offset for SSH path */
+        }
+        .nginx-split-arrow {
+            display: flex;
+            justify-content: space-around;
+            margin-top: -10px;
+            margin-bottom: -10px;
+            font-size: 24px;
+            z-index: 10;
+            margin-left: 80px;
+        }
+
+        /* Docker Environment Wrapper */
+        .docker-env {
+            display: flex;
+            gap: 20px;
+            border: 1px dashed #555;
+            padding: 20px;
+            border-radius: 8px;
+            background: #252525;
+            position: relative;
+            margin-left: 80px;
+        }
+        .docker-label {
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            background: #555;
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Public & Private Columns */
+        .zone-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        /* Public Zone Styling */
+        .public-zone {
+            background-color: var(--public-bg-tint);
+            border: 1px solid var(--public-color);
+        }
+        .public-zone:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.1);
+        }
+
+        /* Private Zone Styling */
+        .private-zone {
+            background-color: var(--private-bg-tint);
+            border: 1px solid var(--private-color);
+        }
+        .private-zone:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.1);
+        }
+
+        .zone-title {
+            text-transform: uppercase;
+            font-weight: 800;
+            font-size: 12px;
+            text-align: center;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        /* Containers inside Zones */
+        .container-box {
+            background: var(--container-bg);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-main);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border-left: 4px solid;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .container-public { border-left-color: var(--public-color); }
+        .container-private { border-left-color: var(--private-color); }
+
+        .db-container {
+            border-left-color: var(--db-color);
+            background: #252210; /* Slight yellow tint */
+        }
+        .mail-container {
+            border-left-color: var(--mail-color);
+            background: #1f1a23; /* Slight purple tint */
+        }
+
+        .icon-large { font-size: 20px; margin-bottom: 4px; }
+
+        .port-tag {
+            display: block;
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .localhost-tag {
+            background: #000;
+            color: #81c784; /* Soft green text for terminal feel */
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 10px;
+            display: inline-block;
+            margin-bottom: 5px;
+            border: 1px solid #444;
+        }
+
+        /* Connector Arrows Vertical */
+        .connector {
+            text-align: center;
+            color: #555;
+            font-size: 18px;
+            margin: -5px 0;
+        }
+
+        /* Storage Layer */
+        .storage-wrapper {
+            margin-top: 50px; /* Increased gap for isolation visualization */
+            padding: 15px;
+            border: 2px dashed #444;
+            border-radius: 8px;
+            position: relative;
+        }
+        .storage-label {
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--vps-bg);
+            padding: 0 10px;
+            color: #aaa;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .storage-layer {
+            display: flex;
+            gap: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .partition-box {
+            flex: 1;
+            background: var(--storage-header);
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            position: relative;
+            border: 1px solid #444;
+            z-index: 2;
+        }
+        .partition-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #bdc3c7;
+            margin-bottom: 5px;
+        }
+        .partition-name {
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: bold;
+            color: #ecf0f1;
+        }
+        .lock-icon {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        /* --- UPDATED VISUALIZATION FOR VOLUME ISOLATION --- */
+        .volume-isolation-container {
+            position: absolute;
+            top: -60px; /* Moves it into the gap between Docker and Storage */
+            left: 0;
+            width: 100%;
+            height: 70px;
+            z-index: 1;
+            /* Subtly indicate this is the 'mount' layer */
+            background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0) 100%);
+        }
+
+        .volume-isolation-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .pipe-line {
+            fill: none;
+            stroke-width: 5;
+            stroke-linecap: round;
+            opacity: 0.8;
+            stroke-dasharray: 8;
+            animation: flowAnimation 20s linear infinite;
+        }
+
+        .pipe-public { stroke: var(--public-color); }
+        .pipe-private { stroke: var(--private-color); }
+
+        .pipe-blocked {
+            stroke: #e74c3c;
+            stroke-width: 3;
+            stroke-dasharray: 5;
+            opacity: 0.5;
+            animation: none;
+        }
+
+        .pipe-label {
+            font-size: 10px;
+            fill: #fff;
+            background: #000;
+        }
+
+        /* Animation to show data flow */
+        @keyframes flowAnimation {
+            to { stroke-dashoffset: -100; }
+        }
+
+        /* Bouncing X for blocked path */
+        .blocked-indicator {
+            animation: bounce-small 2s infinite;
+            transform-box: fill-box;
+            transform-origin: center;
+        }
+
+        @keyframes bounce-small {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* --- SSH Direct Path --- */
+        .ssh-path-container {
+            position: absolute;
+            top: 0;
+            left: 20px;
+            bottom: 0;
+            width: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 20;
+        }
+        .ssh-line {
+            flex: 1;
+            width: 4px;
+            background-color: var(--os-color);
+            opacity: 0.6;
+        }
+        .ssh-arrow {
+            color: var(--os-color);
+            font-size: 24px;
+            margin-bottom: -10px;
+        }
+
+        /* --- NEW MODAL & BUTTON STYLING --- */
+
+        .info-btn {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 18px;
+            height: 18px;
+            background: var(--text-main);
+            color: var(--bg-color);
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 5px;
+            box-shadow: 0 0 5px rgba(255,255,255,0.3);
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .info-btn:hover {
+            background: #fff;
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(255,255,255,0.6);
+        }
+
+        .checklist-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+        .checklist-btn:hover {
+            background: #2ecc71;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Modal Content */
+        .modal-content {
+            background: #2c2c2c;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            border-radius: 8px;
+            border: 1px solid #555;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            animation: slide-up 0.3s ease-out;
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #444;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #222;
+            border-radius: 8px 8px 0 0;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .close-btn:hover { color: #fff; }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            color: #ddd;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .modal-body h4 {
+            color: var(--public-color);
+            margin-top: 0;
+        }
+        .modal-body ul {
+            padding-left: 20px;
+            margin: 10px 0;
+        }
+        .modal-body li {
+            margin-bottom: 8px;
+        }
+        .code-snippet {
+            background: #111;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #f39c12;
+        }
+
+        @keyframes slide-up {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes pulse-down {
+            0% { transform: translateY(0); opacity: 0.5; }
+            50% { transform: translateY(5px); opacity: 1; }
+            100% { transform: translateY(0); opacity: 0.5; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+
+        <!-- SECTION 1: INTERNET -->
+        <div class="internet-zone">
+            <div class="cloud-icon">☁️</div>
+            <div><strong>Internet Traffic</strong></div>
+            <div class="arrow-down">⬇️</div>
+        </div>
+
+        <!-- SECTION 2: DOORS LAYER (New) -->
+        <div class="doors-layer">
+            <div style="position: absolute; top:-10px; left:10px; font-size:10px; color:#bdc3c7;">SERVER "DOORS" (Ports)</div>
+
+            <!-- SSH Door -->
+            <div class="door-box door-ssh">
+                🚪 Port 22<br>(SSH)
+                <div class="door-connector conn-ssh">↓</div>
+            </div>
+
+            <!-- Web Doors -->
+            <div class="door-box door-web">
+                🚪 80/443<br>(HTTP/S)
+                <div class="door-connector conn-web">↓</div>
+            </div>
+
+            <!-- Mail Doors -->
+            <div class="door-box door-mail">
+                📧 25/587<br>(SMTP)
+                <div class="door-connector conn-mail">↓</div>
+            </div>
+            <div class="door-box door-mail">
+                📧 993<br>(IMAP)
+                <div class="door-connector conn-mail">↓</div>
+            </div>
+
+            <div class="door-box" style="border-color:#555; color:#999; transform: scale(0.9);">
+                🚫 Others<br>(Closed)
+            </div>
+        </div>
+
+        <!-- SECTION 3: FIREWALL WALL -->
+        <!-- Added Info Button for Network Security -->
+        <div class="firewall-wall">
+            🛡️ VPS FIREWALL (UFW)
+            <span class="info-btn" onclick="openModal('network')">i</span>
+            <div style="font-size:10px; font-weight:normal; margin-top:5px;">Only allows traffic from open "Doors" above</div>
+        </div>
+        <div class="arrow-down" style="margin-top:-10px; margin-bottom: -10px; z-index:6;">⬇️</div>
+
+
+        <!-- SECTION 4: THE VPS SERVER BOX -->
+        <div class="vps-box">
+            <div class="vps-label">
+                YOUR VPS SERVER
+                <!-- Added Info Button for Philosophy -->
+                <span class="info-btn" onclick="openModal('philosophy')">i</span>
+            </div>
+
+            <!-- SSH Direct Path Visual -->
+            <div class="ssh-path-container">
+                <div class="ssh-arrow">↓</div>
+                <div class="ssh-line"></div>
+                <div class="ssh-arrow">↓</div>
+                <div style="font-size:10px; color:var(--os-color); font-weight:bold; writing-mode: vertical-rl; text-orientation: mixed; padding: 5px 0;">DIRECT SSH ACCESS</div>
+            </div>
+
+
+            <!-- LAYER A: NGINX GATEWAY -->
+            <div class="nginx-layer">
+                <div>HOST NGINX (Reverse Proxy)
+                    <!-- Added Info Button for Routing -->
+                    <span class="info-btn" onclick="openModal('routing')">i</span>
+                </div>
+                <div style="font-size: 11px; font-weight: normal; margin-top:5px; color: var(--text-muted);">
+                    Routes Traffic Internally
+                </div>
+            </div>
+
+            <!-- Visual Flow Arrows -->
+            <div class="nginx-split-arrow">
+                <span style="color:var(--public-color);">↓</span>
+                <span style="color:var(--private-color);">↓</span>
+            </div>
+
+            <!-- LAYER B: DOCKER ENVIRONMENT -->
+            <div class="docker-env">
+                <div class="docker-label">
+                    DOCKER COMPOSE
+                    <!-- Added Info Button for Compute Isolation -->
+                    <span class="info-btn" onclick="openModal('compute')">i</span>
+                </div>
+
+                <!-- LEFT: PUBLIC ZONE -->
+                <div class="zone-column public-zone">
+                    <span class="zone-title" style="color:var(--public-color);">Public Network Zone</span>
+
+                    <div class="container-box container-public">
+                        <span class="localhost-tag">127.0.0.1:8081</span>
+                        <div><strong>Public Website</strong></div>
+                        <span class="port-tag">Static HTML</span>
+                    </div>
+
+                    <div class="connector">⬇</div>
+
+                    <!-- NEW MAIL SERVER -->
+                    <div class="container-box mail-container">
+                        <span class="localhost-tag">127.0.0.1:25/587</span>
+                        <div class="icon-large">📧</div>
+                        <div><strong>Mail Server</strong></div>
+                        <span class="port-tag">Postfix / Dovecot</span>
+                    </div>
+
+                    <div class="connector">⬇</div>
+
+                    <div class="container-box container-public">
+                        <span class="localhost-tag">127.0.0.1:8082</span>
+                        <div class="icon-large">📊</div>
+                        <div><strong>Matomo App</strong></div>
+                        <span class="port-tag">Analytics</span>
+                    </div>
+
+                    <!-- Split DB -->
+                    <div class="container-box db-container" style="margin-top: 5px;">
+                        <span class="localhost-tag">Internal:3306</span>
+                        <div class="icon-large">🛢️</div>
+                        <div><strong>Matomo DB</strong></div>
+                        <span class="port-tag">MariaDB SQL</span>
+                    </div>
+                </div>
+
+                <!-- RIGHT: PRIVATE ZONE -->
+                <div class="zone-column private-zone">
+                    <span class="zone-title" style="color:var(--private-color);">🔒 Private Network Zone</span>
+
+                    <div class="container-box container-private">
+                        <span class="localhost-tag">Internal Only</span>
+                        <div class="icon-large">🔧</div>
+                        <div><strong>Private Tools</strong></div>
+                        <span class="port-tag">NextCloud / Wiki</span>
+                    </div>
+
+                    <div class="connector">⬇</div>
+
+                    <div class="container-box db-container">
+                        <span class="localhost-tag">No Access</span>
+                        <div class="icon-large">🛢️</div>
+                        <div><strong>Private DB</strong></div>
+                        <span class="port-tag">MariaDB SQL</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LAYER C: STORAGE PARTITIONS -->
+            <div class="storage-wrapper">
+                <div class="storage-label">
+                    PERSISTENT STORAGE VOLUMES
+                    <!-- Added Info Button for Storage Isolation -->
+                    <span class="info-btn" onclick="openModal('storage')">i</span>
+                </div>
+
+                <!-- NEW SVG GRAPHIC FOR VOLUME ISOLATION -->
+                <div class="volume-isolation-container">
+                    <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: #222; border: 1px solid #444; color: #fff; padding: 2px 10px; font-size: 10px; border-radius: 10px; z-index: 5;">
+                        VOLUME MOUNT INSULATION <span class="info-btn" onclick="openModal('mounts')">i</span>
+                    </div>
+
+                    <svg class="volume-isolation-svg" viewBox="0 0 100 70" preserveAspectRatio="none">
+                        <defs>
+                            <marker id="arrow-public" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                                <path d="M0,0 L0,6 L6,3 z" fill="#2ecc71" />
+                            </marker>
+                            <marker id="arrow-private" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                                <path d="M0,0 L0,6 L6,3 z" fill="#3498db" />
+                            </marker>
+                        </defs>
+
+                        <!-- Public Path (Left Side) -->
+                        <!-- Start: 25% Width (approx below Public DB) End: 50% Width (Middle Storage) -->
+                        <path d="M 25,0 L 25,20 L 50,35 L 50,70" class="pipe-line pipe-public" marker-end="url(#arrow-public)" />
+
+                        <!-- Private Path (Right Side) -->
+                        <!-- Start: 75% Width (approx below Private DB) End: 83% Width (Right Storage) -->
+                        <path d="M 75,0 L 75,35 L 83,45 L 83,70" class="pipe-line pipe-private" marker-end="url(#arrow-private)" />
+
+                        <!-- Blocked Path (Public attempting to cross to Private) -->
+                        <path d="M 30,0 Q 40,20 65,30" class="pipe-line pipe-blocked" />
+
+                        <!-- X Icon -->
+                        <g class="blocked-indicator" transform="translate(65, 30)">
+                            <circle cx="0" cy="0" r="6" fill="#121212" stroke="#e74c3c" stroke-width="2"/>
+                            <text x="0" y="3" text-anchor="middle" fill="#e74c3c" font-size="8" font-weight="bold">X</text>
+                            <text x="0" y="15" text-anchor="middle" fill="#e74c3c" font-size="6">BLOCKED</text>
+                        </g>
+                    </svg>
+                </div>
+
+                <div class="storage-layer">
+                    <!-- SYSTEM Partition -->
+                    <div class="partition-box" style="border-bottom: 4px solid var(--os-color);">
+                        <div class="partition-title" style="color:var(--os-color);">SYSTEM</div>
+                        <div class="partition-name">/ (Root)</div>
+                        <div style="font-size:10px; color:#bdc3c7;">(Configs)</div>
+                    </div>
+
+                    <!-- Public Partition -->
+                    <div class="partition-box" style="border-bottom: 4px solid var(--db-color); border-top: 2px dashed var(--db-color);">
+                        <div class="partition-title">PUBLIC DB DATA</div>
+                        <div class="partition-name">/mnt/pub_sql</div>
+                        <div style="font-size:10px; color:#bdc3c7;">(Matomo DB Vol)</div>
+                    </div>
+
+                    <!-- Private Partition -->
+                    <div class="partition-box" style="border-bottom: 4px solid var(--db-color); border-top: 2px dashed var(--db-color);">
+                        <div class="lock-icon">🔒</div>
+                        <div class="partition-title">PRIVATE DB DATA</div>
+                        <div class="partition-name">/mnt/priv_sql</div>
+                        <div style="font-size:10px; color:#bdc3c7;">(Encrypted Vol)</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <button class="checklist-btn" onclick="openModal('checklist')">
+            ✅ View Implementation Checklist
+        </button>
+    </div>
+
+    <!-- MODAL STRUCTURE -->
+    <div id="info-modal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-title">Title</div>
+                <button class="close-btn" onclick="closeModalBtn()">×</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                Content goes here...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Content Database
+        const guideContent = {
+            philosophy: {
+                title: "1. High-Level Philosophy",
+                body: `
+                    <h4>Blast Radius Containment</h4>
+                    <p>The core principle of this architecture is <strong>Isolation</strong>. We assume that any public-facing service (like the website or analytics) could eventually be compromised.</p>
+                    <p>The goal is to ensure that if a breach occurs, the attacker is trapped in a tiny, disposable box and cannot access the Host OS or Private Data.</p>
+                `
+            },
+            network: {
+                title: "2. Network Security (The Outer Wall)",
+                body: `
+                    <h4>A. The Firewall (UFW)</h4>
+                    <p>We use UFW as the first line of defense. Policy: Default DENY incoming, ALLOW outgoing.</p>
+                    <ul>
+                        <li><strong>Open Ports:</strong> 22 (SSH), 80 (HTTP), 443 (HTTPS), 25/587/993 (Mail).</li>
+                        <li><strong>Blocked:</strong> Everything else (e.g., 8080, 3306).</li>
+                    </ul>
+
+                    <h4>B. The Docker-Firewall Conflict</h4>
+                    <p><strong>Risk:</strong> Docker modifies iptables. <code>docker run -p 8080:80</code> often bypasses UFW.</p>
+                    <p><strong>Solution:</strong> We force Docker to bind to localhost only.</p>
+                    <p class="code-snippet">ports: - "127.0.0.1:8081:80"</p>
+                `
+            },
+            routing: {
+                title: "3. Traffic Routing (The Gatekeeper)",
+                body: `
+                    <h4>Host NGINX (Reverse Proxy)</h4>
+                    <p>This is the only software (besides SSH) allowed to talk to the internet directly.</p>
+                    <ul>
+                        <li><strong>Role:</strong> Termination of SSL/TLS.</li>
+                        <li><strong>Proxy Pass:</strong> Routes traffic to <code>http://127.0.0.1:8081</code> (Public) or <code>:8082</code> (Private).</li>
+                        <li><strong>Benefit:</strong> Filters malformed HTTP requests before they hit your apps.</li>
+                    </ul>
+                `
+            },
+            compute: {
+                title: "4. Compute Isolation",
+                body: `
+                    <h4>A. Network Segmentation</h4>
+                    <p>We use Docker Networks to create "Air Gaps".</p>
+                    <ul>
+                        <li><strong>public_net:</strong> Web + Analytics.</li>
+                        <li><strong>private_net:</strong> Nextcloud + Wiki.</li>
+                    </ul>
+                    <p><em>Security:</em> A hacker in the public app cannot ping the private DB.</p>
+
+                    <h4>B. Container Hardening</h4>
+                    <ul>
+                        <li><strong>Read-Only:</strong> Static sites mounted as <code>:ro</code> so attackers cannot write backdoors.</li>
+                        <li><strong>Stateless:</strong> Containers are disposable.</li>
+                    </ul>
+                `
+            },
+            storage: {
+                title: "5. Storage Isolation (The Vaults)",
+                body: `
+                    <h4>Structure on Host</h4>
+                    <ul>
+                        <li><strong>System Partition (/):</strong> OS & Configs only.</li>
+                        <li><strong>Public Partition (/mnt/public):</strong> Limited quota (e.g., 20GB) to prevent DoS via log flooding.</li>
+                        <li><strong>Private Partition (/mnt/private):</strong> Encrypted at rest (LUKS). Permissions set to <code>700</code> (Root only).</li>
+                    </ul>
+                    <h4>Database Separation</h4>
+                    <p>NEVER run one MariaDB instance for both. Use separate containers to prevent permission leaks.</p>
+                `
+            },
+            mounts: {
+                title: "Volume Mounts & Isolation",
+                body: `
+                    <h4>How does Isolation work here?</h4>
+                    <p>You asked: <em>"Is there a traffic connection between Private Networks and Partitions?"</em></p>
+                    <p><strong>Visually:</strong> We represent this as a pipe. This implies a direct link.</p>
+                    <p><strong>Technically:</strong> Isolation is enforced by two things:</p>
+                    <ol>
+                        <li><strong>Mount Configuration:</strong> The <code>docker-compose.yml</code> file explicitly maps specific folders to specific containers. The Public Container is simply never given the "address" (path) to the Private Data.</li>
+                        <li><strong>Network Isolation:</strong> Even if a hacker compromised the Public Container, they cannot "jump" to the Private Container to steal its access keys, because the internal Docker Network firewall blocks that traffic.</li>
+                    </ol>
+                `
+            },
+            checklist: {
+                title: "6. Implementation Checklist",
+                body: `
+                    <ul>
+                        <li><input type="checkbox" disabled> Provision VPS with SSH Key access only.</li>
+                        <li><input type="checkbox" disabled> Setup UFW: Allow 22, 80, 443. Enable firewall.</li>
+                        <li><input type="checkbox" disabled> Partition Disks: Create LVM logical volumes for public/private data.</li>
+                        <li><input type="checkbox" disabled> Install Docker & NGINX (Host).</li>
+                        <li><input type="checkbox" disabled> Create Docker Networks (public_net, etc).</li>
+                        <li><input type="checkbox" disabled> Deploy Containers: Ensure <code>127.0.0.1</code> binding.</li>
+                        <li><input type="checkbox" disabled> Configure Host NGINX reverse proxy blocks.</li>
+                        <li><input type="checkbox" disabled> Run Certbot for SSL.</li>
+                    </ul>
+                `
+            }
+        };
+
+        // Modal Functions
+        function openModal(key) {
+            const modal = document.getElementById('info-modal');
+            const titleEl = document.getElementById('modal-title');
+            const bodyEl = document.getElementById('modal-body');
+
+            if (guideContent[key]) {
+                titleEl.textContent = guideContent[key].title;
+                bodyEl.innerHTML = guideContent[key].body;
+                modal.style.display = 'flex';
+            }
+        }
+
+        function closeModal(e) {
+            if (e.target.id === 'info-modal') {
+                document.getElementById('info-modal').style.display = 'none';
+            }
+        }
+
+        function closeModalBtn() {
+            document.getElementById('info-modal').style.display = 'none';
+        }
+    </script>
+
+</body>
+</html>
