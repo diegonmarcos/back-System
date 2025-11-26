@@ -460,6 +460,63 @@
             font-size: 11px;
         }
 
+        /* Hardware Specs Bar */
+        .hardware-specs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 70px 20px;
+            padding: 12px 20px;
+            background: linear-gradient(90deg, rgba(52,73,94,0.3), rgba(44,62,80,0.3));
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            flex-wrap: wrap;
+        }
+
+        .hw-spec {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            font-size: 11px;
+        }
+
+        .hw-spec .icon {
+            font-size: 16px;
+        }
+
+        .hw-spec .label {
+            color: var(--text-muted);
+        }
+
+        .hw-spec .value {
+            color: var(--public-color);
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+
+        .hw-spec.provider {
+            border-left: 3px solid #f39c12;
+        }
+
+        .hw-spec.cpu {
+            border-left: 3px solid #e74c3c;
+        }
+
+        .hw-spec.ram {
+            border-left: 3px solid #3498db;
+        }
+
+        .hw-spec.storage {
+            border-left: 3px solid #2ecc71;
+        }
+
+        .hw-spec.arch {
+            border-left: 3px solid #9b59b6;
+        }
+
         /* SSH Direct Path */
         .ssh-direct-path {
             position: absolute;
@@ -1648,6 +1705,35 @@
             <button class="info-btn" onclick="openModal('server')">i</button>
         </div>
 
+        <!-- Hardware Specs -->
+        <div class="hardware-specs">
+            <div class="hw-spec provider">
+                <span class="icon">☁️</span>
+                <span class="label">Provider:</span>
+                <span class="value">Oracle Cloud</span>
+            </div>
+            <div class="hw-spec arch">
+                <span class="icon">🔧</span>
+                <span class="label">Arch:</span>
+                <span class="value">ARM64 Ampere A1</span>
+            </div>
+            <div class="hw-spec cpu">
+                <span class="icon">⚡</span>
+                <span class="label">CPU:</span>
+                <span class="value">4 OCPUs</span>
+            </div>
+            <div class="hw-spec ram">
+                <span class="icon">🧠</span>
+                <span class="label">RAM:</span>
+                <span class="value">24 GB</span>
+            </div>
+            <div class="hw-spec storage">
+                <span class="icon">💾</span>
+                <span class="label">Storage:</span>
+                <span class="value">197 GB</span>
+            </div>
+        </div>
+
         <!-- SSH Direct Path -->
         <div class="ssh-direct-path">
             <div class="ssh-line"></div>
@@ -1928,8 +2014,8 @@
             <div class="storage-partitions">
                 <div class="partition-box system">
                     <div class="partition-icon">⚙️</div>
-                    <div class="partition-name">/</div>
-                    <div class="partition-desc">System & Configs</div>
+                    <div class="partition-name">/ <span style="color:#888;font-size:10px">(47GB)</span></div>
+                    <div class="partition-desc">Boot Volume - System & Configs</div>
                     <div class="partition-security">
                         <span class="security-tag restricted">root only</span>
                     </div>
@@ -1937,17 +2023,17 @@
 
                 <div class="partition-box public">
                     <div class="partition-icon">📊</div>
-                    <div class="partition-name">/mnt/public</div>
-                    <div class="partition-desc">Matomo DB + Logs</div>
+                    <div class="partition-name">/mnt/public <span style="color:#888;font-size:10px">(50GB)</span></div>
+                    <div class="partition-desc">Block Vol 1 - Matomo DB + Logs</div>
                     <div class="partition-security">
-                        <span class="security-tag readonly">quota: 20GB</span>
+                        <span class="security-tag readonly">quota limited</span>
                     </div>
                 </div>
 
                 <div class="partition-box private">
                     <div class="partition-icon">🔐</div>
-                    <div class="partition-name">/mnt/private</div>
-                    <div class="partition-desc">NextCloud Files + DB</div>
+                    <div class="partition-name">/mnt/private <span style="color:#888;font-size:10px">(50GB)</span></div>
+                    <div class="partition-desc">Block Vol 2 - NextCloud Files + DB</div>
                     <div class="partition-security">
                         <span class="security-tag encrypted">LUKS encrypted</span>
                     </div>
@@ -1955,8 +2041,8 @@
 
                 <div class="partition-box mail">
                     <div class="partition-icon">📧</div>
-                    <div class="partition-name">/mnt/mail</div>
-                    <div class="partition-desc">Mailboxes + Certs</div>
+                    <div class="partition-name">/mnt/mail <span style="color:#888;font-size:10px">(50GB)</span></div>
+                    <div class="partition-desc">Block Vol 3 - Mailboxes + Certs</div>
                     <div class="partition-security">
                         <span class="security-tag encrypted">LUKS encrypted</span>
                     </div>
