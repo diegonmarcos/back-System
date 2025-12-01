@@ -1,200 +1,192 @@
 # Cloud Infrastructure Handoff
 
-> **For Web Designer**: This document provides the visual structure and relationships.
-> **For Data**: See the CSV files for IPs, ports, commands, and service details.
+> **For Front-End Developers**: Use `cloud-infrastructure.json` as the data source.
+> **For Cloud Engineers**: Update `cloud-infrastructure.json` and regenerate documentation.
 
 ---
 
-## Quick Reference
+## Data Source
 
-| File | Purpose | Update By |
-|------|---------|-----------|
-| `infrastructure.csv` | VMs: IPs, regions, status | Cloud Engineer |
-| `services.csv` | Services: ports, domains, categories | Cloud Engineer |
-| `ports.csv` | Firewall rules, port mappings | Cloud Engineer |
-| `commands.csv` | SSH, CLI commands | Cloud Engineer |
-| `HANDOFF.md` | Architecture diagrams | Cloud Engineer |
-
----
-
-## 1. High-Level Architecture
-
-```mermaid
-graph TB
-    subgraph Internet
-        USER[User Browser]
-    end
-
-    subgraph Oracle Cloud
-        subgraph web-server-1 [web-server-1<br/>130.110.251.193]
-            NPM1[Nginx Proxy Manager]
-            MATOMO[Matomo Analytics]
-            SYNC[Syncthing]
-        end
-
-        subgraph services-server-1 [services-server-1<br/>129.151.228.66]
-            NPM2[Nginx Proxy Manager]
-            N8N[n8n Automation]
-        end
-
-        subgraph arm-server [arm-server<br/>pending]
-            FUTURE[Future Services]
-        end
-    end
-
-    subgraph Google Cloud
-        subgraph arch-1 [arch-1<br/>pending]
-            DEV[Development]
-        end
-    end
-
-    USER -->|HTTPS| NPM1
-    USER -->|HTTPS| NPM2
-    NPM1 --> MATOMO
-    NPM1 --> SYNC
-    NPM2 --> N8N
+```
+0.spec/
+├── cloud-infrastructure.json   ← PRIMARY DATA SOURCE
+├── SPEC.md                     ← Human-readable documentation
+├── HANDOFF.md                  ← This file (quick reference)
+├── VPS_ARCHITECTURE_SPEC.md    ← Detailed security architecture
+├── spec_infra.md               ← Mermaid diagrams
+└── archive/
+    └── csv/                    ← Legacy CSV files (deprecated)
 ```
 
 ---
 
-## 2. Network Topology
+## JSON Structure Overview
 
-```mermaid
-graph LR
-    subgraph Public Internet
-        DNS[DNS<br/>diegonmarcos.com]
-    end
-
-    subgraph Domains
-        A1[analytics.diegonmarcos.com]
-        A2[sync.diegonmarcos.com]
-        A3[n8n.diegonmarcos.com]
-    end
-
-    subgraph web-server-1
-        W_NPM[NPM :81]
-        W_443[HTTPS :443]
-        W_MATOMO[:8080]
-        W_SYNC[:8384]
-    end
-
-    subgraph services-server-1
-        S_NPM[NPM :81]
-        S_443[HTTPS :443]
-        S_N8N[:5678]
-    end
-
-    DNS --> A1 & A2 & A3
-    A1 --> W_443 --> W_MATOMO
-    A2 --> W_443 --> W_SYNC
-    A3 --> S_443 --> S_N8N
+```json
+{
+  "providers": {
+    "oracle": { /* Console URL, CLI commands */ },
+    "gcloud": { /* Console URL, CLI commands */ }
+  },
+  "virtualMachines": {
+    "web-server-1": { /* IP, SSH, services, ports */ },
+    "services-server-1": { /* IP, SSH, services, ports */ },
+    "arm-server": { /* Pending - future main server */ },
+    "arch-1": { /* Pending - GCloud dev VM */ }
+  },
+  "services": {
+    "matomo": { /* URLs, ports, docker config */ },
+    "syncthing": { /* URLs, ports, docker config */ },
+    "n8n": { /* URLs, ports, docker config */ },
+    "mail": { /* Planned */ },
+    "nextcloud": { /* Planned */ }
+  },
+  "domains": { /* DNS mappings */ },
+  "firewallRules": { /* Per-VM port rules */ },
+  "quickCommands": { /* SSH, Docker commands */ }
+}
 ```
 
 ---
 
-## 3. Service Categories
+## Front-End Card Mapping
 
-```mermaid
-graph TB
-    subgraph Active Services
-        S1[Matomo Analytics<br/>analytics.diegonmarcos.com]
-        S2[Syncthing<br/>sync.diegonmarcos.com]
-        S3[n8n Automation<br/>n8n.diegonmarcos.com]
-    end
+### Services Section
+| Card | JSON Path | Click Action |
+|------|-----------|--------------|
+| Matomo Analytics | `services.matomo` | Open `urls.gui` |
+| Syncthing | `services.syncthing` | Open `urls.gui` |
+| n8n Automation | `services.n8n` | Open `urls.gui` |
 
-    subgraph VPS Providers
-        V1[Oracle Cloud<br/>cloud.oracle.com]
-        V2[Google Cloud<br/>console.cloud.google.com]
-    end
+### VPS Providers Section
+| Card | JSON Path | Click Action |
+|------|-----------|--------------|
+| Oracle Cloud | `providers.oracle` | Open `consoleUrl` |
+| Google Cloud | `providers.gcloud` | Open `consoleUrl` |
 
-    subgraph Virtual Machines
-        VM1[web-server-1<br/>130.110.251.193]
-        VM2[services-server-1<br/>129.151.228.66]
-        VM3[arch-1<br/>pending]
-    end
+### Virtual Machines Section
+| Card | JSON Path | Click Action |
+|------|-----------|--------------|
+| web-server-1 | `virtualMachines.web-server-1` | Show SSH modal |
+| services-server-1 | `virtualMachines.services-server-1` | Show SSH modal |
+| arm-server | `virtualMachines.arm-server` | Show "pending" |
+| arch-1 | `virtualMachines.arch-1` | Show "pending" |
 
-    subgraph Under Development
-        D1[Mail Server]
-        D2[OS Terminal]
-        D3[DevOps Dashboard]
-    end
+### Under Development Section
+| Card | JSON Path | Status |
+|------|-----------|--------|
+| Mail Server | `services.mail` | `development` |
+| Nextcloud | `services.nextcloud` | `planned` |
+| OS Terminal | `services.terminal` | `development` |
+| Dashboard | `services.dashboard` | `development` |
 
-    V1 --> VM1 & VM2
-    V2 --> VM3
-    VM1 --> S1 & S2
-    VM2 --> S3
+---
+
+## Status Values
+
+| Status | Display | Card Style |
+|--------|---------|------------|
+| `active` | ✅ Online | Green indicator |
+| `pending` | ⏳ Pending | Yellow indicator |
+| `development` | 🔧 In Development | Blue indicator |
+| `planned` | 📋 Planned | Gray indicator |
+| `offline` | ❌ Offline | Red indicator |
+
+---
+
+## Quick Access URLs
+
+### Active Services
+- **Matomo**: https://analytics.diegonmarcos.com
+- **Syncthing**: https://sync.diegonmarcos.com
+- **n8n**: https://n8n.diegonmarcos.com
+
+### Proxy Admin Panels
+- **web-server-1 NPM**: http://130.110.251.193:81
+- **services-server-1 NPM**: http://129.151.228.66:81
+
+### Cloud Consoles
+- **Oracle**: https://cloud.oracle.com
+- **Google**: https://console.cloud.google.com
+
+---
+
+## SSH Commands (for copy buttons)
+
+```bash
+# web-server-1
+ssh -i ~/.ssh/matomo_key ubuntu@130.110.251.193
+
+# services-server-1
+ssh -i ~/.ssh/matomo_key ubuntu@129.151.228.66
 ```
 
 ---
 
-## 4. Dashboard Card Structure
+## Architecture Diagrams
 
-```mermaid
-graph TB
-    subgraph Cards Tab
-        subgraph Services Section
-            C1[Matomo Analytics<br/>Click: Open GUI]
-            C2[Syncthing<br/>Click: Open GUI]
-            C3[n8n<br/>Click: Open GUI]
-        end
+### High-Level View
 
-        subgraph VPS Section
-            C4[Oracle Cloud<br/>Click: Console<br/>Copy: CLI command<br/>Copy: Install CLI]
-            C5[Google Cloud<br/>Click: Console<br/>Copy: CLI command<br/>Copy: Install CLI]
-        end
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         INTERNET                                 │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │
+              ┌───────────────┴───────────────┐
+              │                               │
+              ▼                               ▼
+┌─────────────────────────┐     ┌─────────────────────────┐
+│     web-server-1        │     │   services-server-1     │
+│   130.110.251.193       │     │   129.151.228.66        │
+├─────────────────────────┤     ├─────────────────────────┤
+│ NPM (:81)               │     │ NPM (:81)               │
+│   ├── :443 → Matomo     │     │   └── :443 → n8n        │
+│   └── :443 → Syncthing  │     │                         │
+│                         │     │                         │
+│ analytics.diegonmarcos  │     │ n8n.diegonmarcos.com    │
+│ sync.diegonmarcos.com   │     │                         │
+└─────────────────────────┘     └─────────────────────────┘
+```
 
-        subgraph VMs Section
-            C6[web-server-1<br/>Click: Proxy GUI<br/>Copy: SSH command<br/>Buttons: Proxy / Firewall]
-            C7[services-server-1<br/>Click: Proxy GUI<br/>Copy: SSH command<br/>Buttons: Proxy / Firewall]
-            C8[arch-1<br/>Status: Pending]
-        end
+### Service Flow
 
-        subgraph Under Development
-            C9[Mail]
-            C10[OS Terminal]
-            C11[DevOps Dashboard]
-        end
-    end
+```
+User Request
+     │
+     ▼
+┌─────────────┐
+│    DNS      │ analytics.diegonmarcos.com → 130.110.251.193
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│ NPM (:443)  │ SSL Termination + Routing
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐
+│ Matomo      │ localhost:8080 (Docker)
+│ (:8080)     │
+└─────────────┘
 ```
 
 ---
 
-## 5. Port Flow Diagram
+## TypeScript Integration
 
-```mermaid
-flowchart LR
-    subgraph External Ports
-        E22[SSH :22]
-        E80[HTTP :80]
-        E443[HTTPS :443]
-        E81[NPM :81]
-        E22000[Sync :22000]
-    end
+```typescript
+// Load infrastructure data
+const infra = await fetch('/0.spec/cloud-infrastructure.json').then(r => r.json());
 
-    subgraph Internal Ports
-        I8080[:8080 Matomo]
-        I8384[:8384 Syncthing]
-        I5678[:5678 n8n]
-    end
+// Get service URL
+const matomoUrl = infra.services.matomo.urls.gui;
 
-    E22 -->|Direct| SSH[Host SSH]
-    E80 -->|Redirect| E443
-    E443 -->|Proxy| I8080 & I8384 & I5678
-    E81 -->|Admin| NPM[Proxy Manager]
-    E22000 -->|Direct| SYNC[Syncthing Protocol]
+// Get SSH command
+const sshCmd = infra.virtualMachines['web-server-1'].ssh.command;
+
+// Check status
+const isActive = infra.services.matomo.status === 'active';
 ```
-
----
-
-## 6. Access Methods
-
-| Access Type | Method | Example |
-|-------------|--------|---------|
-| Service GUI | HTTPS via domain | `https://analytics.diegonmarcos.com` |
-| Proxy Admin | HTTP via IP:81 | `http://130.110.251.193:81` |
-| SSH Access | SSH via IP:22 | `ssh -i ~/.ssh/key ubuntu@IP` |
-| Firewall | Cloud Console | Oracle Security Lists |
-| CLI | Terminal command | `oci compute instance list` |
 
 ---
 
@@ -202,5 +194,6 @@ flowchart LR
 
 | Date | Change | By |
 |------|--------|-----|
-| 2025-11-27 | Initial handoff structure | Cloud Engineer |
-
+| 2025-12-01 | Migrated to JSON data source, deprecated CSV | Cloud Engineer |
+| 2025-11-27 | Added services-server-1 with n8n | Cloud Engineer |
+| 2025-11-26 | Initial handoff structure | Cloud Engineer |
