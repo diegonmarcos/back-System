@@ -1,0 +1,588 @@
+{
+  "$schema": "cloud-infrastructure-schema",
+  "version": "2.0.0",
+  "lastUpdated": "2025-12-01",
+  "owner": "Diego Nepomuceno Marcos",
+  "providers": {
+    "oracle": {
+      "id": "oracle",
+      "name": "Oracle Cloud",
+      "type": "cloud",
+      "tier": "always-free",
+      "consoleUrl": "https://cloud.oracle.com",
+      "region": "eu-marseille-1",
+      "cli": {
+        "name": "OCI CLI",
+        "install": "bash -c \"$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh)\"",
+        "listInstances": "oci compute instance list --compartment-id $OCI_COMPARTMENT_ID"
+      },
+      "status": "active"
+    },
+    "gcloud": {
+      "id": "gcloud",
+      "name": "Google Cloud",
+      "type": "cloud",
+      "tier": "free-tier",
+      "consoleUrl": "https://console.cloud.google.com",
+      "region": "us-central1",
+      "cli": {
+        "name": "gcloud CLI",
+        "install": "curl https://sdk.cloud.google.com | bash && exec -l $SHELL && gcloud init",
+        "listInstances": "gcloud compute instances list"
+      },
+      "status": "active"
+    }
+  },
+  "virtualMachines": {
+    "web-server-1": {
+      "id": "web-server-1",
+      "name": "Web Server 1",
+      "provider": "oracle",
+      "instanceType": "VM.Standard.E2.1.Micro",
+      "specs": {
+        "cpu": "1 OCPU (AMD)",
+        "ram": "1 GB",
+        "storage": "47 GB Boot"
+      },
+      "network": {
+        "publicIp": "130.110.251.193",
+        "privateIp": "10.0.0.x"
+      },
+      "os": {
+        "name": "Ubuntu",
+        "version": "24.04 LTS"
+      },
+      "ssh": {
+        "user": "ubuntu",
+        "keyPath": "~/.ssh/matomo_key",
+        "command": "ssh -i ~/.ssh/matomo_key ubuntu@130.110.251.193"
+      },
+      "services": [
+        "matomo",
+        "syncthing",
+        "npm-web"
+      ],
+      "ports": {
+        "external": [
+          22,
+          80,
+          443,
+          81,
+          22000,
+          21027
+        ],
+        "internal": [
+          8080,
+          8384,
+          3306
+        ]
+      },
+      "status": "active",
+      "notes": "Primary web server - Matomo Analytics + Syncthing"
+    },
+    "services-server-1": {
+      "id": "services-server-1",
+      "name": "Services Server 1",
+      "provider": "oracle",
+      "instanceType": "VM.Standard.E2.1.Micro",
+      "specs": {
+        "cpu": "1 OCPU (AMD)",
+        "ram": "1 GB",
+        "storage": "47 GB Boot"
+      },
+      "network": {
+        "publicIp": "129.151.228.66",
+        "privateIp": "10.0.0.x"
+      },
+      "os": {
+        "name": "Ubuntu",
+        "version": "24.04 LTS"
+      },
+      "ssh": {
+        "user": "ubuntu",
+        "keyPath": "~/.ssh/matomo_key",
+        "command": "ssh -i ~/.ssh/matomo_key ubuntu@129.151.228.66"
+      },
+      "services": [
+        "n8n",
+        "npm-services"
+      ],
+      "ports": {
+        "external": [
+          22,
+          80,
+          443,
+          81
+        ],
+        "internal": [
+          5678
+        ]
+      },
+      "status": "active",
+      "notes": "Automation server - n8n workflows"
+    },
+    "arm-server": {
+      "id": "arm-server",
+      "name": "ARM Server",
+      "provider": "oracle",
+      "instanceType": "VM.Standard.A1.Flex",
+      "specs": {
+        "cpu": "4 OCPU (ARM64 Ampere)",
+        "ram": "24 GB",
+        "storage": "200 GB (47 Boot + 50 Public + 50 Private + 50 Mail)"
+      },
+      "network": {
+        "publicIp": "pending",
+        "privateIp": "pending"
+      },
+      "os": {
+        "name": "Ubuntu",
+        "version": "24.04 LTS"
+      },
+      "ssh": {
+        "user": "ubuntu",
+        "keyPath": "~/.ssh/arm_key",
+        "command": "ssh -i ~/.ssh/arm_key ubuntu@<pending>"
+      },
+      "services": [
+        "mail",
+        "nextcloud",
+        "terminal",
+        "dashboard"
+      ],
+      "ports": {
+        "external": [
+          22,
+          80,
+          443,
+          25,
+          587,
+          993
+        ],
+        "internal": [
+          8082,
+          5432,
+          6379
+        ]
+      },
+      "status": "pending",
+      "notes": "ARM capacity waitlist - Future main server with encrypted storage"
+    },
+    "arch-1": {
+      "id": "arch-1",
+      "name": "Arch Linux 1",
+      "provider": "gcloud",
+      "instanceType": "e2-micro",
+      "specs": {
+        "cpu": "0.25-2 vCPU",
+        "ram": "1 GB",
+        "storage": "30 GB"
+      },
+      "network": {
+        "publicIp": "pending",
+        "privateIp": "pending"
+      },
+      "os": {
+        "name": "Arch Linux",
+        "version": "rolling"
+      },
+      "ssh": {
+        "user": "diego",
+        "keyPath": "~/.ssh/gcloud_key",
+        "command": "gcloud compute ssh arch-1 --zone us-central1-a"
+      },
+      "services": [],
+      "ports": {
+        "external": [
+          22
+        ],
+        "internal": []
+      },
+      "status": "pending",
+      "notes": "Development/testing VM"
+    }
+  },
+  "services": {
+    "matomo": {
+      "id": "matomo",
+      "name": "Matomo Analytics",
+      "category": "analytics",
+      "vmId": "web-server-1",
+      "technology": {
+        "image": "matomo:fpm-alpine",
+        "database": "mariadb:11.4"
+      },
+      "network": {
+        "internalPort": 8080,
+        "externalPort": 443,
+        "domain": "analytics.diegonmarcos.com",
+        "protocol": "HTTPS"
+      },
+      "urls": {
+        "gui": "https://analytics.diegonmarcos.com",
+        "direct": "http://130.110.251.193:8080"
+      },
+      "docker": {
+        "containerName": "matomo-app",
+        "dbContainerName": "matomo-db",
+        "network": "public_net"
+      },
+      "features": [
+        "Anti-blocker proxy",
+        "Tag Manager",
+        "Custom events"
+      ],
+      "status": "active"
+    },
+    "syncthing": {
+      "id": "syncthing",
+      "name": "Syncthing",
+      "category": "sync",
+      "vmId": "web-server-1",
+      "technology": {
+        "image": "syncthing/syncthing:latest"
+      },
+      "network": {
+        "internalPort": 8384,
+        "externalPort": 443,
+        "syncPort": 22000,
+        "discoveryPort": 21027,
+        "domain": "sync.diegonmarcos.com",
+        "protocol": "HTTPS"
+      },
+      "urls": {
+        "gui": "https://sync.diegonmarcos.com"
+      },
+      "docker": {
+        "containerName": "syncthing",
+        "network": "public_net"
+      },
+      "status": "active"
+    },
+    "npm-web": {
+      "id": "npm-web",
+      "name": "Nginx Proxy Manager",
+      "category": "proxy",
+      "vmId": "web-server-1",
+      "technology": {
+        "image": "jc21/nginx-proxy-manager:latest"
+      },
+      "network": {
+        "adminPort": 81,
+        "httpPort": 80,
+        "httpsPort": 443
+      },
+      "urls": {
+        "admin": "http://130.110.251.193:81"
+      },
+      "docker": {
+        "containerName": "nginx-proxy",
+        "network": "public_net"
+      },
+      "features": [
+        "SSL termination",
+        "Let's Encrypt",
+        "Access lists"
+      ],
+      "status": "active"
+    },
+    "n8n": {
+      "id": "n8n",
+      "name": "n8n Automation",
+      "category": "automation",
+      "vmId": "services-server-1",
+      "technology": {
+        "image": "n8nio/n8n:latest"
+      },
+      "network": {
+        "internalPort": 5678,
+        "externalPort": 443,
+        "domain": "n8n.diegonmarcos.com",
+        "protocol": "HTTPS"
+      },
+      "urls": {
+        "gui": "https://n8n.diegonmarcos.com"
+      },
+      "docker": {
+        "containerName": "n8n",
+        "network": "public_net"
+      },
+      "features": [
+        "Workflow automation",
+        "400+ integrations",
+        "Webhooks"
+      ],
+      "status": "active"
+    },
+    "npm-services": {
+      "id": "npm-services",
+      "name": "Nginx Proxy Manager",
+      "category": "proxy",
+      "vmId": "services-server-1",
+      "technology": {
+        "image": "jc21/nginx-proxy-manager:latest"
+      },
+      "network": {
+        "adminPort": 81,
+        "httpPort": 80,
+        "httpsPort": 443
+      },
+      "urls": {
+        "admin": "http://129.151.228.66:81"
+      },
+      "docker": {
+        "containerName": "nginx-proxy",
+        "network": "public_net"
+      },
+      "status": "active"
+    },
+    "mail": {
+      "id": "mail",
+      "name": "Mail Server",
+      "category": "email",
+      "vmId": "arm-server",
+      "technology": {
+        "image": "docker-mailserver/docker-mailserver:latest"
+      },
+      "network": {
+        "smtpPort": 25,
+        "submissionPort": 587,
+        "imapsPort": 993,
+        "domain": "mail.diegonmarcos.com"
+      },
+      "features": [
+        "DKIM",
+        "SPF",
+        "DMARC",
+        "Fail2Ban"
+      ],
+      "status": "development"
+    },
+    "nextcloud": {
+      "id": "nextcloud",
+      "name": "Nextcloud",
+      "category": "storage",
+      "vmId": "arm-server",
+      "technology": {
+        "image": "nextcloud:fpm-alpine",
+        "database": "postgres:16-alpine",
+        "cache": "redis:7-alpine"
+      },
+      "network": {
+        "internalPort": 8082,
+        "externalPort": 443,
+        "domain": "cloud.diegonmarcos.com",
+        "protocol": "HTTPS"
+      },
+      "features": [
+        "File sync",
+        "Calendar",
+        "Contacts",
+        "2FA"
+      ],
+      "status": "planned"
+    },
+    "terminal": {
+      "id": "terminal",
+      "name": "OS Terminal",
+      "category": "devops",
+      "vmId": "arm-server",
+      "technology": {
+        "image": "wetty or ttyd"
+      },
+      "status": "development"
+    },
+    "dashboard": {
+      "id": "dashboard",
+      "name": "DevOps Dashboard",
+      "category": "devops",
+      "vmId": "arm-server",
+      "status": "development"
+    }
+  },
+  "domains": {
+    "primary": "diegonmarcos.com",
+    "subdomains": {
+      "analytics.diegonmarcos.com": {
+        "service": "matomo",
+        "vmId": "web-server-1",
+        "ip": "130.110.251.193",
+        "ssl": true
+      },
+      "sync.diegonmarcos.com": {
+        "service": "syncthing",
+        "vmId": "web-server-1",
+        "ip": "130.110.251.193",
+        "ssl": true
+      },
+      "n8n.diegonmarcos.com": {
+        "service": "n8n",
+        "vmId": "services-server-1",
+        "ip": "129.151.228.66",
+        "ssl": true
+      },
+      "mail.diegonmarcos.com": {
+        "service": "mail",
+        "vmId": "arm-server",
+        "ip": "pending",
+        "ssl": true,
+        "status": "planned"
+      },
+      "cloud.diegonmarcos.com": {
+        "service": "nextcloud",
+        "vmId": "arm-server",
+        "ip": "pending",
+        "ssl": true,
+        "status": "planned"
+      }
+    }
+  },
+  "firewallRules": {
+    "web-server-1": [
+      {
+        "port": 22,
+        "protocol": "TCP",
+        "service": "SSH",
+        "direction": "ingress",
+        "source": "0.0.0.0/0"
+      },
+      {
+        "port": 80,
+        "protocol": "TCP",
+        "service": "HTTP",
+        "direction": "ingress",
+        "source": "0.0.0.0/0",
+        "notes": "Redirect to HTTPS"
+      },
+      {
+        "port": 443,
+        "protocol": "TCP",
+        "service": "HTTPS",
+        "direction": "ingress",
+        "source": "0.0.0.0/0"
+      },
+      {
+        "port": 81,
+        "protocol": "TCP",
+        "service": "NPM Admin",
+        "direction": "ingress",
+        "source": "0.0.0.0/0"
+      },
+      {
+        "port": 22000,
+        "protocol": "TCP",
+        "service": "Syncthing Sync",
+        "direction": "ingress",
+        "source": "0.0.0.0/0"
+      },
+      {
+        "port": 21027,
+        "protocol": "UDP",
+        "service": "Syncthing Discovery",
+        "direction": "ingress",
+        "source": "0.0.0.0/0"
+      },
+      {
+        "port": 8080,
+        "protocol": "TCP",
+        "service": "Matomo",
+        "direction": "internal",
+        "source": "127.0.0.1",
+        "notes": "Proxied via NPM"
+      },
+      {
+        "port": 8384,
+        "protocol": "TCP",
+        "service": "Syncthing GUI",
+        "direction": "internal",
+        "source": "127.0.0.1",
+        "notes": "Proxied via NPM"
+      }
+    ],
+    "services-server-1": [
+      {
+        "port": 22,
+        "protocol": "TCP",
+        "service": "SSH",
+        "direction": "ingress",
+        "source": "0.0.0.0/0"
+      },
+      {
+        "port": 80,
+        "protocol": "TCP",
+        "service": "HTTP",
+        "direction": "ingress",
+        "source": "0.0.0.0/0"
+      },
+      {
+        "port": 443,
+        "protocol": "TCP",
+        "service": "HTTPS",
+        "direction": "ingress",
+        "source": "0.0.0.0/0"
+      },
+      {
+        "port": 81,
+        "protocol": "TCP",
+        "service": "NPM Admin",
+        "direction": "ingress",
+        "source": "0.0.0.0/0"
+      },
+      {
+        "port": 5678,
+        "protocol": "TCP",
+        "service": "n8n",
+        "direction": "internal",
+        "source": "127.0.0.1",
+        "notes": "Proxied via NPM"
+      }
+    ]
+  },
+  "dockerNetworks": {
+    "public_net": {
+      "driver": "bridge",
+      "subnet": "172.20.0.0/24",
+      "purpose": "Public services accessible via NGINX"
+    },
+    "private_net": {
+      "driver": "bridge",
+      "subnet": "172.21.0.0/24",
+      "internal": true,
+      "purpose": "Private services requiring authentication"
+    },
+    "mail_net": {
+      "driver": "bridge",
+      "subnet": "172.22.0.0/24",
+      "purpose": "Isolated email stack"
+    },
+    "db_bridge": {
+      "driver": "bridge",
+      "subnet": "172.23.0.0/24",
+      "internal": true,
+      "purpose": "Database backup agent access"
+    }
+  },
+  "quickCommands": {
+    "ssh": {
+      "web-server-1": "ssh -i ~/.ssh/matomo_key ubuntu@130.110.251.193",
+      "services-server-1": "ssh -i ~/.ssh/matomo_key ubuntu@129.151.228.66"
+    },
+    "docker": {
+      "status": "sudo docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'",
+      "logs": "sudo docker logs --tail 100 <container>",
+      "exec": "sudo docker exec -it <container> bash"
+    },
+    "monitoring": {
+      "diskUsage": "df -h",
+      "memoryUsage": "free -h",
+      "containerStats": "docker stats --no-stream"
+    }
+  },
+  "statusLegend": {
+    "active": "Running and accessible",
+    "pending": "Waiting for resources or configuration",
+    "development": "Under active development",
+    "planned": "Scheduled for future implementation",
+    "offline": "Temporarily unavailable"
+  }
+}
