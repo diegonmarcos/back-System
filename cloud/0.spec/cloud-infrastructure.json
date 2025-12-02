@@ -1,7 +1,7 @@
 {
   "$schema": "cloud-infrastructure-schema",
-  "version": "2.0.0",
-  "lastUpdated": "2025-12-01",
+  "version": "2.1.0",
+  "lastUpdated": "2025-12-02",
   "owner": "Diego Nepomuceno Marcos",
 
   "providers": {
@@ -35,11 +35,25 @@
     }
   },
 
+  "vmCategories": {
+    "services": {
+      "id": "services",
+      "name": "Services",
+      "description": "General purpose VMs for web services and applications"
+    },
+    "ml": {
+      "id": "ml",
+      "name": "Machine Learning",
+      "description": "VMs dedicated to ML workloads and automation"
+    }
+  },
+
   "virtualMachines": {
-    "web-server-1": {
-      "id": "web-server-1",
-      "name": "Web Server 1",
+    "oracle-web-server-1": {
+      "id": "oracle-web-server-1",
+      "name": "Oracle Web Server 1",
       "provider": "oracle",
+      "category": "services",
       "instanceType": "VM.Standard.E2.1.Micro",
       "specs": {
         "cpu": "1 OCPU (AMD)",
@@ -56,8 +70,8 @@
       },
       "ssh": {
         "user": "ubuntu",
-        "keyPath": "~/.ssh/matomo_key",
-        "command": "ssh -i ~/.ssh/matomo_key ubuntu@130.110.251.193"
+        "keyPath": "~/.ssh/id_rsa",
+        "command": "ssh ubuntu@130.110.251.193"
       },
       "services": ["matomo", "syncthing", "npm-web"],
       "ports": {
@@ -67,10 +81,11 @@
       "status": "active",
       "notes": "Primary web server - Matomo Analytics + Syncthing"
     },
-    "services-server-1": {
-      "id": "services-server-1",
-      "name": "Services Server 1",
+    "oracle-services-server-1": {
+      "id": "oracle-services-server-1",
+      "name": "Oracle Services Server 1",
       "provider": "oracle",
+      "category": "services",
       "instanceType": "VM.Standard.E2.1.Micro",
       "specs": {
         "cpu": "1 OCPU (AMD)",
@@ -87,8 +102,8 @@
       },
       "ssh": {
         "user": "ubuntu",
-        "keyPath": "~/.ssh/matomo_key",
-        "command": "ssh -i ~/.ssh/matomo_key ubuntu@129.151.228.66"
+        "keyPath": "~/.ssh/id_rsa",
+        "command": "ssh ubuntu@129.151.228.66"
       },
       "services": ["n8n", "npm-services"],
       "ports": {
@@ -98,41 +113,11 @@
       "status": "active",
       "notes": "Automation server - n8n workflows"
     },
-    "arm-server": {
-      "id": "arm-server",
-      "name": "ARM Server",
-      "provider": "oracle",
-      "instanceType": "VM.Standard.A1.Flex",
-      "specs": {
-        "cpu": "4 OCPU (ARM64 Ampere)",
-        "ram": "24 GB",
-        "storage": "200 GB (47 Boot + 50 Public + 50 Private + 50 Mail)"
-      },
-      "network": {
-        "publicIp": "pending",
-        "privateIp": "pending"
-      },
-      "os": {
-        "name": "Ubuntu",
-        "version": "24.04 LTS"
-      },
-      "ssh": {
-        "user": "ubuntu",
-        "keyPath": "~/.ssh/arm_key",
-        "command": "ssh -i ~/.ssh/arm_key ubuntu@<pending>"
-      },
-      "services": ["mail", "nextcloud", "terminal", "dashboard"],
-      "ports": {
-        "external": [22, 80, 443, 25, 587, 993],
-        "internal": [8082, 5432, 6379]
-      },
-      "status": "pending",
-      "notes": "ARM capacity waitlist - Future main server with encrypted storage"
-    },
-    "arch-1": {
-      "id": "arch-1",
-      "name": "Arch Linux 1",
+    "gcloud-arch-1": {
+      "id": "gcloud-arch-1",
+      "name": "GCloud Arch Linux 1",
       "provider": "gcloud",
+      "category": "services",
       "instanceType": "e2-micro",
       "specs": {
         "cpu": "0.25-2 vCPU",
@@ -159,6 +144,125 @@
       },
       "status": "pending",
       "notes": "Development/testing VM"
+    },
+    "oracle-arm-server": {
+      "id": "oracle-arm-server",
+      "name": "Oracle ARM Server",
+      "provider": "oracle",
+      "category": "ml",
+      "instanceType": "VM.Standard.A1.Flex",
+      "specs": {
+        "cpu": "4 OCPU (ARM64 Ampere)",
+        "ram": "24 GB",
+        "storage": "200 GB (47 Boot + 50 Public + 50 Private + 50 Mail)"
+      },
+      "network": {
+        "publicIp": "pending",
+        "privateIp": "pending"
+      },
+      "os": {
+        "name": "Ubuntu",
+        "version": "24.04 LTS"
+      },
+      "ssh": {
+        "user": "ubuntu",
+        "keyPath": "~/.ssh/arm_key",
+        "command": "ssh -i ~/.ssh/arm_key ubuntu@<pending>"
+      },
+      "services": ["cloud", "mail", "terminal", "dashboard"],
+      "ports": {
+        "external": [22, 80, 443, 25, 587, 993],
+        "internal": [8082, 5432, 6379]
+      },
+      "status": "pending",
+      "notes": "ARM capacity waitlist - Future main server with encrypted storage"
+    },
+    "ml-vm1": {
+      "id": "ml-vm1",
+      "name": "ML VM1",
+      "provider": "oracle",
+      "category": "ml",
+      "instanceType": "pending",
+      "specs": {
+        "cpu": "pending",
+        "ram": "pending",
+        "storage": "pending"
+      },
+      "network": {
+        "publicIp": "pending",
+        "privateIp": "pending"
+      },
+      "os": {
+        "name": "pending",
+        "version": "pending"
+      },
+      "ssh": {
+        "user": "pending",
+        "keyPath": "pending",
+        "command": "pending"
+      },
+      "services": [],
+      "ports": {
+        "external": [],
+        "internal": []
+      },
+      "status": "planned",
+      "notes": "Future ML workload VM"
+    },
+    "ml-vm2": {
+      "id": "ml-vm2",
+      "name": "ML VM2",
+      "provider": "oracle",
+      "category": "ml",
+      "instanceType": "pending",
+      "specs": {
+        "cpu": "pending",
+        "ram": "pending",
+        "storage": "pending"
+      },
+      "network": {
+        "publicIp": "pending",
+        "privateIp": "pending"
+      },
+      "os": {
+        "name": "pending",
+        "version": "pending"
+      },
+      "ssh": {
+        "user": "pending",
+        "keyPath": "pending",
+        "command": "pending"
+      },
+      "services": [],
+      "ports": {
+        "external": [],
+        "internal": []
+      },
+      "status": "planned",
+      "notes": "Future ML workload VM"
+    }
+  },
+
+  "serviceCategories": {
+    "infra": {
+      "id": "infra",
+      "name": "Infrastructure",
+      "description": "Core infrastructure services (storage, proxy)"
+    },
+    "productivity": {
+      "id": "productivity",
+      "name": "Productivity",
+      "description": "Productivity and communication tools"
+    },
+    "web": {
+      "id": "web",
+      "name": "Web",
+      "description": "Web analytics and monitoring"
+    },
+    "ml": {
+      "id": "ml",
+      "name": "Machine Learning",
+      "description": "ML and automation services"
     }
   },
 
@@ -166,8 +270,8 @@
     "matomo": {
       "id": "matomo",
       "name": "Matomo Analytics",
-      "category": "analytics",
-      "vmId": "web-server-1",
+      "category": "web",
+      "vmId": "oracle-web-server-1",
       "technology": {
         "image": "matomo:fpm-alpine",
         "database": "mariadb:11.4"
@@ -193,8 +297,8 @@
     "syncthing": {
       "id": "syncthing",
       "name": "Syncthing",
-      "category": "sync",
-      "vmId": "web-server-1",
+      "category": "productivity",
+      "vmId": "oracle-web-server-1",
       "technology": {
         "image": "syncthing/syncthing:latest"
       },
@@ -217,18 +321,21 @@
     },
     "npm-web": {
       "id": "npm-web",
-      "name": "Nginx Proxy Manager",
-      "category": "proxy",
-      "vmId": "web-server-1",
+      "name": "NPM (Web Server)",
+      "category": "infra",
+      "vmId": "oracle-web-server-1",
       "technology": {
         "image": "jc21/nginx-proxy-manager:latest"
       },
       "network": {
         "adminPort": 81,
         "httpPort": 80,
-        "httpsPort": 443
+        "httpsPort": 443,
+        "domain": "oracle-web-server-1.diegonmarcos.com",
+        "ip": "130.110.251.193"
       },
       "urls": {
+        "gui": "https://oracle-web-server-1.diegonmarcos.com",
         "admin": "http://130.110.251.193:81"
       },
       "docker": {
@@ -241,8 +348,8 @@
     "n8n": {
       "id": "n8n",
       "name": "n8n Automation",
-      "category": "automation",
-      "vmId": "services-server-1",
+      "category": "ml",
+      "vmId": "oracle-services-server-1",
       "technology": {
         "image": "n8nio/n8n:latest"
       },
@@ -264,18 +371,21 @@
     },
     "npm-services": {
       "id": "npm-services",
-      "name": "Nginx Proxy Manager",
-      "category": "proxy",
-      "vmId": "services-server-1",
+      "name": "NPM (Services Server)",
+      "category": "infra",
+      "vmId": "oracle-services-server-1",
       "technology": {
         "image": "jc21/nginx-proxy-manager:latest"
       },
       "network": {
         "adminPort": 81,
         "httpPort": 80,
-        "httpsPort": 443
+        "httpsPort": 443,
+        "domain": "oracle-services-server-1.diegonmarcos.com",
+        "ip": "129.151.228.66"
       },
       "urls": {
+        "gui": "https://oracle-services-server-1.diegonmarcos.com",
         "admin": "http://129.151.228.66:81"
       },
       "docker": {
@@ -287,8 +397,8 @@
     "mail": {
       "id": "mail",
       "name": "Mail Server",
-      "category": "email",
-      "vmId": "arm-server",
+      "category": "productivity",
+      "vmId": "oracle-arm-server",
       "technology": {
         "image": "docker-mailserver/docker-mailserver:latest"
       },
@@ -301,40 +411,32 @@
       "features": ["DKIM", "SPF", "DMARC", "Fail2Ban"],
       "status": "development"
     },
-    "nextcloud": {
-      "id": "nextcloud",
-      "name": "Nextcloud",
-      "category": "storage",
-      "vmId": "arm-server",
+    "cloud": {
+      "id": "cloud",
+      "name": "Cloud",
+      "category": "infra",
+      "vmId": "github-pages",
       "technology": {
-        "image": "nextcloud:fpm-alpine",
-        "database": "postgres:16-alpine",
-        "cache": "redis:7-alpine"
+        "hosting": "GitHub Pages"
       },
       "network": {
-        "internalPort": 8082,
-        "externalPort": 443,
         "domain": "cloud.diegonmarcos.com",
         "protocol": "HTTPS"
       },
-      "features": ["File sync", "Calendar", "Contacts", "2FA"],
-      "status": "planned"
+      "urls": {
+        "gui": "https://cloud.diegonmarcos.com"
+      },
+      "features": ["Static website"],
+      "status": "active"
     },
     "terminal": {
       "id": "terminal",
-      "name": "OS Terminal",
-      "category": "devops",
-      "vmId": "arm-server",
+      "name": "OS Terminal Web",
+      "category": "productivity",
+      "vmId": "oracle-arm-server",
       "technology": {
         "image": "wetty or ttyd"
       },
-      "status": "development"
-    },
-    "dashboard": {
-      "id": "dashboard",
-      "name": "DevOps Dashboard",
-      "category": "devops",
-      "vmId": "arm-server",
       "status": "development"
     }
   },
@@ -344,32 +446,32 @@
     "subdomains": {
       "analytics.diegonmarcos.com": {
         "service": "matomo",
-        "vmId": "web-server-1",
+        "vmId": "oracle-web-server-1",
         "ip": "130.110.251.193",
         "ssl": true
       },
       "sync.diegonmarcos.com": {
         "service": "syncthing",
-        "vmId": "web-server-1",
+        "vmId": "oracle-web-server-1",
         "ip": "130.110.251.193",
         "ssl": true
       },
       "n8n.diegonmarcos.com": {
         "service": "n8n",
-        "vmId": "services-server-1",
+        "vmId": "oracle-services-server-1",
         "ip": "129.151.228.66",
         "ssl": true
       },
       "mail.diegonmarcos.com": {
         "service": "mail",
-        "vmId": "arm-server",
+        "vmId": "oracle-arm-server",
         "ip": "pending",
         "ssl": true,
         "status": "planned"
       },
       "cloud.diegonmarcos.com": {
-        "service": "nextcloud",
-        "vmId": "arm-server",
+        "service": "cloud",
+        "vmId": "oracle-arm-server",
         "ip": "pending",
         "ssl": true,
         "status": "planned"
@@ -378,7 +480,7 @@
   },
 
   "firewallRules": {
-    "web-server-1": [
+    "oracle-web-server-1": [
       { "port": 22, "protocol": "TCP", "service": "SSH", "direction": "ingress", "source": "0.0.0.0/0" },
       { "port": 80, "protocol": "TCP", "service": "HTTP", "direction": "ingress", "source": "0.0.0.0/0", "notes": "Redirect to HTTPS" },
       { "port": 443, "protocol": "TCP", "service": "HTTPS", "direction": "ingress", "source": "0.0.0.0/0" },
@@ -388,7 +490,7 @@
       { "port": 8080, "protocol": "TCP", "service": "Matomo", "direction": "internal", "source": "127.0.0.1", "notes": "Proxied via NPM" },
       { "port": 8384, "protocol": "TCP", "service": "Syncthing GUI", "direction": "internal", "source": "127.0.0.1", "notes": "Proxied via NPM" }
     ],
-    "services-server-1": [
+    "oracle-services-server-1": [
       { "port": 22, "protocol": "TCP", "service": "SSH", "direction": "ingress", "source": "0.0.0.0/0" },
       { "port": 80, "protocol": "TCP", "service": "HTTP", "direction": "ingress", "source": "0.0.0.0/0" },
       { "port": 443, "protocol": "TCP", "service": "HTTPS", "direction": "ingress", "source": "0.0.0.0/0" },
@@ -424,8 +526,8 @@
 
   "quickCommands": {
     "ssh": {
-      "web-server-1": "ssh -i ~/.ssh/matomo_key ubuntu@130.110.251.193",
-      "services-server-1": "ssh -i ~/.ssh/matomo_key ubuntu@129.151.228.66"
+      "oracle-web-server-1": "ssh ubuntu@130.110.251.193",
+      "oracle-services-server-1": "ssh ubuntu@129.151.228.66"
     },
     "docker": {
       "status": "sudo docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'",
