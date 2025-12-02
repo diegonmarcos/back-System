@@ -1,795 +1,840 @@
 #!/bin/sh
+#==============================================================================
 # Cloud Infrastructure Dashboard
-# POSIX-compliant TUI for managing VMs and services
-# Version: 1.0.0
-# Last Updated: 2025-12-01
+# A POSIX-compliant TUI for monitoring and managing cloud VMs and services
+#
+# Version: 5.0.0
+# Author: Diego Nepomuceno Marcos
+# Last Updated: 2025-12-02
+#
+# Dependencies: jq, ssh, curl, ping
+# Data Source: cloud-infrastructure.json
+#==============================================================================
 
-set -e
+set -eu
 
-#=============================================================================
+#==============================================================================
 # CONFIGURATION
-#=============================================================================
+#==============================================================================
 
-# Colors (ANSI escape codes)
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-MAGENTA='\033[0;35m'
-CYAN='\033[0;36m'
-WHITE='\033[0;37m'
-BOLD='\033[1m'
-DIM='\033[2m'
-NC='\033[0m' # No Color
+VERSION="5.0.0"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+CONFIG_FILE="${SCRIPT_DIR}/cloud-infrastructure.json"
 
-# VM Configuration
-VM1_NAME="web-server-1"
-VM1_IP="130.110.251.193"
-VM1_USER="ubuntu"
-VM1_KEY="$HOME/.ssh/matomo_key"
-VM1_SERVICES="matomo-app matomo-db nginx-proxy syncthing"
+# Timeouts (seconds)
+SSH_TIMEOUT=5
+PING_TIMEOUT=2
+CURL_TIMEOUT=5
 
-VM2_NAME="services-server-1"
-VM2_IP="129.151.228.66"
-VM2_USER="ubuntu"
-VM2_KEY="$HOME/.ssh/matomo_key"
-VM2_SERVICES="n8n nginx-proxy"
+# Colors
+C_RED='\033[0;31m'
+C_GREEN='\033[0;32m'
+C_YELLOW='\033[0;33m'
+C_BLUE='\033[0;34m'
+C_MAGENTA='\033[0;35m'
+C_CYAN='\033[0;36m'
+C_BOLD='\033[1m'
+C_DIM='\033[2m'
+C_RESET='\033[0m'
 
-# Service to domain mapping
-MATOMO_URL="https://analytics.diegonmarcos.com"
-SYNCTHING_URL="https://sync.diegonmarcos.com"
-N8N_URL="https://n8n.diegonmarcos.com"
+# Box drawing
+BOX_H='-'
+BOX_V='|'
 
-# Timeouts
-SSH_TIMEOUT=10
-PING_TIMEOUT=5
-CURL_TIMEOUT=10
+#==============================================================================
+# DEPENDENCY CHECK
+#==============================================================================
 
-#=============================================================================
-# UTILITY FUNCTIONS
-#=============================================================================
+check_deps() {
+    missing=""
+    for cmd in jq ssh curl ping; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            missing="$missing $cmd"
+        fi
+    done
 
-# Clear screen and move cursor to top
-clear_screen() {
+    if [ -n "$missing" ]; then
+        printf "%bError: Missing dependencies:%s%b\n" "$C_RED" "$missing" "$C_RESET"
+        exit 1
+    fi
+
+    if [ ! -f "$CONFIG_FILE" ]; then
+        printf "%bError: Config not found: %s%b\n" "$C_RED" "$CONFIG_FILE" "$C_RESET"
+        exit 1
+    fi
+}
+
+#==============================================================================
+# JSON DATA ACCESS
+#==============================================================================
+
+get_vm_ids() {
+    jq -r '.virtualMachines | keys[]' "$CONFIG_FILE" 2>/dev/null
+}
+
+get_vm_ids_by_category() {
+    _cat="$1"
+    jq -r ".virtualMachines | to_entries[] | select(.value.category == \"$_cat\") | .key" "$CONFIG_FILE" 2>/dev/null
+}
+
+get_vm_categories() {
+    jq -r '.vmCategories | keys[]' "$CONFIG_FILE" 2>/dev/null
+}
+
+get_vm_category_name() {
+    _cat="$1"
+    jq -r ".vmCategories[\"$_cat\"].name" "$CONFIG_FILE" 2>/dev/null
+}
+
+get_vm() {
+    _id="$1"
+    _prop="$2"
+    jq -r ".virtualMachines[\"$_id\"]$_prop" "$CONFIG_FILE" 2>/dev/null
+}
+
+get_service_ids() {
+    jq -r '.services | keys[]' "$CONFIG_FILE" 2>/dev/null
+}
+
+get_service_ids_by_category() {
+    _cat="$1"
+    jq -r ".services | to_entries[] | select(.value.category == \"$_cat\") | .key" "$CONFIG_FILE" 2>/dev/null
+}
+
+get_service_categories() {
+    jq -r '.serviceCategories | keys[]' "$CONFIG_FILE" 2>/dev/null
+}
+
+get_service_category_name() {
+    _cat="$1"
+    jq -r ".serviceCategories[\"$_cat\"].name" "$CONFIG_FILE" 2>/dev/null
+}
+
+get_svc() {
+    _id="$1"
+    _prop="$2"
+    jq -r ".services[\"$_id\"]$_prop" "$CONFIG_FILE" 2>/dev/null
+}
+
+expand_path() {
+    _path="$1"
+    case "$_path" in
+        "~"*) printf "%s%s" "$HOME" "${_path#\~}" ;;
+        *) printf "%s" "$_path" ;;
+    esac
+}
+
+#==============================================================================
+# HEALTH CHECK FUNCTIONS
+#==============================================================================
+
+check_ping() {
+    _host="$1"
+    ping -c 1 -W "$PING_TIMEOUT" "$_host" >/dev/null 2>&1
+}
+
+check_ssh() {
+    _host="$1"
+    _user="$2"
+    _key="$3"
+    ssh -i "$_key" \
+        -o BatchMode=yes \
+        -o ConnectTimeout="$SSH_TIMEOUT" \
+        -o StrictHostKeyChecking=no \
+        "$_user@$_host" "true" >/dev/null 2>&1
+}
+
+check_http() {
+    _url="$1"
+    [ -z "$_url" ] && return 2
+    [ "$_url" = "null" ] && return 2
+
+    _code=$(curl -s -o /dev/null -w "%{http_code}" \
+            --connect-timeout "$CURL_TIMEOUT" \
+            --max-time "$((CURL_TIMEOUT + 2))" \
+            "$_url" 2>/dev/null || printf "000")
+
+    case "$_code" in
+        2*|3*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+get_vm_status() {
+    _id="$1"
+    _ip=$(get_vm "$_id" ".network.publicIp")
+
+    if [ "$_ip" = "pending" ]; then
+        printf "%b◐ PENDING%b" "$C_YELLOW" "$C_RESET"
+        return
+    fi
+
+    _user=$(get_vm "$_id" ".ssh.user")
+    _key=$(expand_path "$(get_vm "$_id" ".ssh.keyPath")")
+
+    # Use SSH directly (Oracle Cloud blocks ICMP/ping)
+    if check_ssh "$_ip" "$_user" "$_key"; then
+        printf "%b● ONLINE%b" "$C_GREEN" "$C_RESET"
+    else
+        # Fallback: try ping if SSH fails (might be key issue)
+        if check_ping "$_ip"; then
+            printf "%b◐ NO SSH%b" "$C_YELLOW" "$C_RESET"
+        else
+            printf "%b○ OFFLINE%b" "$C_RED" "$C_RESET"
+        fi
+    fi
+}
+
+# Get RAM usage percentage via SSH
+get_vm_ram_percent() {
+    _id="$1"
+    _ip=$(get_vm "$_id" ".network.publicIp")
+
+    if [ "$_ip" = "pending" ]; then
+        printf "-"
+        return
+    fi
+
+    _user=$(get_vm "$_id" ".ssh.user")
+    _key=$(expand_path "$(get_vm "$_id" ".ssh.keyPath")")
+
+    # Get RAM percentage via SSH
+    _ram=$(ssh -i "$_key" \
+        -o BatchMode=yes \
+        -o ConnectTimeout="$SSH_TIMEOUT" \
+        -o StrictHostKeyChecking=no \
+        "$_user@$_ip" "free | awk '/^Mem:/{printf \"%.0f\", \$3/\$2*100}'" 2>/dev/null || printf "-")
+
+    printf "%s" "$_ram"
+}
+
+get_svc_status() {
+    _id="$1"
+    _status=$(get_svc "$_id" ".status")
+
+    if [ "$_status" = "planned" ] || [ "$_status" = "development" ]; then
+        printf "%b◑ DEV%b" "$C_BLUE" "$C_RESET"
+        return
+    fi
+
+    _url=$(get_svc "$_id" ".urls.gui // .urls.admin" 2>/dev/null)
+
+    if [ -z "$_url" ] || [ "$_url" = "null" ]; then
+        printf "%b- N/A%b" "$C_DIM" "$C_RESET"
+        return
+    fi
+
+    if check_http "$_url"; then
+        printf "%b● HEALTHY%b" "$C_GREEN" "$C_RESET"
+    else
+        printf "%b✖ ERROR%b" "$C_RED" "$C_RESET"
+    fi
+}
+
+#==============================================================================
+# TUI HELPERS
+#==============================================================================
+
+cls() {
     printf '\033[2J\033[H'
 }
 
-# Print colored text
-print_color() {
-    color="$1"
-    shift
-    printf "%b%s%b" "$color" "$*" "$NC"
-}
-
-# Print a horizontal line
-print_line() {
-    char="${1:-─}"
-    width="${2:-80}"
-    i=0
-    while [ $i -lt "$width" ]; do
-        printf "%s" "$char"
-        i=$((i + 1))
+hline() {
+    _w="${1:-78}"
+    _c="${2:--}"
+    _i=0
+    while [ "$_i" -lt "$_w" ]; do
+        printf "%s" "$_c"
+        _i=$((_i + 1))
     done
-    printf "\n"
 }
 
-# Print centered text
-print_centered() {
-    text="$1"
-    width="${2:-80}"
-    text_len=${#text}
-    padding=$(( (width - text_len) / 2 ))
-    printf "%*s%s\n" "$padding" "" "$text"
+wait_key() {
+    printf "\n%bPress Enter to continue...%b" "$C_DIM" "$C_RESET"
+    read -r _dummy
 }
 
-# Print a box header
-print_box_header() {
-    title="$1"
-    width="${2:-78}"
-    printf "┌"
-    print_line "─" "$width"
-    printf "┐\n"
-    printf "│ %b%-*s%b │\n" "$BOLD$CYAN" "$((width - 1))" "$title" "$NC"
-    printf "├"
-    print_line "─" "$width"
-    printf "┤\n"
-}
-
-# Print a box footer
-print_box_footer() {
-    width="${1:-78}"
-    printf "└"
-    print_line "─" "$width"
-    printf "┘\n"
-}
-
-# Print a box row
-print_box_row() {
-    content="$1"
-    width="${2:-78}"
-    # Strip ANSI codes for length calculation
-    clean_content=$(printf "%s" "$content" | sed 's/\x1b\[[0-9;]*m//g')
-    content_len=${#clean_content}
-    padding=$((width - content_len - 1))
-    if [ $padding -lt 0 ]; then
-        padding=0
-    fi
-    printf "│ %b%*s │\n" "$content" "$padding" ""
-}
-
-# Show a spinner while waiting
-show_spinner() {
-    pid=$1
-    message="${2:-Loading...}"
-    spin='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
-    i=0
-    while kill -0 "$pid" 2>/dev/null; do
-        i=$(( (i + 1) % 10 ))
-        char=$(printf "%s" "$spin" | cut -c$((i + 1)))
-        printf "\r%b %s %s" "$CYAN" "$char" "$message$NC"
-        sleep 0.1
-    done
-    printf "\r%*s\r" 50 ""
-}
-
-# Press any key to continue
-press_any_key() {
-    printf "\n%bPress any key to continue...%b" "$DIM" "$NC"
-    stty -echo -icanon
-    dd bs=1 count=1 2>/dev/null
-    stty echo icanon
-    printf "\n"
-}
-
-# Confirm action
-confirm_action() {
-    message="$1"
-    printf "%b%s [y/N]: %b" "$YELLOW" "$message" "$NC"
-    read -r response
-    case "$response" in
+confirm() {
+    printf "%b%s [y/N]: %b" "$C_YELLOW" "$1" "$C_RESET"
+    read -r _resp
+    case "$_resp" in
         [yY]|[yY][eE][sS]) return 0 ;;
         *) return 1 ;;
     esac
 }
 
-#=============================================================================
-# STATUS CHECK FUNCTIONS
-#=============================================================================
+#==============================================================================
+# DISPLAY FUNCTIONS
+#==============================================================================
 
-# Check if host is reachable via ping
-check_ping() {
-    host="$1"
-    if ping -c 1 -W "$PING_TIMEOUT" "$host" >/dev/null 2>&1; then
-        return 0
-    else
-        return 1
-    fi
+print_header() {
+    printf "\n"
+    printf "  %b+%s+%b\n" "$C_BOLD$C_CYAN" "$(hline 76 '=')" "$C_RESET"
+    printf "  %b|%b" "$C_BOLD$C_CYAN" "$C_RESET"
+    printf "           CLOUD INFRASTRUCTURE DASHBOARD v%s                   " "$VERSION"
+    printf "%b|%b\n" "$C_BOLD$C_CYAN" "$C_RESET"
+    printf "  %b+%s+%b\n" "$C_BOLD$C_CYAN" "$(hline 76 '=')" "$C_RESET"
+    printf "\n"
 }
 
-# Check if SSH is accessible
-check_ssh() {
-    host="$1"
-    user="$2"
-    key="$3"
-    if ssh -i "$key" -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes -o StrictHostKeyChecking=no "$user@$host" "echo ok" >/dev/null 2>&1; then
-        return 0
-    else
-        return 1
-    fi
+print_vm_table() {
+    printf "  %b+%s+%b\n" "$C_BOLD" "$(hline 76 '-')" "$C_RESET"
+    printf "  %b| VIRTUAL MACHINES                                                         |%b\n" "$C_BOLD" "$C_RESET"
+
+    for _cat in $(get_vm_categories); do
+        _cat_name=$(get_vm_category_name "$_cat")
+        _vms=$(get_vm_ids_by_category "$_cat")
+
+        # Skip empty categories
+        [ -z "$_vms" ] && continue
+
+        printf "  +--------------------------------------------------------------------------+\n"
+        printf "  %b| %-72s |%b\n" "$C_BOLD$C_MAGENTA" "$_cat_name" "$C_RESET"
+        printf "  +----------------------+---------------+----------+------+----------------+\n"
+        printf "  | %-20s | %-13s | %-8s | %4s | %-14s |\n" "NAME" "IP" "STATUS" "RAM%" "TYPE"
+        printf "  +----------------------+---------------+----------+------+----------------+\n"
+
+        for _id in $_vms; do
+            _name=$(get_vm "$_id" ".name" | cut -c1-20)
+            _ip=$(get_vm "$_id" ".network.publicIp" | cut -c1-13)
+            _type=$(get_vm "$_id" ".instanceType" | cut -c1-14)
+            _stat=$(get_vm_status "$_id")
+            _ram=$(get_vm_ram_percent "$_id")
+
+            if [ "$_ram" = "-" ]; then
+                _ram_display="-"
+            else
+                _ram_display="${_ram}%"
+            fi
+
+            printf "  | %-20s | %-13s | %b | %4s | %-14s |\n" "$_name" "$_ip" "$_stat" "$_ram_display" "$_type"
+        done
+    done
+
+    printf "  +----------------------+---------------+----------+------+----------------+\n"
+    printf "\n"
 }
 
-# Check HTTP/HTTPS endpoint
-check_http() {
-    url="$1"
-    if curl -s -o /dev/null -w "%{http_code}" --connect-timeout "$CURL_TIMEOUT" "$url" | grep -q "^[23]"; then
-        return 0
-    else
-        return 1
-    fi
+print_svc_table() {
+    printf "  %b+%s+%b\n" "$C_BOLD" "$(hline 76 '-')" "$C_RESET"
+    printf "  %b| SERVICES                                                                  |%b\n" "$C_BOLD" "$C_RESET"
+
+    for _cat in $(get_service_categories); do
+        _cat_name=$(get_service_category_name "$_cat")
+        _svcs=$(get_service_ids_by_category "$_cat")
+
+        # Skip empty categories
+        [ -z "$_svcs" ] && continue
+
+        printf "  +--------------------------------------------------------------------------+\n"
+        printf "  %b| %-72s |%b\n" "$C_BOLD$C_MAGENTA" "$_cat_name" "$C_RESET"
+        printf "  +----------------------+--------------------------------------+----------+\n"
+        printf "  | %-20s | %-36s | %-8s |\n" "NAME" "URL" "STATUS"
+        printf "  +----------------------+--------------------------------------+----------+\n"
+
+        for _id in $_svcs; do
+            _name=$(get_svc "$_id" ".name" | cut -c1-20)
+            _url=$(get_svc "$_id" ".urls.gui // .urls.admin" 2>/dev/null)
+
+            if [ -n "$_url" ] && [ "$_url" != "null" ]; then
+                _short_url=$(printf "%s" "$_url" | sed 's|https://||;s|http://||' | cut -c1-36)
+            else
+                _short_url="-"
+            fi
+
+            _stat=$(get_svc_status "$_id")
+
+            printf "  | %-20s | %-36s | %b |\n" "$_name" "$_short_url" "$_stat"
+        done
+    done
+
+    printf "  +----------------------+--------------------------------------+----------+\n"
+    printf "\n"
 }
 
-# Get VM status
-get_vm_status() {
-    ip="$1"
-    user="$2"
-    key="$3"
+print_menu() {
+    printf "  %b+%s+%b\n" "$C_BOLD" "$(hline 76 '-')" "$C_RESET"
+    printf "  %b| COMMANDS                                                                  |%b\n" "$C_BOLD" "$C_RESET"
+    printf "  +--------------------------------------------------------------------------+\n"
+    printf "  |                                                                          |\n"
+    printf "  |   %b[1]%b VM Details        %b[4]%b Restart Container   %b[7]%b SSH to VM           |\n" "$C_CYAN" "$C_RESET" "$C_CYAN" "$C_RESET" "$C_CYAN" "$C_RESET"
+    printf "  |   %b[2]%b Container Status  %b[5]%b View Logs           %b[8]%b Open URL            |\n" "$C_CYAN" "$C_RESET" "$C_CYAN" "$C_RESET" "$C_CYAN" "$C_RESET"
+    printf "  |   %b[3]%b Reboot VM         %b[6]%b Stop/Start          %b[R]%b Refresh             |\n" "$C_CYAN" "$C_RESET" "$C_CYAN" "$C_RESET" "$C_CYAN" "$C_RESET"
+    printf "  |                                                                          |\n"
+    printf "  |   %b[S]%b Quick Status      %b[Q]%b Quit                                        |\n" "$C_CYAN" "$C_RESET" "$C_CYAN" "$C_RESET"
+    printf "  |                                                                          |\n"
+    printf "  +--------------------------------------------------------------------------+\n"
+    printf "\n"
+}
 
-    # Check ping first
-    if ! check_ping "$ip"; then
-        printf "OFFLINE"
+display_dashboard() {
+    cls
+    print_header
+    print_vm_table
+    print_svc_table
+    print_menu
+}
+
+#==============================================================================
+# SELECTION HELPERS
+#==============================================================================
+
+# Select VM - outputs VM ID or empty string
+# Usage: vm_id=$(select_vm "online")
+select_vm() {
+    _filter="${1:-all}"
+    _count=0
+    _ids=""
+
+    printf "\n%bSelect VM:%b\n" "$C_BOLD" "$C_RESET"
+
+    for _id in $(get_vm_ids); do
+        _ip=$(get_vm "$_id" ".network.publicIp")
+        _name=$(get_vm "$_id" ".name")
+
+        case "$_filter" in
+            online) [ "$_ip" = "pending" ] && continue ;;
+            pending) [ "$_ip" != "pending" ] && continue ;;
+        esac
+
+        _count=$((_count + 1))
+        _ids="$_ids $_id"
+        printf "  [%d] %s (%s)\n" "$_count" "$_name" "$_ip"
+    done
+
+    printf "  [0] Cancel\n"
+    printf "Choice: "
+    read -r _choice
+
+    if [ -z "$_choice" ] || [ "$_choice" = "0" ]; then
+        printf ""
         return
     fi
 
-    # Check SSH
-    if check_ssh "$ip" "$user" "$key"; then
-        printf "ONLINE"
-    else
-        printf "UNREACHABLE"
-    fi
+    # Extract nth ID
+    printf "%s" "$_ids" | tr ' ' '\n' | sed -n "${_choice}p"
 }
 
-# Get service status from Docker
-get_docker_status() {
-    ip="$1"
-    user="$2"
-    key="$3"
-    container="$4"
+# Select Service - outputs service ID or empty string
+select_service() {
+    _filter="${1:-all}"
+    _count=0
+    _ids=""
 
-    status=$(ssh -i "$key" -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes -o StrictHostKeyChecking=no "$user@$ip" \
-        "sudo docker inspect -f '{{.State.Status}}' $container 2>/dev/null" 2>/dev/null || echo "error")
+    printf "\n%bSelect Service:%b\n" "$C_BOLD" "$C_RESET"
 
-    case "$status" in
-        running) printf "RUNNING" ;;
-        exited) printf "STOPPED" ;;
-        paused) printf "PAUSED" ;;
-        restarting) printf "RESTARTING" ;;
-        *) printf "UNKNOWN" ;;
-    esac
-}
+    for _id in $(get_service_ids); do
+        _name=$(get_svc "$_id" ".name")
+        _container=$(get_svc "$_id" ".docker.containerName")
+        _status=$(get_svc "$_id" ".status")
 
-# Get all container statuses from a VM
-get_all_containers() {
-    ip="$1"
-    user="$2"
-    key="$3"
+        case "$_filter" in
+            docker)
+                [ -z "$_container" ] && continue
+                [ "$_container" = "null" ] && continue
+                ;;
+            active)
+                [ "$_status" = "planned" ] && continue
+                [ "$_status" = "development" ] && continue
+                ;;
+        esac
 
-    ssh -i "$key" -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes -o StrictHostKeyChecking=no "$user@$ip" \
-        "sudo docker ps -a --format '{{.Names}}|{{.Status}}|{{.Ports}}'" 2>/dev/null
-}
+        _count=$((_count + 1))
+        _ids="$_ids $_id"
 
-# Get system stats from VM
-get_system_stats() {
-    ip="$1"
-    user="$2"
-    key="$3"
-
-    ssh -i "$key" -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes -o StrictHostKeyChecking=no "$user@$ip" \
-        "echo \"CPU: \$(top -bn1 | grep 'Cpu(s)' | awk '{print \$2}')% | RAM: \$(free -h | awk '/^Mem:/{print \$3\"/\"\$2}') | Disk: \$(df -h / | awk 'NR==2{print \$3\"/\"\$2}')\"" 2>/dev/null
-}
-
-#=============================================================================
-# SERVICE MANAGEMENT FUNCTIONS
-#=============================================================================
-
-# Restart a Docker container
-restart_container() {
-    ip="$1"
-    user="$2"
-    key="$3"
-    container="$4"
-
-    printf "%bRestarting %s...%b\n" "$YELLOW" "$container" "$NC"
-
-    result=$(ssh -i "$key" -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes -o StrictHostKeyChecking=no "$user@$ip" \
-        "sudo docker restart $container" 2>&1)
-
-    if [ $? -eq 0 ]; then
-        printf "%b✓ Container %s restarted successfully%b\n" "$GREEN" "$container" "$NC"
-        return 0
-    else
-        printf "%b✗ Failed to restart %s: %s%b\n" "$RED" "$container" "$result" "$NC"
-        return 1
-    fi
-}
-
-# Stop a Docker container
-stop_container() {
-    ip="$1"
-    user="$2"
-    key="$3"
-    container="$4"
-
-    printf "%bStopping %s...%b\n" "$YELLOW" "$container" "$NC"
-
-    result=$(ssh -i "$key" -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes -o StrictHostKeyChecking=no "$user@$ip" \
-        "sudo docker stop $container" 2>&1)
-
-    if [ $? -eq 0 ]; then
-        printf "%b✓ Container %s stopped%b\n" "$GREEN" "$container" "$NC"
-        return 0
-    else
-        printf "%b✗ Failed to stop %s: %s%b\n" "$RED" "$container" "$result" "$NC"
-        return 1
-    fi
-}
-
-# Start a Docker container
-start_container() {
-    ip="$1"
-    user="$2"
-    key="$3"
-    container="$4"
-
-    printf "%bStarting %s...%b\n" "$YELLOW" "$container" "$NC"
-
-    result=$(ssh -i "$key" -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes -o StrictHostKeyChecking=no "$user@$ip" \
-        "sudo docker start $container" 2>&1)
-
-    if [ $? -eq 0 ]; then
-        printf "%b✓ Container %s started%b\n" "$GREEN" "$container" "$NC"
-        return 0
-    else
-        printf "%b✗ Failed to start %s: %s%b\n" "$RED" "$container" "$result" "$NC"
-        return 1
-    fi
-}
-
-# View container logs
-view_container_logs() {
-    ip="$1"
-    user="$2"
-    key="$3"
-    container="$4"
-    lines="${5:-50}"
-
-    printf "%b═══ Last %s lines of %s logs ═══%b\n\n" "$CYAN" "$lines" "$container" "$NC"
-
-    ssh -i "$key" -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes -o StrictHostKeyChecking=no "$user@$ip" \
-        "sudo docker logs --tail $lines $container" 2>&1
-
-    printf "\n%b═══ End of logs ═══%b\n" "$CYAN" "$NC"
-}
-
-# Reboot VM
-reboot_vm() {
-    ip="$1"
-    user="$2"
-    key="$3"
-    name="$4"
-
-    if confirm_action "Are you sure you want to reboot $name ($ip)?"; then
-        printf "%bRebooting %s...%b\n" "$YELLOW" "$name" "$NC"
-
-        ssh -i "$key" -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes -o StrictHostKeyChecking=no "$user@$ip" \
-            "sudo reboot" 2>/dev/null
-
-        printf "%b✓ Reboot command sent. VM will be back online in ~1 minute.%b\n" "$GREEN" "$NC"
-        return 0
-    else
-        printf "%bReboot cancelled.%b\n" "$YELLOW" "$NC"
-        return 1
-    fi
-}
-
-#=============================================================================
-# DISPLAY FUNCTIONS
-#=============================================================================
-
-# Display main dashboard
-display_dashboard() {
-    clear_screen
-
-    printf "\n"
-    print_color "$BOLD$CYAN" "  ╔══════════════════════════════════════════════════════════════════════════╗\n"
-    print_color "$BOLD$CYAN" "  ║                    CLOUD INFRASTRUCTURE DASHBOARD                        ║\n"
-    print_color "$BOLD$CYAN" "  ╚══════════════════════════════════════════════════════════════════════════╝\n"
-    printf "\n"
-
-    # VM Status Section
-    print_color "$BOLD$WHITE" "  ┌─ VIRTUAL MACHINES ─────────────────────────────────────────────────────┐\n"
-    printf "  │                                                                          │\n"
-
-    # VM 1 Status
-    printf "  │  "
-    vm1_status=$(get_vm_status "$VM1_IP" "$VM1_USER" "$VM1_KEY")
-    case "$vm1_status" in
-        ONLINE) print_color "$GREEN" "● ONLINE  " ;;
-        OFFLINE) print_color "$RED" "○ OFFLINE " ;;
-        *) print_color "$YELLOW" "◐ UNKNOWN " ;;
-    esac
-    printf " %-20s  %-15s  " "$VM1_NAME" "$VM1_IP"
-    if [ "$vm1_status" = "ONLINE" ]; then
-        stats=$(get_system_stats "$VM1_IP" "$VM1_USER" "$VM1_KEY" 2>/dev/null || echo "N/A")
-        print_color "$DIM" "$stats"
-    fi
-    printf "      │\n"
-
-    # VM 2 Status
-    printf "  │  "
-    vm2_status=$(get_vm_status "$VM2_IP" "$VM2_USER" "$VM2_KEY")
-    case "$vm2_status" in
-        ONLINE) print_color "$GREEN" "● ONLINE  " ;;
-        OFFLINE) print_color "$RED" "○ OFFLINE " ;;
-        *) print_color "$YELLOW" "◐ UNKNOWN " ;;
-    esac
-    printf " %-20s  %-15s  " "$VM2_NAME" "$VM2_IP"
-    if [ "$vm2_status" = "ONLINE" ]; then
-        stats=$(get_system_stats "$VM2_IP" "$VM2_USER" "$VM2_KEY" 2>/dev/null || echo "N/A")
-        print_color "$DIM" "$stats"
-    fi
-    printf "      │\n"
-
-    printf "  │                                                                          │\n"
-    print_color "$BOLD$WHITE" "  └──────────────────────────────────────────────────────────────────────────┘\n"
-    printf "\n"
-
-    # Services Section
-    print_color "$BOLD$WHITE" "  ┌─ SERVICES ────────────────────────────────────────────────────────────────┐\n"
-    printf "  │                                                                          │\n"
-
-    # Check web services
-    printf "  │  "
-    if check_http "$MATOMO_URL" 2>/dev/null; then
-        print_color "$GREEN" "● ONLINE  "
-    else
-        print_color "$RED" "○ OFFLINE "
-    fi
-    printf " %-20s  %s\n" "Matomo Analytics" "$MATOMO_URL"
-    printf "                                                                            │\n"
-
-    printf "  │  "
-    if check_http "$SYNCTHING_URL" 2>/dev/null; then
-        print_color "$GREEN" "● ONLINE  "
-    else
-        print_color "$RED" "○ OFFLINE "
-    fi
-    printf " %-20s  %s\n" "Syncthing" "$SYNCTHING_URL"
-    printf "                                                                            │\n"
-
-    printf "  │  "
-    if check_http "$N8N_URL" 2>/dev/null; then
-        print_color "$GREEN" "● ONLINE  "
-    else
-        print_color "$RED" "○ OFFLINE "
-    fi
-    printf " %-20s  %s\n" "n8n Automation" "$N8N_URL"
-    printf "                                                                            │\n"
-
-    printf "  │                                                                          │\n"
-    print_color "$BOLD$WHITE" "  └──────────────────────────────────────────────────────────────────────────┘\n"
-    printf "\n"
-
-    # Menu
-    print_color "$BOLD$WHITE" "  ┌─ COMMANDS ───────────────────────────────────────────────────────────────┐\n"
-    printf "  │                                                                          │\n"
-    printf "  │   [1] VM Details        [4] Restart Service      [7] SSH to VM          │\n"
-    printf "  │   [2] Container Status  [5] View Logs            [8] Open Service URL   │\n"
-    printf "  │   [3] Reboot VM         [6] Stop/Start Service   [R] Refresh            │\n"
-    printf "  │                                                                          │\n"
-    printf "  │   [Q] Quit                                                              │\n"
-    printf "  │                                                                          │\n"
-    print_color "$BOLD$WHITE" "  └──────────────────────────────────────────────────────────────────────────┘\n"
-    printf "\n"
-}
-
-# Display VM selection menu
-select_vm() {
-    printf "\n%bSelect VM:%b\n" "$BOLD" "$NC"
-    printf "  [1] %s (%s)\n" "$VM1_NAME" "$VM1_IP"
-    printf "  [2] %s (%s)\n" "$VM2_NAME" "$VM2_IP"
-    printf "  [0] Cancel\n"
-    printf "\nChoice: "
-    read -r choice
-
-    case "$choice" in
-        1) echo "1" ;;
-        2) echo "2" ;;
-        *) echo "0" ;;
-    esac
-}
-
-# Display container selection menu for a VM
-select_container() {
-    vm_num="$1"
-
-    case "$vm_num" in
-        1)
-            ip="$VM1_IP"
-            user="$VM1_USER"
-            key="$VM1_KEY"
-            ;;
-        2)
-            ip="$VM2_IP"
-            user="$VM2_USER"
-            key="$VM2_KEY"
-            ;;
-    esac
-
-    printf "\n%bFetching containers...%b\n" "$DIM" "$NC"
-    containers=$(get_all_containers "$ip" "$user" "$key")
-
-    if [ -z "$containers" ]; then
-        printf "%bNo containers found or VM unreachable%b\n" "$RED" "$NC"
-        return 1
-    fi
-
-    printf "\n%bSelect Container:%b\n" "$BOLD" "$NC"
-    i=1
-    echo "$containers" | while IFS='|' read -r name status ports; do
-        printf "  [%d] %-20s %s\n" "$i" "$name" "$status"
-        i=$((i + 1))
-    done
-    printf "  [0] Cancel\n"
-    printf "\nChoice: "
-    read -r choice
-
-    if [ "$choice" = "0" ] || [ -z "$choice" ]; then
-        return 1
-    fi
-
-    container=$(echo "$containers" | sed -n "${choice}p" | cut -d'|' -f1)
-    echo "$container"
-}
-
-# Display VM details
-display_vm_details() {
-    vm_num="$1"
-
-    case "$vm_num" in
-        1)
-            name="$VM1_NAME"
-            ip="$VM1_IP"
-            user="$VM1_USER"
-            key="$VM1_KEY"
-            ;;
-        2)
-            name="$VM2_NAME"
-            ip="$VM2_IP"
-            user="$VM2_USER"
-            key="$VM2_KEY"
-            ;;
-    esac
-
-    clear_screen
-    printf "\n"
-    print_color "$BOLD$CYAN" "  ═══ VM DETAILS: $name ═══\n"
-    printf "\n"
-
-    printf "  %bBasic Info:%b\n" "$BOLD" "$NC"
-    printf "  ├─ Name: %s\n" "$name"
-    printf "  ├─ IP: %s\n" "$ip"
-    printf "  └─ User: %s\n" "$user"
-    printf "\n"
-
-    printf "  %bFetching live data...%b\n" "$DIM" "$NC"
-
-    # Get detailed system info
-    ssh -i "$key" -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes -o StrictHostKeyChecking=no "$user@$ip" '
-        echo "  System Info:"
-        echo "  ├─ Hostname: $(hostname)"
-        echo "  ├─ Uptime: $(uptime -p)"
-        echo "  ├─ Kernel: $(uname -r)"
-        echo "  └─ Arch: $(uname -m)"
-        echo ""
-        echo "  Resources:"
-        echo "  ├─ CPU: $(nproc) cores, $(top -bn1 | grep "Cpu(s)" | awk "{print \$2}")% used"
-        echo "  ├─ RAM: $(free -h | awk "/^Mem:/{print \$3\"/\"\$2\" used\"}")"
-        echo "  └─ Disk: $(df -h / | awk "NR==2{print \$3\"/\"\$2\" used (\"100-\$5\"%% free)\"}")"
-        echo ""
-        echo "  Docker Containers:"
-        sudo docker ps -a --format "  ├─ {{.Names}}: {{.Status}}" | head -10
-        echo "  └─ ($(sudo docker ps -q | wc -l) running)"
-    ' 2>/dev/null || printf "  %bFailed to connect to VM%b\n" "$RED" "$NC"
-
-    printf "\n"
-}
-
-# Display container status for a VM
-display_container_status() {
-    vm_num="$1"
-
-    case "$vm_num" in
-        1)
-            name="$VM1_NAME"
-            ip="$VM1_IP"
-            user="$VM1_USER"
-            key="$VM1_KEY"
-            ;;
-        2)
-            name="$VM2_NAME"
-            ip="$VM2_IP"
-            user="$VM2_USER"
-            key="$VM2_KEY"
-            ;;
-    esac
-
-    clear_screen
-    printf "\n"
-    print_color "$BOLD$CYAN" "  ═══ CONTAINERS: $name ═══\n"
-    printf "\n"
-
-    printf "  %b%-25s %-15s %-30s%b\n" "$BOLD" "CONTAINER" "STATUS" "PORTS" "$NC"
-    print_line "─" 75
-    printf "\n"
-
-    ssh -i "$key" -o ConnectTimeout="$SSH_TIMEOUT" -o BatchMode=yes -o StrictHostKeyChecking=no "$user@$ip" \
-        'sudo docker ps -a --format "{{.Names}}|{{.Status}}|{{.Ports}}"' 2>/dev/null | \
-    while IFS='|' read -r cname cstatus cports; do
-        # Color based on status
-        if echo "$cstatus" | grep -q "^Up"; then
-            status_color="$GREEN"
+        if [ -n "$_container" ] && [ "$_container" != "null" ]; then
+            printf "  [%d] %s (container: %s)\n" "$_count" "$_name" "$_container"
         else
-            status_color="$RED"
+            printf "  [%d] %s\n" "$_count" "$_name"
         fi
-
-        # Truncate long values
-        cstatus=$(echo "$cstatus" | cut -c1-15)
-        cports=$(echo "$cports" | cut -c1-30)
-
-        printf "  %-25s %b%-15s%b %-30s\n" "$cname" "$status_color" "$cstatus" "$NC" "$cports"
     done
+
+    printf "  [0] Cancel\n"
+    printf "Choice: "
+    read -r _choice
+
+    if [ -z "$_choice" ] || [ "$_choice" = "0" ]; then
+        printf ""
+        return
+    fi
+
+    printf "%s" "$_ids" | tr ' ' '\n' | sed -n "${_choice}p"
+}
+
+#==============================================================================
+# ACTIONS
+#==============================================================================
+
+action_vm_details() {
+    _vm_id=$(select_vm "online")
+    [ -z "$_vm_id" ] && return
+
+    _ip=$(get_vm "$_vm_id" ".network.publicIp")
+    _user=$(get_vm "$_vm_id" ".ssh.user")
+    _key=$(expand_path "$(get_vm "$_vm_id" ".ssh.keyPath")")
+    _name=$(get_vm "$_vm_id" ".name")
+
+    cls
+    printf "\n%b=== VM Details: %s ===%b\n\n" "$C_BOLD$C_CYAN" "$_name" "$C_RESET"
+
+    printf "%bLocal Config:%b\n" "$C_BOLD" "$C_RESET"
+    printf "  ID:       %s\n" "$_vm_id"
+    printf "  IP:       %s\n" "$_ip"
+    printf "  User:     %s\n" "$_user"
+    printf "  Provider: %s\n" "$(get_vm "$_vm_id" ".provider")"
+    printf "  Category: %s\n" "$(get_vm "$_vm_id" ".category")"
+    printf "  Type:     %s\n\n" "$(get_vm "$_vm_id" ".instanceType")"
+
+    printf "%bRemote System Info:%b\n" "$C_BOLD" "$C_RESET"
+    ssh -i "$_key" \
+        -o ConnectTimeout="$SSH_TIMEOUT" \
+        -o StrictHostKeyChecking=no \
+        "$_user@$_ip" '
+echo "  Hostname: $(hostname)"
+echo "  Uptime:   $(uptime -p 2>/dev/null || uptime)"
+echo "  Kernel:   $(uname -r)"
+echo ""
+echo "Resources:"
+echo "  CPU:      $(nproc) cores"
+echo "  RAM:      $(free -h | awk "/^Mem:/{print \$3 \"/\" \$2}")"
+echo "  RAM %:    $(free | awk "/^Mem:/{printf \"%.1f%%\", \$3/\$2*100}")"
+echo "  Disk:     $(df -h / | awk "NR==2{print \$3 \"/\" \$2}")"
+echo ""
+echo "Docker:"
+echo "  Running:  $(sudo docker ps -q 2>/dev/null | wc -l) containers"
+' 2>/dev/null || printf "  %bFailed to connect%b\n" "$C_RED" "$C_RESET"
+
+    wait_key
+}
+
+action_container_status() {
+    _vm_id=$(select_vm "online")
+    [ -z "$_vm_id" ] && return
+
+    _ip=$(get_vm "$_vm_id" ".network.publicIp")
+    _user=$(get_vm "$_vm_id" ".ssh.user")
+    _key=$(expand_path "$(get_vm "$_vm_id" ".ssh.keyPath")")
+    _name=$(get_vm "$_vm_id" ".name")
+
+    cls
+    printf "\n%b=== Containers on %s ===%b\n\n" "$C_BOLD$C_CYAN" "$_name" "$C_RESET"
+
+    ssh -i "$_key" \
+        -o ConnectTimeout="$SSH_TIMEOUT" \
+        -o StrictHostKeyChecking=no \
+        "$_user@$_ip" \
+        'sudo docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"' \
+        2>/dev/null || printf "%bFailed to connect%b\n" "$C_RED" "$C_RESET"
+
+    wait_key
+}
+
+action_reboot_vm() {
+    _vm_id=$(select_vm "online")
+    [ -z "$_vm_id" ] && return
+
+    _name=$(get_vm "$_vm_id" ".name")
+    _ip=$(get_vm "$_vm_id" ".network.publicIp")
+    _user=$(get_vm "$_vm_id" ".ssh.user")
+    _key=$(expand_path "$(get_vm "$_vm_id" ".ssh.keyPath")")
 
     printf "\n"
-}
-
-#=============================================================================
-# MAIN MENU HANDLERS
-#=============================================================================
-
-handle_vm_details() {
-    vm=$(select_vm)
-    if [ "$vm" != "0" ]; then
-        display_vm_details "$vm"
-        press_any_key
+    if confirm "REBOOT ${_name} (${_ip})?"; then
+        printf "%bSending reboot command...%b\n" "$C_YELLOW" "$C_RESET"
+        ssh -i "$_key" \
+            -o ConnectTimeout="$SSH_TIMEOUT" \
+            -o StrictHostKeyChecking=no \
+            "$_user@$_ip" 'sudo reboot' 2>/dev/null || true
+        printf "%bReboot signal sent.%b\n" "$C_GREEN" "$C_RESET"
+        wait_key
     fi
 }
 
-handle_container_status() {
-    vm=$(select_vm)
-    if [ "$vm" != "0" ]; then
-        display_container_status "$vm"
-        press_any_key
+action_restart_container() {
+    _svc_id=$(select_service "docker")
+    [ -z "$_svc_id" ] && return
+
+    _name=$(get_svc "$_svc_id" ".name")
+    _container=$(get_svc "$_svc_id" ".docker.containerName")
+    _vm_id=$(get_svc "$_svc_id" ".vmId")
+    _ip=$(get_vm "$_vm_id" ".network.publicIp")
+    _user=$(get_vm "$_vm_id" ".ssh.user")
+    _key=$(expand_path "$(get_vm "$_vm_id" ".ssh.keyPath")")
+
+    printf "\n"
+    if confirm "Restart container '${_container}' (${_name})?"; then
+        printf "%bRestarting...%b\n" "$C_YELLOW" "$C_RESET"
+        ssh -i "$_key" \
+            -o ConnectTimeout="$SSH_TIMEOUT" \
+            -o StrictHostKeyChecking=no \
+            "$_user@$_ip" "sudo docker restart $_container" 2>/dev/null
+        printf "%bDone.%b\n" "$C_GREEN" "$C_RESET"
+        wait_key
     fi
 }
 
-handle_reboot_vm() {
-    vm=$(select_vm)
-    case "$vm" in
-        1) reboot_vm "$VM1_IP" "$VM1_USER" "$VM1_KEY" "$VM1_NAME" ;;
-        2) reboot_vm "$VM2_IP" "$VM2_USER" "$VM2_KEY" "$VM2_NAME" ;;
-    esac
-    [ "$vm" != "0" ] && press_any_key
+action_view_logs() {
+    _svc_id=$(select_service "docker")
+    [ -z "$_svc_id" ] && return
+
+    _container=$(get_svc "$_svc_id" ".docker.containerName")
+    _vm_id=$(get_svc "$_svc_id" ".vmId")
+    _ip=$(get_vm "$_vm_id" ".network.publicIp")
+    _user=$(get_vm "$_vm_id" ".ssh.user")
+    _key=$(expand_path "$(get_vm "$_vm_id" ".ssh.keyPath")")
+
+    printf "Lines to show [50]: "
+    read -r _lines
+    _lines="${_lines:-50}"
+
+    cls
+    printf "\n%b=== Logs: %s (last %s lines) ===%b\n\n" "$C_BOLD$C_CYAN" "$_container" "$_lines" "$C_RESET"
+
+    ssh -i "$_key" \
+        -o ConnectTimeout="$SSH_TIMEOUT" \
+        -o StrictHostKeyChecking=no \
+        "$_user@$_ip" "sudo docker logs --tail $_lines $_container" 2>&1
+
+    wait_key
 }
 
-handle_restart_service() {
-    vm=$(select_vm)
-    if [ "$vm" != "0" ]; then
-        container=$(select_container "$vm")
-        if [ -n "$container" ]; then
-            case "$vm" in
-                1) restart_container "$VM1_IP" "$VM1_USER" "$VM1_KEY" "$container" ;;
-                2) restart_container "$VM2_IP" "$VM2_USER" "$VM2_KEY" "$container" ;;
-            esac
-            press_any_key
-        fi
-    fi
-}
+action_stop_start() {
+    _svc_id=$(select_service "docker")
+    [ -z "$_svc_id" ] && return
 
-handle_view_logs() {
-    vm=$(select_vm)
-    if [ "$vm" != "0" ]; then
-        container=$(select_container "$vm")
-        if [ -n "$container" ]; then
-            printf "\nLines to show [50]: "
-            read -r lines
-            lines=${lines:-50}
-            clear_screen
-            case "$vm" in
-                1) view_container_logs "$VM1_IP" "$VM1_USER" "$VM1_KEY" "$container" "$lines" ;;
-                2) view_container_logs "$VM2_IP" "$VM2_USER" "$VM2_KEY" "$container" "$lines" ;;
-            esac
-            press_any_key
-        fi
-    fi
-}
+    _container=$(get_svc "$_svc_id" ".docker.containerName")
+    _vm_id=$(get_svc "$_svc_id" ".vmId")
+    _ip=$(get_vm "$_vm_id" ".network.publicIp")
+    _user=$(get_vm "$_vm_id" ".ssh.user")
+    _key=$(expand_path "$(get_vm "$_vm_id" ".ssh.keyPath")")
 
-handle_stop_start_service() {
-    vm=$(select_vm)
-    if [ "$vm" != "0" ]; then
-        container=$(select_container "$vm")
-        if [ -n "$container" ]; then
-            printf "\n[1] Start  [2] Stop  [0] Cancel: "
-            read -r action
-            case "$action" in
-                1)
-                    case "$vm" in
-                        1) start_container "$VM1_IP" "$VM1_USER" "$VM1_KEY" "$container" ;;
-                        2) start_container "$VM2_IP" "$VM2_USER" "$VM2_KEY" "$container" ;;
-                    esac
-                    ;;
-                2)
-                    case "$vm" in
-                        1) stop_container "$VM1_IP" "$VM1_USER" "$VM1_KEY" "$container" ;;
-                        2) stop_container "$VM2_IP" "$VM2_USER" "$VM2_KEY" "$container" ;;
-                    esac
-                    ;;
-            esac
-            [ "$action" != "0" ] && press_any_key
-        fi
-    fi
-}
+    printf "\n  [1] Start\n  [2] Stop\nAction: "
+    read -r _action
 
-handle_ssh_to_vm() {
-    vm=$(select_vm)
-    case "$vm" in
-        1)
-            printf "\n%bConnecting to %s...%b\n" "$CYAN" "$VM1_NAME" "$NC"
-            printf "%bType 'exit' to return to dashboard%b\n\n" "$DIM" "$NC"
-            ssh -i "$VM1_KEY" -o StrictHostKeyChecking=no "$VM1_USER@$VM1_IP"
-            ;;
-        2)
-            printf "\n%bConnecting to %s...%b\n" "$CYAN" "$VM2_NAME" "$NC"
-            printf "%bType 'exit' to return to dashboard%b\n\n" "$DIM" "$NC"
-            ssh -i "$VM2_KEY" -o StrictHostKeyChecking=no "$VM2_USER@$VM2_IP"
-            ;;
-    esac
-}
-
-handle_open_service_url() {
-    printf "\n%bSelect Service:%b\n" "$BOLD" "$NC"
-    printf "  [1] Matomo Analytics (%s)\n" "$MATOMO_URL"
-    printf "  [2] Syncthing (%s)\n" "$SYNCTHING_URL"
-    printf "  [3] n8n Automation (%s)\n" "$N8N_URL"
-    printf "  [4] NPM Admin - web-server-1 (http://%s:81)\n" "$VM1_IP"
-    printf "  [5] NPM Admin - services-server-1 (http://%s:81)\n" "$VM2_IP"
-    printf "  [0] Cancel\n"
-    printf "\nChoice: "
-    read -r choice
-
-    url=""
-    case "$choice" in
-        1) url="$MATOMO_URL" ;;
-        2) url="$SYNCTHING_URL" ;;
-        3) url="$N8N_URL" ;;
-        4) url="http://$VM1_IP:81" ;;
-        5) url="http://$VM2_IP:81" ;;
+    case "$_action" in
+        1) _cmd="start" ;;
+        2) _cmd="stop" ;;
+        *) return ;;
     esac
 
-    if [ -n "$url" ]; then
-        printf "%bOpening %s...%b\n" "$CYAN" "$url" "$NC"
-        # Try different browsers
-        if command -v xdg-open >/dev/null 2>&1; then
-            xdg-open "$url" 2>/dev/null &
-        elif command -v open >/dev/null 2>&1; then
-            open "$url" 2>/dev/null &
-        else
-            printf "%bCouldn't open browser. URL: %s%b\n" "$YELLOW" "$url" "$NC"
-        fi
-        sleep 1
+    if confirm "${_cmd} container '${_container}'?"; then
+        printf "%bExecuting docker %s...%b\n" "$C_YELLOW" "$_cmd" "$C_RESET"
+        ssh -i "$_key" \
+            -o ConnectTimeout="$SSH_TIMEOUT" \
+            -o StrictHostKeyChecking=no \
+            "$_user@$_ip" "sudo docker $_cmd $_container" 2>/dev/null
+        printf "%bDone.%b\n" "$C_GREEN" "$C_RESET"
+        wait_key
     fi
 }
 
-#=============================================================================
-# MAIN LOOP
-#=============================================================================
+action_ssh() {
+    _vm_id=$(select_vm "online")
+    [ -z "$_vm_id" ] && return
 
-main() {
-    # Check dependencies
-    for cmd in ssh curl ping; do
-        if ! command -v "$cmd" >/dev/null 2>&1; then
-            printf "%bError: Required command '%s' not found%b\n" "$RED" "$cmd" "$NC"
-            exit 1
-        fi
+    _ip=$(get_vm "$_vm_id" ".network.publicIp")
+    _user=$(get_vm "$_vm_id" ".ssh.user")
+    _key=$(expand_path "$(get_vm "$_vm_id" ".ssh.keyPath")")
+    _name=$(get_vm "$_vm_id" ".name")
+
+    printf "\n%bConnecting to %s...%b\n" "$C_CYAN" "$_name" "$C_RESET"
+    printf "%bType 'exit' to return%b\n\n" "$C_DIM" "$C_RESET"
+
+    ssh -i "$_key" -o StrictHostKeyChecking=no "$_user@$_ip"
+}
+
+action_open_url() {
+    _svc_id=$(select_service "active")
+    [ -z "$_svc_id" ] && return
+
+    _url=$(get_svc "$_svc_id" ".urls.gui // .urls.admin" 2>/dev/null)
+
+    if [ -z "$_url" ] || [ "$_url" = "null" ]; then
+        printf "%bNo URL available.%b\n" "$C_YELLOW" "$C_RESET"
+        wait_key
+        return
+    fi
+
+    printf "%bOpening %s...%b\n" "$C_CYAN" "$_url" "$C_RESET"
+
+    if command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "$_url" >/dev/null 2>&1 &
+    elif command -v open >/dev/null 2>&1; then
+        open "$_url" >/dev/null 2>&1 &
+    else
+        printf "%bNo browser opener. URL: %s%b\n" "$C_YELLOW" "$_url" "$C_RESET"
+        wait_key
+    fi
+
+    sleep 1
+}
+
+action_quick_status() {
+    printf "\n%b=== Quick Status ===%b\n\n" "$C_BOLD$C_CYAN" "$C_RESET"
+
+    for _cat in $(get_vm_categories); do
+        _cat_name=$(get_vm_category_name "$_cat")
+        _vms=$(get_vm_ids_by_category "$_cat")
+        [ -z "$_vms" ] && continue
+
+        printf "%b%s VMs:%b\n" "$C_BOLD$C_MAGENTA" "$_cat_name" "$C_RESET"
+        for _id in $_vms; do
+            _name=$(get_vm "$_id" ".name")
+            _ip=$(get_vm "$_id" ".network.publicIp")
+            _stat=$(get_vm_status "$_id")
+            _ram=$(get_vm_ram_percent "$_id")
+            if [ "$_ram" = "-" ]; then
+                printf "  %-25s %-16s %b\n" "$_name" "$_ip" "$_stat"
+            else
+                printf "  %-25s %-16s %b RAM: %s%%\n" "$_name" "$_ip" "$_stat" "$_ram"
+            fi
+        done
+        printf "\n"
     done
 
+    for _cat in $(get_service_categories); do
+        _cat_name=$(get_service_category_name "$_cat")
+        _svcs=$(get_service_ids_by_category "$_cat")
+        [ -z "$_svcs" ] && continue
+
+        printf "%b%s Services:%b\n" "$C_BOLD$C_MAGENTA" "$_cat_name" "$C_RESET"
+        for _id in $_svcs; do
+            _name=$(get_svc "$_id" ".name")
+            _stat=$(get_svc_status "$_id")
+            printf "  %-25s %b\n" "$_name" "$_stat"
+        done
+        printf "\n"
+    done
+
+    wait_key
+}
+
+#==============================================================================
+# CLI MODE
+#==============================================================================
+
+cli_status() {
+    printf "Cloud Infrastructure Status\n"
+    printf "============================\n\n"
+
+    for _cat in $(get_vm_categories); do
+        _cat_name=$(get_vm_category_name "$_cat")
+        _vms=$(get_vm_ids_by_category "$_cat")
+        [ -z "$_vms" ] && continue
+
+        printf "%s VMs:\n" "$_cat_name"
+        for _id in $_vms; do
+            _name=$(get_vm "$_id" ".name")
+            _ip=$(get_vm "$_id" ".network.publicIp")
+
+            if [ "$_ip" = "pending" ]; then
+                printf "  %s: PENDING\n" "$_name"
+            else
+                _user=$(get_vm "$_id" ".ssh.user")
+                _key=$(expand_path "$(get_vm "$_id" ".ssh.keyPath")")
+                if check_ssh "$_ip" "$_user" "$_key"; then
+                    printf "  %s (%s): ONLINE\n" "$_name" "$_ip"
+                else
+                    printf "  %s (%s): OFFLINE\n" "$_name" "$_ip"
+                fi
+            fi
+        done
+        printf "\n"
+    done
+
+    for _cat in $(get_service_categories); do
+        _cat_name=$(get_service_category_name "$_cat")
+        _svcs=$(get_service_ids_by_category "$_cat")
+        [ -z "$_svcs" ] && continue
+
+        printf "%s Services:\n" "$_cat_name"
+        for _id in $_svcs; do
+            _name=$(get_svc "$_id" ".name")
+            _url=$(get_svc "$_id" ".urls.gui // .urls.admin" 2>/dev/null)
+            _status=$(get_svc "$_id" ".status")
+
+            if [ "$_status" = "planned" ] || [ "$_status" = "development" ]; then
+                printf "  %s: DEV/PLANNED\n" "$_name"
+            elif [ -z "$_url" ] || [ "$_url" = "null" ]; then
+                printf "  %s: NO URL\n" "$_name"
+            elif check_http "$_url"; then
+                printf "  %s: HEALTHY\n" "$_name"
+            else
+                printf "  %s: ERROR\n" "$_name"
+            fi
+        done
+        printf "\n"
+    done
+}
+
+cli_help() {
+    cat << EOF
+Cloud Infrastructure Dashboard v${VERSION}
+
+Usage: $(basename "$0") [command]
+
+Commands:
+  (no args)     Launch interactive TUI dashboard
+  status        Show quick status of all VMs and services
+  help          Show this help message
+
+Interactive Commands:
+  1 - VM Details          4 - Restart Container    7 - SSH to VM
+  2 - Container Status    5 - View Logs            8 - Open URL
+  3 - Reboot VM           6 - Stop/Start           R - Refresh
+  S - Quick Status        Q - Quit
+
+Config: ${CONFIG_FILE}
+EOF
+}
+
+#==============================================================================
+# MAIN
+#==============================================================================
+
+main_loop() {
     while true; do
         display_dashboard
+        printf "  Command: "
+        read -r _cmd
 
-        printf "  Enter command: "
-        read -r cmd
-
-        case "$cmd" in
-            1) handle_vm_details ;;
-            2) handle_container_status ;;
-            3) handle_reboot_vm ;;
-            4) handle_restart_service ;;
-            5) handle_view_logs ;;
-            6) handle_stop_start_service ;;
-            7) handle_ssh_to_vm ;;
-            8) handle_open_service_url ;;
-            [rR]) ;; # Refresh - just loop again
+        case "$_cmd" in
+            1) action_vm_details ;;
+            2) action_container_status ;;
+            3) action_reboot_vm ;;
+            4) action_restart_container ;;
+            5) action_view_logs ;;
+            6) action_stop_start ;;
+            7) action_ssh ;;
+            8) action_open_url ;;
+            [sS]) action_quick_status ;;
+            [rR]) ;; # refresh
             [qQ])
-                clear_screen
-                printf "%bGoodbye!%b\n" "$CYAN" "$NC"
+                cls
+                printf "%bGoodbye!%b\n" "$C_CYAN" "$C_RESET"
                 exit 0
                 ;;
             *)
-                printf "%bInvalid command%b\n" "$RED" "$NC"
+                printf "%bInvalid command%b\n" "$C_RED" "$C_RESET"
                 sleep 1
                 ;;
         esac
     done
 }
 
-# Run main function
+main() {
+    check_deps
+
+    case "${1:-}" in
+        status) cli_status ;;
+        help|--help|-h) cli_help ;;
+        "") main_loop ;;
+        *)
+            printf "Unknown command: %s\n" "$1"
+            cli_help
+            exit 1
+            ;;
+    esac
+}
+
 main "$@"
