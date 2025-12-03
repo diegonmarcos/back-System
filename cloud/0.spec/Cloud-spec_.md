@@ -1,8 +1,8 @@
 # Cloud Infrastructure Specification
 
 > **Single Source of Truth**: `cloud-infrastructure.json`
-> **Dashboard**: `cloud-dashboard.sh`
-> **Version**: 2.1.0 | **Updated**: 2025-12-02
+> **Dashboard**: `cloud-dashboard.py` (TUI + Flask API)
+> **Version**: 3.0.0 | **Updated**: 2025-12-03
 
 ---
 
@@ -27,12 +27,12 @@
 ## 1. Quick Reference
 
 ### Active Services
-| Service | URL | Status |
-|---------|-----|--------|
-| Matomo Analytics | https://analytics.diegonmarcos.com | Active |
-| Syncthing | https://sync.diegonmarcos.com | Active |
-| n8n Automation | https://n8n.diegonmarcos.com | Active |
-| Cloud | https://cloud.diegonmarcos.com | Active |
+| Service ID | Display Name | URL | Status |
+|------------|--------------|-----|--------|
+| analytics-app | Matomo Analytics | https://analytics.diegonmarcos.com | on |
+| sync-app | Syncthing | https://sync.diegonmarcos.com | on |
+| n8n-infra-app | n8n (Infra) | https://n8n.diegonmarcos.com | on |
+| cloud-app | Cloud Dashboard | https://cloud.diegonmarcos.com | on |
 
 ### Proxy Admin Panels
 | Server | URL |
@@ -197,38 +197,43 @@ ssh ubuntu@129.151.228.66
 
 ### 4.2 Service Resource Requirements
 
-| Status | Service | Category | RAM (Avg) | Storage (Avg) | Bandwidth (Avg) | Notes |
-|--------|---------|----------|-----------|---------------|-----------------|-------|
-| | **n8n (AI)** | ML | | | | AI Agentic workflows |
-| dev | ↳ n8n-ai | | 1-4 GB | 2-10 GB | 5-20 GB/mo | LLM context + workflows |
-| dev | ↳ n8n-ai-db (PostgreSQL) | | 256-512 MB | 1-10 GB | - | Varies by usage |
-| | **Mail Server** | Productivity | | | | Email stack |
-| dev | ↳ mailserver | | 512 MB - 1 GB | 5-50 GB | 1-10 GB/mo | Mailboxes + indexes |
-| dev | ↳ mail-db (SQLite) | | 8-32 MB | Variable | - | Embedded, minimal overhead |
-| | **Matomo** | Web | | | | Analytics platform |
-| on | ↳ matomo-app | | 256-512 MB | 2-5 GB | 500 MB-2 GB/mo | PHP FPM Alpine |
-| on | ↳ matomo-db (MariaDB) | | 256-512 MB | 1-10 GB | - | Grows with analytics data |
-| | **Gitea** | Productivity | | | | Git hosting |
-| dev | ↳ gitea | | 256-512 MB | 1-5 GB | 2-10 GB/mo | Web + Git server |
-| dev | ↳ gitea-db (SQLite) | | 8-32 MB | Variable | - | Embedded DB |
-| dev | ↳ gitea-repos-db | | - | ~10 GB | - | Git repositories storage |
-| | **n8n (Infra)** | Automation | | | | Workflow automation |
-| on | ↳ n8n | | 256-512 MB | 500 MB - 2 GB | 1-5 GB/mo | Workflows + execution logs |
-| | **Sync** | Productivity | | | | File sync |
-| on | ↳ syncthing | | 128-256 MB | 100-500 MB | 10-50 GB/mo | App + config |
+| Status | Service ID | Category | RAM (Avg) | Storage (Avg) | Bandwidth (Avg) | Notes |
+|--------|------------|----------|-----------|---------------|-----------------|-------|
+| | **n8n-ai** | ML | | | | AI Agentic workflows |
+| hold | ↳ n8n-ai-app | | 1-4 GB | 2-10 GB | 5-20 GB/mo | LLM context + workflows |
+| hold | ↳ n8n-ai-db | | 256-512 MB | 1-10 GB | - | PostgreSQL - varies by usage |
+| | **mail** | Productivity | | | | Email stack |
+| dev | ↳ mail-app | | 512 MB - 1 GB | 5-50 GB | 1-10 GB/mo | Mailboxes + indexes |
+| dev | ↳ mail-db | | 8-32 MB | Variable | - | SQLite embedded |
+| | **analytics** | Web | | | | Matomo Analytics platform |
+| on | ↳ analytics-app | | 256-512 MB | 2-5 GB | 500 MB-2 GB/mo | PHP FPM Alpine |
+| on | ↳ analytics-db | | 256-512 MB | 1-10 GB | - | MariaDB - grows with data |
+| | **git** | Productivity | | | | Gitea hosting |
+| dev | ↳ git-app | | 256-512 MB | 1-5 GB | 2-10 GB/mo | Web + Git server |
+| dev | ↳ git-db | | 8-32 MB | Variable | - | SQLite embedded |
+| dev | ↳ git-repos | | - | ~10 GB | - | Git repositories storage |
+| | **n8n-infra** | Automation | | | | Workflow automation |
+| on | ↳ n8n-infra-app | | 256-512 MB | 500 MB - 2 GB | 1-5 GB/mo | Workflows + execution logs |
+| | **sync** | Productivity | | | | Syncthing file sync |
+| on | ↳ sync-app | | 128-256 MB | 100-500 MB | 10-50 GB/mo | App + config |
 | on | ↳ sync-index-db | | - | 100-500 MB | - | File metadata index |
-| dev | ↳ sync-files-db | | - | ~100 GB | - | Synced files storage |
+| on | ↳ sync-files-db | | - | ~100 GB | - | Synced files storage |
 | on | ↳ sync-obj-db | | - | ~5 GB | - | Object/blob storage |
-| | **NPM** | Infrastructure | | | | Reverse proxy |
-| on | ↳ nginx-proxy | | 128-256 MB | 100-500 MB | 5-20 GB/mo | SSL certs + configs |
-| | **Redis** | Cache | | | | In-memory store |
-| dev | ↳ redis | | 64-256 MB | 100 MB - 1 GB | - | Session/cache data |
-| | **OpenVPN** | Infrastructure | | | | VPN server |
-| dev | ↳ openvpn | | 64-128 MB | 50-100 MB | 5-50 GB/mo | Client configs + certs |
-| | **Flask Server** | Infrastructure | | | | Cloud Dashboard API |
-| dev | ↳ flask-server | | 64-128 MB | 50-100 MB | 100-500 MB/mo | Lightweight API |
-| | **Web Terminal** | Productivity | | | | Browser shell |
-| dev | ↳ wetty/ttyd | | 64-128 MB | 50-100 MB | 500 MB-2 GB/mo | Session-based |
+| | **npm** | Infrastructure | | | | Reverse proxy (4 instances) |
+| on | ↳ npm-oracle-web | | 128-256 MB | 100-500 MB | 5-20 GB/mo | SSL certs + configs |
+| on | ↳ npm-oracle-services | | 128-256 MB | 100-500 MB | 5-20 GB/mo | SSL certs + configs |
+| hold | ↳ npm-oracle-arm | | 128-256 MB | 100-500 MB | 5-20 GB/mo | SSL certs + configs |
+| dev | ↳ npm-gcloud | | 128-256 MB | 100-500 MB | 5-20 GB/mo | SSL certs + configs |
+| | **cache** | Cache | | | | Redis in-memory store |
+| dev | ↳ cache-app | | 64-256 MB | 100 MB - 1 GB | - | Session/cache data |
+| | **vpn** | Infrastructure | | | | OpenVPN server |
+| dev | ↳ vpn-app | | 64-128 MB | 50-100 MB | 5-50 GB/mo | Client configs + certs |
+| | **cloud** | Coder | | | | Cloud Dashboard |
+| on | ↳ cloud-app | | - | 5 MB | 50-200 MB/mo | Static HTML/CSS/JS |
+| dev | ↳ cloud-api | | 64-128 MB | 50-100 MB | 100-500 MB/mo | Flask API server |
+| dev | ↳ cloud-db | | 8-32 MB | 50-200 MB | - | SQLite or PostgreSQL |
+| | **terminal** | Productivity | | | | Web terminal |
+| dev | ↳ terminal-app | | 64-128 MB | 50-100 MB | 500 MB-2 GB/mo | wetty/ttyd session-based |
 | | **Total ON** | | **~1-1.8 GB** | **~8-23 GB** | **~17-77 GB/mo** | Active services |
 | | **Total DEV** | | **~2-5.7 GB** | **~122-182 GB** | **~14-92 GB/mo** | In development |
 | | **TOTAL** | | **~3-7.5 GB** | **~130-205 GB** | **~31-169 GB/mo** | All services combined |
@@ -238,10 +243,10 @@ ssh ubuntu@129.151.228.66
 
 | Status | VM | Services | Total RAM (Est) | Total Storage (Est) | Bandwidth (Est) |
 |--------|-----|----------|-----------------|---------------------|-----------------|
-| on | Oracle Web Server 1 | n8n, Syncthing, Flask, NPM, VPN, Gitea | ~800 MB - 1.5 GB | ~5-15 GB | ~20-80 GB/mo |
-| on | Oracle Services Server 1 | Matomo, MariaDB, NPM | ~600 MB - 1.2 GB | ~5-15 GB | ~5-20 GB/mo |
-| dev | Oracle ARM Server | n8n (AI), NPM, PostgreSQL | ~1.5-5 GB | ~5-20 GB | ~10-40 GB/mo |
-| dev | GCloud Arch 1 | Mail, Terminal, NPM, SQLite | ~800 MB - 1.5 GB | ~10-50 GB | ~5-15 GB/mo |
+| on | Oracle Web Server 1 | n8n-infra-app, sync-app, cloud-app, cloud-api, npm-oracle-web, vpn-app, git-app, cache-app | ~800 MB - 1.5 GB | ~5-15 GB | ~20-80 GB/mo |
+| on | Oracle Services Server 1 | analytics-app, analytics-db, cloud-db, npm-oracle-services | ~600 MB - 1.2 GB | ~5-15 GB | ~5-20 GB/mo |
+| hold | Oracle ARM Server | n8n-ai-app, n8n-ai-db, npm-oracle-arm | ~1.5-5 GB | ~5-20 GB | ~10-40 GB/mo |
+| dev | GCloud Arch 1 | mail-app, mail-db, terminal-app, npm-gcloud | ~800 MB - 1.5 GB | ~10-50 GB | ~5-15 GB/mo |
 | | **Total ON** | | **~1.4-2.7 GB** | **~10-30 GB** | **~25-100 GB/mo** |
 | | **Total DEV** | | **~2.3-6.5 GB** | **~15-70 GB** | **~15-55 GB/mo** |
 | | **TOTAL** | | **~3.7-9.2 GB** | **~25-100 GB** | **~40-155 GB/mo** |
@@ -778,13 +783,23 @@ interface CloudInfrastructure {
 
 ### 11.5 Status Values
 
-| Status | Display | Card Style |
-|--------|---------|------------|
-| `active` | Online | Green indicator |
-| `pending` | Pending | Yellow indicator |
-| `development` | In Development | Blue indicator |
-| `planned` | Planned | Gray indicator |
-| `offline` | Offline | Red indicator |
+| Status | Display | Card Style | Description |
+|--------|---------|------------|-------------|
+| `on` | Online | Green indicator | Running and accessible |
+| `dev` | In Development | Blue indicator | Under active development |
+| `hold` | On Hold | Yellow/Orange indicator | Waiting for resources |
+| `tbd` | To Be Determined | Gray indicator | Planned for future |
+
+### 11.6 Naming Convention
+
+All services follow a consistent naming pattern:
+
+| Pattern | Example | Description |
+|---------|---------|-------------|
+| `{service}-app` | `analytics-app`, `sync-app` | Application/service container |
+| `{service}-db` | `analytics-db`, `git-db` | Database container |
+| `npm-{provider}-{vm}` | `npm-oracle-web`, `npm-gcloud` | NPM proxy per VM |
+| `n8n-{type}-app` | `n8n-infra-app`, `n8n-ai-app` | n8n workflow variants |
 
 ---
 
@@ -838,16 +853,55 @@ docker network inspect public_net
 
 ### 12.4 Dashboard Usage
 
-```bash
-# Launch interactive TUI
-./cloud-dashboard.sh
+The unified `cloud-dashboard.py` provides three modes: TUI, API Server, and CLI.
 
-# Quick status check
-./cloud-dashboard.sh status
+```bash
+# Launch interactive TUI dashboard
+python cloud-dashboard.py
+
+# Start Flask API server (for web dashboard)
+python cloud-dashboard.py serve
+python cloud-dashboard.py serve --debug
+
+# Quick CLI status check
+python cloud-dashboard.py status
 
 # Help
-./cloud-dashboard.sh help
+python cloud-dashboard.py help
 ```
+
+#### API Endpoints (when running `serve`)
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/health` | API health check |
+| `GET /api/vms` | List all VMs |
+| `GET /api/vms/<id>` | Get VM details |
+| `GET /api/vms/<id>/status` | VM health status (ping, SSH) |
+| `GET /api/vms/<id>/containers` | Docker containers on VM |
+| `GET /api/services` | List all services |
+| `GET /api/services/<id>` | Get service details |
+| `GET /api/services/<id>/status` | Service health status (HTTP check) |
+| `GET /api/dashboard/summary` | Full dashboard with health checks |
+| `GET /api/dashboard/quick-status` | Quick status (config only, no checks) |
+| `GET /api/config` | Full JSON configuration |
+| `POST /api/config/reload` | Reload configuration from disk |
+
+#### TUI Commands
+
+| Key | Action |
+|-----|--------|
+| `1` | VM Details |
+| `2` | Container Status |
+| `3` | Reboot VM |
+| `4` | Restart Container |
+| `5` | View Logs |
+| `6` | Stop/Start Container |
+| `7` | SSH to VM |
+| `8` | Open URL |
+| `S` | Quick Status |
+| `R` | Refresh |
+| `Q` | Quit |
 
 ### 12.5 Incident Response
 
@@ -977,6 +1031,11 @@ sequenceDiagram
 
 | Date | Change |
 |------|--------|
+| 2025-12-03 | **v3.0.0** - Unified cloud-dashboard.py (TUI + Flask API in single file) |
+| 2025-12-03 | Established naming convention: `{service}-app`, `{service}-db`, `npm-{provider}-{vm}` |
+| 2025-12-03 | New status values: `on`, `dev`, `hold`, `tbd` (replaces active/pending/development/planned) |
+| 2025-12-03 | Added `displayName` field for human-readable service names |
+| 2025-12-03 | Created Cloud-spec_Tables.md with architecture reference tables |
 | 2025-12-02 | Consolidated HANDOFF.md, spec_infra.md, SPEC.md, VPS_ARCHITECTURE_SPEC.md into single CLOUD-SPEC.md |
 | 2025-12-02 | Reorganized VMs and services with categories |
 | 2025-12-01 | Migrated to JSON data source, deprecated CSV |
@@ -988,15 +1047,39 @@ sequenceDiagram
 ## File Structure
 
 ```
-0.spec/
-├── cloud-infrastructure.json   ← PRIMARY DATA SOURCE
-├── cloud-dashboard.sh          ← POSIX TUI Dashboard (v5.0.0)
-├── CLOUD-SPEC.md               ← This file (consolidated documentation)
+0.spec/                                    ← SOURCE OF TRUTH FOLDER
+├── Cloud-spec_.md                          ← Main specification (this file)
+├── Cloud-spec_Tables.md                    ← Architecture reference tables
+├── cloud-infrastructure.json               ← PRIMARY DATA SOURCE (JSON)
+├── cloud-dashboard.py                      ← UNIFIED DASHBOARD (TUI + Flask API) v6.0.0
+├── front-cloud/                            ← Symlink to website repo
+│   ├── src_vanilla/                        ← HTML/CSS/JS source
+│   └── dist_vanilla/                       ← Built static files
 └── archive/
-    └── csv/                    ← Legacy CSV files (deprecated)
+    └── csv/                                ← Legacy CSV files (deprecated)
+
+flask-server/                              ← FLASK SERVER DEPLOYMENT
+├── cloud_dashboard.py                      ← Symlink → 0.spec/cloud-dashboard.py
+├── cloud-infrastructure.json               ← Symlink → 0.spec/cloud-infrastructure.json
+├── run.py                                  ← Entry point (calls cloud_dashboard.run_server)
+├── templates/
+│   └── dashboard.html                      ← Symlink → front-cloud/dist_vanilla/dashboard.html
+└── venv/                                   ← Python virtual environment (Flask)
+```
+
+### Source of Truth Hierarchy
+
+```
+1. Cloud-spec_.md / Cloud-spec_Tables.md    ← Human-readable documentation
+        ↓
+2. cloud-infrastructure.json                ← Machine-readable data
+        ↓
+3. cloud-dashboard.py                       ← TUI + API (reads JSON)
+        ↓
+4. front-cloud/ (HTML/CSS/JS)               ← Web dashboard (calls API)
 ```
 
 ---
 
 **Maintainer**: Diego Nepomuceno Marcos
-**Last Updated**: 2025-12-02
+**Last Updated**: 2025-12-03
