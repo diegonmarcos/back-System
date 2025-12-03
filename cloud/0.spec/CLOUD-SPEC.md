@@ -195,7 +195,60 @@ ssh ubuntu@129.151.228.66
 | **Web** | Web analytics and monitoring |
 | **Machine Learning** | ML and automation services |
 
-### 4.2 Infrastructure Services
+### 4.2 Service Resource Requirements
+
+| Status | Service | Category | RAM (Avg) | Storage (Avg) | Bandwidth (Avg) | Notes |
+|--------|---------|----------|-----------|---------------|-----------------|-------|
+| | **n8n (AI)** | ML | | | | AI Agentic workflows |
+| dev | ↳ n8n-ai | | 1-4 GB | 2-10 GB | 5-20 GB/mo | LLM context + workflows |
+| dev | ↳ n8n-ai-db (PostgreSQL) | | 256-512 MB | 1-10 GB | - | Varies by usage |
+| | **Mail Server** | Productivity | | | | Email stack |
+| dev | ↳ mailserver | | 512 MB - 1 GB | 5-50 GB | 1-10 GB/mo | Mailboxes + indexes |
+| dev | ↳ mail-db (SQLite) | | 8-32 MB | Variable | - | Embedded, minimal overhead |
+| | **Matomo** | Web | | | | Analytics platform |
+| on | ↳ matomo-app | | 256-512 MB | 2-5 GB | 500 MB-2 GB/mo | PHP FPM Alpine |
+| on | ↳ matomo-db (MariaDB) | | 256-512 MB | 1-10 GB | - | Grows with analytics data |
+| | **Gitea** | Productivity | | | | Git hosting |
+| dev | ↳ gitea | | 256-512 MB | 1-5 GB | 2-10 GB/mo | Web + Git server |
+| dev | ↳ gitea-db (SQLite) | | 8-32 MB | Variable | - | Embedded DB |
+| dev | ↳ gitea-repos-db | | - | ~10 GB | - | Git repositories storage |
+| | **n8n (Infra)** | Automation | | | | Workflow automation |
+| on | ↳ n8n | | 256-512 MB | 500 MB - 2 GB | 1-5 GB/mo | Workflows + execution logs |
+| | **Sync** | Productivity | | | | File sync |
+| on | ↳ syncthing | | 128-256 MB | 100-500 MB | 10-50 GB/mo | App + config |
+| on | ↳ sync-index-db | | - | 100-500 MB | - | File metadata index |
+| dev | ↳ sync-files-db | | - | ~100 GB | - | Synced files storage |
+| on | ↳ sync-obj-db | | - | ~5 GB | - | Object/blob storage |
+| | **NPM** | Infrastructure | | | | Reverse proxy |
+| on | ↳ nginx-proxy | | 128-256 MB | 100-500 MB | 5-20 GB/mo | SSL certs + configs |
+| | **Redis** | Cache | | | | In-memory store |
+| dev | ↳ redis | | 64-256 MB | 100 MB - 1 GB | - | Session/cache data |
+| | **OpenVPN** | Infrastructure | | | | VPN server |
+| dev | ↳ openvpn | | 64-128 MB | 50-100 MB | 5-50 GB/mo | Client configs + certs |
+| | **Flask Server** | Infrastructure | | | | Cloud Dashboard API |
+| dev | ↳ flask-server | | 64-128 MB | 50-100 MB | 100-500 MB/mo | Lightweight API |
+| | **Web Terminal** | Productivity | | | | Browser shell |
+| dev | ↳ wetty/ttyd | | 64-128 MB | 50-100 MB | 500 MB-2 GB/mo | Session-based |
+| | **Total ON** | | **~1-1.8 GB** | **~8-23 GB** | **~17-77 GB/mo** | Active services |
+| | **Total DEV** | | **~2-5.7 GB** | **~122-182 GB** | **~14-92 GB/mo** | In development |
+| | **TOTAL** | | **~3-7.5 GB** | **~130-205 GB** | **~31-169 GB/mo** | All services combined |
+
+
+**VM Totals (Estimated)**:
+
+| Status | VM | Services | Total RAM (Est) | Total Storage (Est) | Bandwidth (Est) |
+|--------|-----|----------|-----------------|---------------------|-----------------|
+| on | Oracle Web Server 1 | n8n, Syncthing, Flask, NPM, VPN, Gitea | ~800 MB - 1.5 GB | ~5-15 GB | ~20-80 GB/mo |
+| on | Oracle Services Server 1 | Matomo, MariaDB, NPM | ~600 MB - 1.2 GB | ~5-15 GB | ~5-20 GB/mo |
+| dev | Oracle ARM Server | n8n (AI), NPM, PostgreSQL | ~1.5-5 GB | ~5-20 GB | ~10-40 GB/mo |
+| dev | GCloud Arch 1 | Mail, Terminal, NPM, SQLite | ~800 MB - 1.5 GB | ~10-50 GB | ~5-15 GB/mo |
+| | **Total ON** | | **~1.4-2.7 GB** | **~10-30 GB** | **~25-100 GB/mo** |
+| | **Total DEV** | | **~2.3-6.5 GB** | **~15-70 GB** | **~15-55 GB/mo** |
+| | **TOTAL** | | **~3.7-9.2 GB** | **~25-100 GB** | **~40-155 GB/mo** |
+
+---
+
+### 4.3 Infrastructure Services
 
 #### NPM (Web Server)
 | Property | Value |
@@ -221,7 +274,7 @@ ssh ubuntu@129.151.228.66
 | **Technology** | GitHub Pages (static) |
 | **Status** | Active |
 
-### 4.3 Web Services
+### 4.4 Web Services
 
 #### Matomo Analytics
 | Property | Value |
@@ -234,7 +287,7 @@ ssh ubuntu@129.151.228.66
 | **Features** | Anti-blocker proxy, Tag Manager, Custom events |
 | **Status** | Active |
 
-### 4.4 Machine Learning Services
+### 4.5 Machine Learning Services
 
 #### n8n Automation
 | Property | Value |
@@ -247,7 +300,7 @@ ssh ubuntu@129.151.228.66
 | **Features** | Workflow automation, 400+ integrations, Webhooks |
 | **Status** | Active |
 
-### 4.5 Productivity Services
+### 4.6 Productivity Services
 
 #### Syncthing
 | Property | Value |

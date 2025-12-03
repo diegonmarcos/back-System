@@ -180,14 +180,24 @@
   },
 
   "serviceCategories": {
-    "products": {
-      "id": "products",
-      "name": "Product & Services",
-      "description": "Main product and service offerings"
+    "user": {
+      "id": "user",
+      "name": "User Services",
+      "description": "End-user productivity services (Sync, Mail, VPN)"
     },
-    "infra-npm": {
-      "id": "infra-npm",
-      "name": "NPMs",
+    "coder": {
+      "id": "coder",
+      "name": "Coder Services",
+      "description": "Developer tools (Web IDE, Git, Analytics)"
+    },
+    "ai": {
+      "id": "ai",
+      "name": "AI Services",
+      "description": "AI and automation services"
+    },
+    "infra-proxy": {
+      "id": "infra-proxy",
+      "name": "Proxies",
       "description": "Nginx Proxy Managers"
     },
     "infra-db": {
@@ -195,18 +205,18 @@
       "name": "Databases",
       "description": "Database services"
     },
-    "infra-other": {
-      "id": "infra-other",
-      "name": "Others",
-      "description": "Other infrastructure services"
+    "infra-services": {
+      "id": "infra-services",
+      "name": "Infra Services",
+      "description": "Infrastructure automation and APIs"
     }
   },
 
   "services": {
     "matomo": {
       "id": "matomo",
-      "name": "matomo-app",
-      "category": "products",
+      "name": "Analytics",
+      "category": "coder",
       "vmId": "oracle-services-server-1",
       "technology": {
         "image": "matomo:fpm-alpine",
@@ -232,8 +242,8 @@
     },
     "syncthing": {
       "id": "syncthing",
-      "name": "Syncthing",
-      "category": "products",
+      "name": "Sync",
+      "category": "user",
       "vmId": "oracle-web-server-1",
       "technology": {
         "image": "syncthing/syncthing:latest"
@@ -257,18 +267,31 @@
     },
     "cloud-dashboard": {
       "id": "cloud-dashboard",
-      "name": "Cloud_Dashboard",
-      "category": "products",
+      "name": "Cloud Dashboard",
+      "category": "coder",
       "vmId": "oracle-web-server-1",
       "technology": {
         "type": "Python Flask web app"
       },
-      "status": "development"
+      "network": {
+        "internalPort": 5000,
+        "externalPort": 443,
+        "domain": "cloud.diegonmarcos.com",
+        "protocol": "HTTPS"
+      },
+      "urls": {
+        "gui": "https://cloud.diegonmarcos.com"
+      },
+      "components": [
+        { "name": "front_web", "type": "Static HTML/CSS/JS" },
+        { "name": "flask-py", "type": "Flask API server" }
+      ],
+      "status": "active"
     },
     "mail": {
       "id": "mail",
-      "name": "mailserver",
-      "category": "products",
+      "name": "Mail",
+      "category": "user",
       "vmId": "gcloud-arch-1",
       "technology": {
         "image": "docker-mailserver/docker-mailserver:latest"
@@ -284,8 +307,8 @@
     },
     "terminal": {
       "id": "terminal",
-      "name": "Web_Shell_Terminal",
-      "category": "products",
+      "name": "Web IDE",
+      "category": "coder",
       "vmId": "gcloud-arch-1",
       "technology": {
         "image": "wetty or ttyd"
@@ -294,8 +317,8 @@
     },
     "agentic-dashboard": {
       "id": "agentic-dashboard",
-      "name": "Agentic_Dashboard",
-      "category": "products",
+      "name": "AI Agentic Dashboard",
+      "category": "ai",
       "vmId": "oracle-arm-server",
       "technology": {
         "type": "n8n + AI agents"
@@ -305,7 +328,7 @@
     "vpn": {
       "id": "vpn",
       "name": "VPN",
-      "category": "products",
+      "category": "user",
       "vmId": "oracle-web-server-1",
       "technology": {
         "image": "kylemanna/openvpn:latest",
@@ -325,8 +348,8 @@
     },
     "git-server": {
       "id": "git-server",
-      "name": "Git-Server",
-      "category": "products",
+      "name": "Gitea",
+      "category": "coder",
       "vmId": "oracle-web-server-1",
       "technology": {
         "image": "gitea/gitea:latest",
@@ -352,7 +375,7 @@
     "npm-web": {
       "id": "npm-web",
       "name": "NPM-VM-Oracle_Web_Server_1",
-      "category": "infra-npm",
+      "category": "infra-proxy",
       "vmId": "oracle-web-server-1",
       "technology": {
         "image": "jc21/nginx-proxy-manager:latest"
@@ -376,7 +399,7 @@
     "npm-services": {
       "id": "npm-services",
       "name": "NPM-VM-Oracle_Services_Serv",
-      "category": "infra-npm",
+      "category": "infra-proxy",
       "vmId": "oracle-services-server-1",
       "technology": {
         "image": "jc21/nginx-proxy-manager:latest"
@@ -399,7 +422,7 @@
     "npm-arm": {
       "id": "npm-arm",
       "name": "NPM-VM-Oracle_Flex_ARM_Server",
-      "category": "infra-npm",
+      "category": "infra-proxy",
       "vmId": "oracle-arm-server",
       "technology": {
         "image": "jc21/nginx-proxy-manager:latest"
@@ -418,7 +441,7 @@
     "npm-gcloud": {
       "id": "npm-gcloud",
       "name": "NPM-VM-Gcloud",
-      "category": "infra-npm",
+      "category": "infra-proxy",
       "vmId": "gcloud-arch-1",
       "technology": {
         "image": "jc21/nginx-proxy-manager:latest"
@@ -473,8 +496,8 @@
     },
     "n8n-server-ai": {
       "id": "n8n-server-ai",
-      "name": "n8n-AI-server",
-      "category": "infra-other",
+      "name": "n8n (AI)",
+      "category": "ai",
       "vmId": "oracle-arm-server",
       "technology": {
         "image": "n8nio/n8n:latest"
@@ -497,8 +520,8 @@
     },
     "flask-server": {
       "id": "flask-server",
-      "name": "Flask-server",
-      "category": "infra-other",
+      "name": "Flask Server",
+      "category": "infra-services",
       "vmId": "oracle-web-server-1",
       "technology": {
         "type": "Python Flask"
@@ -510,8 +533,8 @@
     },
     "n8n-server-infra": {
       "id": "n8n-server-infra",
-      "name": "n8n-server (Infra)",
-      "category": "infra-other",
+      "name": "n8n (Infra)",
+      "category": "infra-services",
       "vmId": "oracle-web-server-1",
       "technology": {
         "image": "n8nio/n8n:latest"
@@ -790,10 +813,24 @@
           { "name": "openvpn", "ram": { "min": "64 MB", "max": "128 MB" }, "storage": { "min": "50 MB", "max": "100 MB" }, "bandwidth": { "min": "5 GB/mo", "max": "50 GB/mo" }, "notes": "Client configs + certs" }
         ]
       },
+      "cloud-dashboard": {
+        "id": "cloud-dashboard",
+        "name": "Cloud Dashboard",
+        "status": "on",
+        "category": "Coder",
+        "ram": { "min": "64 MB", "max": "128 MB" },
+        "storage": { "min": "50 MB", "max": "100 MB" },
+        "bandwidth": { "min": "100 MB/mo", "max": "500 MB/mo" },
+        "notes": "Cloud Dashboard",
+        "components": [
+          { "name": "front_web", "ram": null, "storage": { "min": "5 MB", "max": "5 MB" }, "bandwidth": { "min": "50 MB/mo", "max": "200 MB/mo" }, "notes": "Static HTML/CSS/JS" },
+          { "name": "flask-py", "ram": { "min": "64 MB", "max": "128 MB" }, "storage": { "min": "50 MB", "max": "100 MB" }, "bandwidth": { "min": "100 MB/mo", "max": "500 MB/mo" }, "notes": "Flask API server" }
+        ]
+      },
       "flask-server": {
         "id": "flask-server",
         "name": "Flask Server",
-        "status": "dev",
+        "status": "on",
         "category": "Infrastructure",
         "ram": { "min": "64 MB", "max": "128 MB" },
         "storage": { "min": "50 MB", "max": "100 MB" },
@@ -867,6 +904,15 @@
         "ram": { "min": "6 GB", "max": "24 GB" },
         "storage": { "min": "5 GB", "max": "20 GB" },
         "bandwidth": { "min": "10 GB/mo", "max": "40 GB/mo" }
+      },
+      "generic-vps-infra": {
+        "id": "generic-vps-infra",
+        "name": "Generic VPS (Infra)",
+        "status": "dev",
+        "services": ["Variable services"],
+        "ram": { "min": "1 GB", "max": "4 GB" },
+        "storage": { "min": "20 GB", "max": "100 GB" },
+        "bandwidth": { "min": "10 GB/mo", "max": "50 GB/mo" }
       },
       "generic-vps-ai": {
         "id": "generic-vps-ai",
