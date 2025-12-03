@@ -73,13 +73,13 @@
         "keyPath": "~/.ssh/id_rsa",
         "command": "ssh ubuntu@130.110.251.193"
       },
-      "services": ["n8n-server-infra", "syncthing", "flask-server", "cloud-dashboard", "npm-web"],
+      "services": ["n8n-server-infra", "syncthing", "flask-server", "cloud-dashboard", "npm-web", "vpn", "git-server"],
       "ports": {
-        "external": [22, 80, 443, 81, 22000, 21027],
-        "internal": [5678, 8384, 5000]
+        "external": [22, 80, 443, 81, 22000, 21027, 1194, 2222],
+        "internal": [5678, 8384, 5000, 3000]
       },
       "status": "active",
-      "notes": "n8n-server (Infra) + Syncthing + Flask-server (Cloud_Dashboard)"
+      "notes": "n8n-server (Infra) + Syncthing + Flask-server (Cloud_Dashboard) + VPN + Git-Server"
     },
     "oracle-services-server-1": {
       "id": "oracle-services-server-1",
@@ -302,6 +302,53 @@
       },
       "status": "development"
     },
+    "vpn": {
+      "id": "vpn",
+      "name": "VPN",
+      "category": "products",
+      "vmId": "oracle-web-server-1",
+      "technology": {
+        "image": "kylemanna/openvpn:latest",
+        "type": "OpenVPN"
+      },
+      "network": {
+        "internalPort": 1194,
+        "externalPort": 1194,
+        "protocol": "UDP"
+      },
+      "docker": {
+        "containerName": "openvpn",
+        "network": "public_net"
+      },
+      "features": ["Secure remote access", "Site-to-site connectivity", "Client certificates"],
+      "status": "development"
+    },
+    "git-server": {
+      "id": "git-server",
+      "name": "Git-Server",
+      "category": "products",
+      "vmId": "oracle-web-server-1",
+      "technology": {
+        "image": "gitea/gitea:latest",
+        "database": "sqlite3"
+      },
+      "network": {
+        "internalPort": 3000,
+        "sshPort": 2222,
+        "externalPort": 443,
+        "domain": "git.diegonmarcos.com",
+        "protocol": "HTTPS"
+      },
+      "urls": {
+        "gui": "https://git.diegonmarcos.com"
+      },
+      "docker": {
+        "containerName": "gitea",
+        "network": "public_net"
+      },
+      "features": ["Git hosting", "Issue tracking", "Pull requests", "CI/CD integration"],
+      "status": "development"
+    },
     "npm-web": {
       "id": "npm-web",
       "name": "NPM-VM-Oracle_Web_Server_1",
@@ -494,6 +541,17 @@
         "type": "SQLite or PostgreSQL"
       },
       "status": "development"
+    },
+    "git-server-db": {
+      "id": "git-server-db",
+      "name": "Git_Server-db",
+      "category": "infra-db",
+      "vmId": "oracle-web-server-1",
+      "technology": {
+        "type": "SQLite"
+      },
+      "notes": "Embedded in Gitea container, uses SQLite for lightweight hosting",
+      "status": "development"
     }
   },
 
@@ -531,6 +589,13 @@
         "ip": "pending",
         "ssl": true,
         "status": "planned"
+      },
+      "git.diegonmarcos.com": {
+        "service": "git-server",
+        "vmId": "oracle-web-server-1",
+        "ip": "130.110.251.193",
+        "ssl": true,
+        "status": "planned"
       }
     }
   },
@@ -543,8 +608,11 @@
       { "port": 81, "protocol": "TCP", "service": "NPM Admin", "direction": "ingress", "source": "0.0.0.0/0" },
       { "port": 22000, "protocol": "TCP", "service": "Syncthing Sync", "direction": "ingress", "source": "0.0.0.0/0" },
       { "port": 21027, "protocol": "UDP", "service": "Syncthing Discovery", "direction": "ingress", "source": "0.0.0.0/0" },
+      { "port": 1194, "protocol": "UDP", "service": "OpenVPN", "direction": "ingress", "source": "0.0.0.0/0" },
+      { "port": 2222, "protocol": "TCP", "service": "Gitea SSH", "direction": "ingress", "source": "0.0.0.0/0" },
       { "port": 5678, "protocol": "TCP", "service": "n8n", "direction": "internal", "source": "127.0.0.1" },
-      { "port": 8384, "protocol": "TCP", "service": "Syncthing GUI", "direction": "internal", "source": "127.0.0.1" }
+      { "port": 8384, "protocol": "TCP", "service": "Syncthing GUI", "direction": "internal", "source": "127.0.0.1" },
+      { "port": 3000, "protocol": "TCP", "service": "Gitea Web", "direction": "internal", "source": "127.0.0.1" }
     ],
     "oracle-services-server-1": [
       { "port": 22, "protocol": "TCP", "service": "SSH", "direction": "ingress", "source": "0.0.0.0/0" },
@@ -604,5 +672,237 @@
     "development": "Under active development",
     "planned": "Scheduled for future implementation",
     "offline": "Temporarily unavailable"
+  },
+
+  "resources": {
+    "services": {
+      "mail-server": {
+        "id": "mail-server",
+        "name": "Mail Server",
+        "status": "dev",
+        "category": "Productivity",
+        "ram": { "min": "520 MB", "max": "1 GB" },
+        "storage": { "min": "5 GB", "max": "50 GB" },
+        "bandwidth": { "min": "1 GB/mo", "max": "10 GB/mo" },
+        "notes": "Email stack",
+        "components": [
+          { "name": "mailserver", "ram": { "min": "512 MB", "max": "1 GB" }, "storage": { "min": "100 MB", "max": "500 MB" }, "bandwidth": { "min": "1 GB/mo", "max": "10 GB/mo" }, "notes": "App + config" },
+          { "name": "mail-db (SQLite)", "ram": { "min": "8 MB", "max": "32 MB" }, "storage": { "min": "5 GB", "max": "50 GB" }, "bandwidth": null, "notes": "Mailboxes + indexes" }
+        ]
+      },
+      "npm": {
+        "id": "npm",
+        "name": "NPM",
+        "status": "on",
+        "category": "Infrastructure",
+        "ram": { "min": "512 MB", "max": "1 GB" },
+        "storage": { "min": "400 MB", "max": "2 GB" },
+        "bandwidth": { "min": "20 GB/mo", "max": "80 GB/mo" },
+        "notes": "Reverse proxy (4 instances)",
+        "components": [
+          { "name": "npm-oracle-web", "ram": { "min": "128 MB", "max": "256 MB" }, "storage": { "min": "100 MB", "max": "500 MB" }, "bandwidth": { "min": "5 GB/mo", "max": "20 GB/mo" }, "notes": "Oracle Web Server 1" },
+          { "name": "npm-oracle-services", "ram": { "min": "128 MB", "max": "256 MB" }, "storage": { "min": "100 MB", "max": "500 MB" }, "bandwidth": { "min": "5 GB/mo", "max": "20 GB/mo" }, "notes": "Oracle Services Server 1" },
+          { "name": "npm-oracle-arm", "ram": { "min": "128 MB", "max": "256 MB" }, "storage": { "min": "100 MB", "max": "500 MB" }, "bandwidth": { "min": "5 GB/mo", "max": "20 GB/mo" }, "notes": "Oracle ARM (hold)" },
+          { "name": "npm-gcloud", "ram": { "min": "128 MB", "max": "256 MB" }, "storage": { "min": "100 MB", "max": "500 MB" }, "bandwidth": { "min": "5 GB/mo", "max": "20 GB/mo" }, "notes": "GCloud (dev)" }
+        ]
+      },
+      "matomo": {
+        "id": "matomo",
+        "name": "Matomo",
+        "status": "on",
+        "category": "Web",
+        "ram": { "min": "512 MB", "max": "1 GB" },
+        "storage": { "min": "3 GB", "max": "15 GB" },
+        "bandwidth": { "min": "500 MB/mo", "max": "2 GB/mo" },
+        "notes": "Analytics platform",
+        "components": [
+          { "name": "matomo-app", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "2 GB", "max": "5 GB" }, "bandwidth": { "min": "500 MB/mo", "max": "2 GB/mo" }, "notes": "PHP FPM Alpine" },
+          { "name": "matomo-db (MariaDB)", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "1 GB", "max": "10 GB" }, "bandwidth": null, "notes": "Grows with analytics data" }
+        ]
+      },
+      "gitea": {
+        "id": "gitea",
+        "name": "Gitea",
+        "status": "dev",
+        "category": "Productivity",
+        "ram": { "min": "264 MB", "max": "544 MB" },
+        "storage": { "min": "11 GB", "max": "15 GB" },
+        "bandwidth": { "min": "2 GB/mo", "max": "10 GB/mo" },
+        "notes": "Git hosting",
+        "components": [
+          { "name": "gitea", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "1 GB", "max": "5 GB" }, "bandwidth": { "min": "2 GB/mo", "max": "10 GB/mo" }, "notes": "Web + Git server" },
+          { "name": "gitea-db (SQLite)", "ram": { "min": "8 MB", "max": "32 MB" }, "storage": { "min": "Variable", "max": "Variable" }, "bandwidth": null, "notes": "Embedded DB" },
+          { "name": "gitea-repos-db", "ram": null, "storage": { "min": "10 GB", "max": "10 GB" }, "bandwidth": null, "notes": "Git repositories storage" }
+        ]
+      },
+      "n8n-infra": {
+        "id": "n8n-infra",
+        "name": "n8n (Infra)",
+        "status": "on",
+        "category": "Automation",
+        "ram": { "min": "256 MB", "max": "512 MB" },
+        "storage": { "min": "500 MB", "max": "2 GB" },
+        "bandwidth": { "min": "1 GB/mo", "max": "5 GB/mo" },
+        "notes": "Workflow automation",
+        "components": [
+          { "name": "n8n", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "500 MB", "max": "2 GB" }, "bandwidth": { "min": "1 GB/mo", "max": "5 GB/mo" }, "notes": "Workflows + execution logs" }
+        ]
+      },
+      "syncthing": {
+        "id": "syncthing",
+        "name": "Sync",
+        "status": "on",
+        "category": "Productivity",
+        "ram": { "min": "128 MB", "max": "256 MB" },
+        "storage": { "min": "5.2 GB", "max": "106 GB" },
+        "bandwidth": { "min": "10 GB/mo", "max": "50 GB/mo" },
+        "notes": "File sync",
+        "components": [
+          { "name": "syncthing", "ram": { "min": "128 MB", "max": "256 MB" }, "storage": { "min": "100 MB", "max": "500 MB" }, "bandwidth": { "min": "10 GB/mo", "max": "50 GB/mo" }, "notes": "App + config" },
+          { "name": "sync-index-db", "ram": null, "storage": { "min": "100 MB", "max": "500 MB" }, "bandwidth": null, "notes": "File metadata index" },
+          { "name": "sync-files-db", "ram": null, "storage": { "min": "100 GB", "max": "100 GB" }, "bandwidth": null, "notes": "Synced files storage" },
+          { "name": "sync-obj-db", "ram": null, "storage": { "min": "5 GB", "max": "5 GB" }, "bandwidth": null, "notes": "Object/blob storage" }
+        ]
+      },
+      "redis": {
+        "id": "redis",
+        "name": "Redis",
+        "status": "hold",
+        "category": "Cache",
+        "ram": { "min": "64 MB", "max": "256 MB" },
+        "storage": { "min": "100 MB", "max": "1 GB" },
+        "bandwidth": null,
+        "notes": "In-memory store",
+        "components": [
+          { "name": "redis", "ram": { "min": "64 MB", "max": "256 MB" }, "storage": { "min": "100 MB", "max": "1 GB" }, "bandwidth": null, "notes": "Session/cache data" }
+        ]
+      },
+      "openvpn": {
+        "id": "openvpn",
+        "name": "OpenVPN",
+        "status": "dev",
+        "category": "Infrastructure",
+        "ram": { "min": "64 MB", "max": "128 MB" },
+        "storage": { "min": "50 MB", "max": "100 MB" },
+        "bandwidth": { "min": "5 GB/mo", "max": "50 GB/mo" },
+        "notes": "VPN server",
+        "components": [
+          { "name": "openvpn", "ram": { "min": "64 MB", "max": "128 MB" }, "storage": { "min": "50 MB", "max": "100 MB" }, "bandwidth": { "min": "5 GB/mo", "max": "50 GB/mo" }, "notes": "Client configs + certs" }
+        ]
+      },
+      "flask-server": {
+        "id": "flask-server",
+        "name": "Flask Server",
+        "status": "dev",
+        "category": "Infrastructure",
+        "ram": { "min": "64 MB", "max": "128 MB" },
+        "storage": { "min": "50 MB", "max": "100 MB" },
+        "bandwidth": { "min": "100 MB/mo", "max": "500 MB/mo" },
+        "notes": "Cloud Dashboard API",
+        "components": [
+          { "name": "flask-server", "ram": { "min": "64 MB", "max": "128 MB" }, "storage": { "min": "50 MB", "max": "100 MB" }, "bandwidth": { "min": "100 MB/mo", "max": "500 MB/mo" }, "notes": "Lightweight API" }
+        ]
+      },
+      "web-terminal": {
+        "id": "web-terminal",
+        "name": "Web Terminal",
+        "status": "dev",
+        "category": "Productivity",
+        "ram": { "min": "64 MB", "max": "128 MB" },
+        "storage": { "min": "50 MB", "max": "100 MB" },
+        "bandwidth": { "min": "500 MB/mo", "max": "2 GB/mo" },
+        "notes": "Browser shell",
+        "components": [
+          { "name": "wetty/ttyd", "ram": { "min": "64 MB", "max": "128 MB" }, "storage": { "min": "50 MB", "max": "100 MB" }, "bandwidth": { "min": "500 MB/mo", "max": "2 GB/mo" }, "notes": "Session-based" }
+        ]
+      },
+      "n8n-ai": {
+        "id": "n8n-ai",
+        "name": "n8n (AI)",
+        "status": "hold",
+        "category": "ML",
+        "ram": { "min": "1.3 GB", "max": "48 GB" },
+        "storage": { "min": "3 GB", "max": "20 GB" },
+        "bandwidth": { "min": "5 GB/mo", "max": "20 GB/mo" },
+        "notes": "AI Agentic workflows",
+        "components": [
+          { "name": "n8n-ai", "ram": { "min": "1 GB", "max": "48 GB" }, "storage": { "min": "2 GB", "max": "10 GB" }, "bandwidth": { "min": "5 GB/mo", "max": "20 GB/mo" }, "notes": "LLM context + workflows" },
+          { "name": "n8n-ai-db (PostgreSQL)", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "1 GB", "max": "10 GB" }, "bandwidth": null, "notes": "Varies by usage" }
+        ]
+      }
+    },
+    "vms": {
+      "oracle-web-server-1": {
+        "id": "oracle-web-server-1",
+        "name": "Oracle Web Server 1",
+        "status": "on",
+        "services": ["n8n", "Syncthing", "Flask", "NPM", "VPN", "Gitea"],
+        "ram": { "min": "800 MB", "max": "1.5 GB" },
+        "storage": { "min": "5 GB", "max": "15 GB" },
+        "bandwidth": { "min": "20 GB/mo", "max": "80 GB/mo" }
+      },
+      "oracle-services-server-1": {
+        "id": "oracle-services-server-1",
+        "name": "Oracle Services Server 1",
+        "status": "on",
+        "services": ["Matomo", "MariaDB", "NPM"],
+        "ram": { "min": "600 MB", "max": "1.2 GB" },
+        "storage": { "min": "5 GB", "max": "15 GB" },
+        "bandwidth": { "min": "5 GB/mo", "max": "20 GB/mo" }
+      },
+      "gcloud-arch-1": {
+        "id": "gcloud-arch-1",
+        "name": "GCloud Arch 1",
+        "status": "dev",
+        "services": ["Mail", "Terminal", "NPM", "SQLite"],
+        "ram": { "min": "800 MB", "max": "1.5 GB" },
+        "storage": { "min": "10 GB", "max": "50 GB" },
+        "bandwidth": { "min": "5 GB/mo", "max": "15 GB/mo" }
+      },
+      "oracle-arm-server": {
+        "id": "oracle-arm-server",
+        "name": "Oracle ARM Server",
+        "status": "hold",
+        "services": ["n8n (AI)", "NPM", "PostgreSQL"],
+        "ram": { "min": "6 GB", "max": "24 GB" },
+        "storage": { "min": "5 GB", "max": "20 GB" },
+        "bandwidth": { "min": "10 GB/mo", "max": "40 GB/mo" }
+      },
+      "generic-vps-ai": {
+        "id": "generic-vps-ai",
+        "name": "Generic VPS (AI)",
+        "status": "dev",
+        "services": ["LLM inference", "AI workloads"],
+        "ram": { "min": "8 GB", "max": "32 GB" },
+        "storage": { "min": "50 GB", "max": "200 GB" },
+        "bandwidth": { "min": "20 GB/mo", "max": "100 GB/mo" }
+      }
+    },
+    "totals": {
+      "nonAi": {
+        "services": {
+          "on": { "ram": { "min": "1.4 GB", "max": "2.8 GB" }, "storage": { "min": "9 GB", "max": "125 GB" }, "bandwidth": { "min": "32 GB/mo", "max": "135 GB/mo" } },
+          "dev": { "ram": { "min": "900 MB", "max": "1.8 GB" }, "storage": { "min": "66 GB", "max": "165 GB" }, "bandwidth": { "min": "8 GB/mo", "max": "72 GB/mo" } },
+          "hold": { "ram": { "min": "64 MB", "max": "256 MB" }, "storage": { "min": "100 MB", "max": "1 GB" }, "bandwidth": null },
+          "total": { "ram": { "min": "2.4 GB", "max": "4.9 GB" }, "storage": { "min": "75 GB", "max": "291 GB" }, "bandwidth": { "min": "40 GB/mo", "max": "207 GB/mo" } }
+        },
+        "vms": {
+          "on": { "ram": { "min": "1.4 GB", "max": "2.7 GB" }, "storage": { "min": "10 GB", "max": "30 GB" }, "bandwidth": { "min": "25 GB/mo", "max": "100 GB/mo" } },
+          "dev": { "ram": { "min": "1.8 GB", "max": "5.5 GB" }, "storage": { "min": "30 GB", "max": "150 GB" }, "bandwidth": { "min": "15 GB/mo", "max": "65 GB/mo" } },
+          "total": { "ram": { "min": "3.2 GB", "max": "8.2 GB" }, "storage": { "min": "40 GB", "max": "180 GB" }, "bandwidth": { "min": "40 GB/mo", "max": "165 GB/mo" } }
+        }
+      },
+      "ai": {
+        "services": {
+          "hold": { "ram": { "min": "1.3 GB", "max": "48.5 GB" }, "storage": { "min": "3 GB", "max": "20 GB" }, "bandwidth": { "min": "5 GB/mo", "max": "20 GB/mo" } },
+          "total": { "ram": { "min": "1.3 GB", "max": "48.5 GB" }, "storage": { "min": "3 GB", "max": "20 GB" }, "bandwidth": { "min": "5 GB/mo", "max": "20 GB/mo" } }
+        },
+        "vms": {
+          "hold": { "ram": { "min": "6 GB", "max": "24 GB" }, "storage": { "min": "5 GB", "max": "20 GB" }, "bandwidth": { "min": "10 GB/mo", "max": "40 GB/mo" } },
+          "dev": { "ram": { "min": "8 GB", "max": "32 GB" }, "storage": { "min": "50 GB", "max": "200 GB" }, "bandwidth": { "min": "20 GB/mo", "max": "100 GB/mo" } },
+          "total": { "ram": { "min": "14 GB", "max": "56 GB" }, "storage": { "min": "55 GB", "max": "220 GB" }, "bandwidth": { "min": "30 GB/mo", "max": "140 GB/mo" } }
+        }
+      }
+    }
   }
 }
