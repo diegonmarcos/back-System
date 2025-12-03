@@ -73,7 +73,7 @@
         "keyPath": "~/.ssh/id_rsa",
         "command": "ssh ubuntu@130.110.251.193"
       },
-      "services": ["n8n-server-infra", "syncthing", "flask-server", "cloud-dashboard", "npm-web", "vpn", "git-server"],
+      "services": ["n8n-infra-app", "sync-app", "sync-index-db", "cloud-app", "cloud-api", "npm-oracle-web", "vpn-app", "git-app", "git-db", "cache-app"],
       "ports": {
         "external": [22, 80, 443, 81, 22000, 21027, 1194, 2222],
         "internal": [5678, 8384, 5000, 3000]
@@ -105,7 +105,7 @@
         "keyPath": "~/.ssh/id_rsa",
         "command": "ssh ubuntu@129.151.228.66"
       },
-      "services": ["matomo", "matomo-db", "cloud-dashboard-db", "npm-services"],
+      "services": ["analytics-app", "analytics-db", "cloud-db", "npm-oracle-services"],
       "ports": {
         "external": [22, 80, 443, 81],
         "internal": [8080, 3306]
@@ -137,7 +137,7 @@
         "keyPath": "~/.ssh/arm_key",
         "command": "ssh -i ~/.ssh/arm_key ubuntu@<pending>"
       },
-      "services": ["n8n-server-ai", "n8n-ai-db", "npm-arm"],
+      "services": ["n8n-ai-app", "n8n-ai-db", "npm-oracle-arm"],
       "ports": {
         "external": [22, 80, 443, 81],
         "internal": [5678]
@@ -169,7 +169,7 @@
         "keyPath": "~/.ssh/gcloud_key",
         "command": "gcloud compute ssh arch-1 --zone us-central1-a"
       },
-      "services": ["mail", "mail-db", "terminal", "npm-gcloud"],
+      "services": ["mail-app", "mail-db", "terminal-app", "npm-gcloud"],
       "ports": {
         "external": [22, 80, 443, 81, 25, 587, 993],
         "internal": [8025]
@@ -213,14 +213,14 @@
   },
 
   "services": {
-    "matomo": {
-      "id": "matomo",
-      "name": "Analytics",
+    "analytics-app": {
+      "id": "analytics-app",
+      "name": "analytics-app",
+      "displayName": "Matomo Analytics",
       "category": "coder",
       "vmId": "oracle-services-server-1",
       "technology": {
-        "image": "matomo:fpm-alpine",
-        "database": "mariadb:11.4"
+        "image": "matomo:fpm-alpine"
       },
       "network": {
         "internalPort": 8080,
@@ -233,16 +233,34 @@
         "direct": "http://129.151.228.66:8080"
       },
       "docker": {
-        "containerName": "matomo-app",
-        "dbContainerName": "matomo-db",
-        "network": "public_net"
+        "containerName": "analytics-app",
+        "network": "matomo_network"
       },
       "features": ["Anti-blocker proxy", "Tag Manager", "Custom events"],
-      "status": "active"
+      "status": "on"
     },
-    "syncthing": {
-      "id": "syncthing",
-      "name": "Sync",
+    "analytics-db": {
+      "id": "analytics-db",
+      "name": "analytics-db",
+      "displayName": "Matomo Database",
+      "category": "infra-db",
+      "vmId": "oracle-services-server-1",
+      "technology": {
+        "image": "mariadb:11.4"
+      },
+      "network": {
+        "internalPort": 3306
+      },
+      "docker": {
+        "containerName": "analytics-db",
+        "network": "matomo_network"
+      },
+      "status": "on"
+    },
+    "sync-app": {
+      "id": "sync-app",
+      "name": "sync-app",
+      "displayName": "Syncthing",
       "category": "user",
       "vmId": "oracle-web-server-1",
       "technology": {
@@ -260,21 +278,33 @@
         "gui": "https://sync.diegonmarcos.com"
       },
       "docker": {
-        "containerName": "syncthing",
-        "network": "public_net"
+        "containerName": "sync-app",
+        "network": "web_network"
       },
-      "status": "active"
+      "status": "on"
     },
-    "cloud-dashboard": {
-      "id": "cloud-dashboard",
-      "name": "Cloud Dashboard",
+    "sync-index-db": {
+      "id": "sync-index-db",
+      "name": "sync-index-db",
+      "displayName": "Sync Index DB",
+      "category": "infra-db",
+      "vmId": "oracle-web-server-1",
+      "technology": {
+        "type": "LevelDB (embedded)"
+      },
+      "notes": "File metadata index",
+      "status": "on"
+    },
+    "cloud-app": {
+      "id": "cloud-app",
+      "name": "cloud-app",
+      "displayName": "Cloud Dashboard",
       "category": "coder",
       "vmId": "oracle-web-server-1",
       "technology": {
-        "type": "Python Flask web app"
+        "type": "Static HTML/CSS/JS"
       },
       "network": {
-        "internalPort": 5000,
         "externalPort": 443,
         "domain": "cloud.diegonmarcos.com",
         "protocol": "HTTPS"
@@ -282,258 +312,41 @@
       "urls": {
         "gui": "https://cloud.diegonmarcos.com"
       },
-      "components": [
-        { "name": "front_web", "type": "Static HTML/CSS/JS" },
-        { "name": "flask-py", "type": "Flask API server" }
-      ],
-      "status": "active"
+      "status": "on"
     },
-    "mail": {
-      "id": "mail",
-      "name": "Mail",
-      "category": "user",
-      "vmId": "gcloud-arch-1",
-      "technology": {
-        "image": "docker-mailserver/docker-mailserver:latest"
-      },
-      "network": {
-        "smtpPort": 25,
-        "submissionPort": 587,
-        "imapsPort": 993,
-        "domain": "mail.diegonmarcos.com"
-      },
-      "features": ["DKIM", "SPF", "DMARC", "Fail2Ban"],
-      "status": "development"
-    },
-    "terminal": {
-      "id": "terminal",
-      "name": "Web IDE",
-      "category": "coder",
-      "vmId": "gcloud-arch-1",
-      "technology": {
-        "image": "wetty or ttyd"
-      },
-      "status": "development"
-    },
-    "agentic-dashboard": {
-      "id": "agentic-dashboard",
-      "name": "AI Agentic Dashboard",
-      "category": "ai",
-      "vmId": "oracle-arm-server",
-      "technology": {
-        "type": "n8n + AI agents"
-      },
-      "status": "development"
-    },
-    "vpn": {
-      "id": "vpn",
-      "name": "VPN",
-      "category": "user",
-      "vmId": "oracle-web-server-1",
-      "technology": {
-        "image": "kylemanna/openvpn:latest",
-        "type": "OpenVPN"
-      },
-      "network": {
-        "internalPort": 1194,
-        "externalPort": 1194,
-        "protocol": "UDP"
-      },
-      "docker": {
-        "containerName": "openvpn",
-        "network": "public_net"
-      },
-      "features": ["Secure remote access", "Site-to-site connectivity", "Client certificates"],
-      "status": "development"
-    },
-    "git-server": {
-      "id": "git-server",
-      "name": "Gitea",
-      "category": "coder",
-      "vmId": "oracle-web-server-1",
-      "technology": {
-        "image": "gitea/gitea:latest",
-        "database": "sqlite3"
-      },
-      "network": {
-        "internalPort": 3000,
-        "sshPort": 2222,
-        "externalPort": 443,
-        "domain": "git.diegonmarcos.com",
-        "protocol": "HTTPS"
-      },
-      "urls": {
-        "gui": "https://git.diegonmarcos.com"
-      },
-      "docker": {
-        "containerName": "gitea",
-        "network": "public_net"
-      },
-      "features": ["Git hosting", "Issue tracking", "Pull requests", "CI/CD integration"],
-      "status": "development"
-    },
-    "npm-web": {
-      "id": "npm-web",
-      "name": "NPM-VM-Oracle_Web_Server_1",
-      "category": "infra-proxy",
-      "vmId": "oracle-web-server-1",
-      "technology": {
-        "image": "jc21/nginx-proxy-manager:latest"
-      },
-      "network": {
-        "adminPort": 81,
-        "httpPort": 80,
-        "httpsPort": 443,
-        "ip": "130.110.251.193"
-      },
-      "urls": {
-        "admin": "http://130.110.251.193:81"
-      },
-      "docker": {
-        "containerName": "nginx-proxy",
-        "network": "public_net"
-      },
-      "features": ["SSL termination", "Let's Encrypt", "Access lists"],
-      "status": "active"
-    },
-    "npm-services": {
-      "id": "npm-services",
-      "name": "NPM-VM-Oracle_Services_Serv",
-      "category": "infra-proxy",
-      "vmId": "oracle-services-server-1",
-      "technology": {
-        "image": "jc21/nginx-proxy-manager:latest"
-      },
-      "network": {
-        "adminPort": 81,
-        "httpPort": 80,
-        "httpsPort": 443,
-        "ip": "129.151.228.66"
-      },
-      "urls": {
-        "admin": "http://129.151.228.66:81"
-      },
-      "docker": {
-        "containerName": "nginx-proxy",
-        "network": "public_net"
-      },
-      "status": "active"
-    },
-    "npm-arm": {
-      "id": "npm-arm",
-      "name": "NPM-VM-Oracle_Flex_ARM_Server",
-      "category": "infra-proxy",
-      "vmId": "oracle-arm-server",
-      "technology": {
-        "image": "jc21/nginx-proxy-manager:latest"
-      },
-      "network": {
-        "adminPort": 81,
-        "httpPort": 80,
-        "httpsPort": 443
-      },
-      "docker": {
-        "containerName": "nginx-proxy",
-        "network": "public_net"
-      },
-      "status": "development"
-    },
-    "npm-gcloud": {
-      "id": "npm-gcloud",
-      "name": "NPM-VM-Gcloud",
-      "category": "infra-proxy",
-      "vmId": "gcloud-arch-1",
-      "technology": {
-        "image": "jc21/nginx-proxy-manager:latest"
-      },
-      "network": {
-        "adminPort": 81,
-        "httpPort": 80,
-        "httpsPort": 443
-      },
-      "docker": {
-        "containerName": "nginx-proxy",
-        "network": "public_net"
-      },
-      "status": "development"
-    },
-    "matomo-db": {
-      "id": "matomo-db",
-      "name": "matomo-db",
-      "category": "infra-db",
-      "vmId": "oracle-services-server-1",
-      "technology": {
-        "image": "mariadb:11.4"
-      },
-      "network": {
-        "internalPort": 3306
-      },
-      "docker": {
-        "containerName": "matomo-db",
-        "network": "public_net"
-      },
-      "status": "active"
-    },
-    "mail-db": {
-      "id": "mail-db",
-      "name": "mail-db",
-      "category": "infra-db",
-      "vmId": "gcloud-arch-1",
-      "technology": {
-        "type": "SQLite"
-      },
-      "status": "development"
-    },
-    "n8n-ai-db": {
-      "id": "n8n-ai-db",
-      "name": "n8n-AI_db",
-      "category": "infra-db",
-      "vmId": "oracle-arm-server",
-      "technology": {
-        "type": "SQLite or PostgreSQL"
-      },
-      "status": "development"
-    },
-    "n8n-server-ai": {
-      "id": "n8n-server-ai",
-      "name": "n8n (AI)",
-      "category": "ai",
-      "vmId": "oracle-arm-server",
-      "technology": {
-        "image": "n8nio/n8n:latest"
-      },
-      "network": {
-        "internalPort": 5678,
-        "externalPort": 443,
-        "domain": "ai.diegonmarcos.com",
-        "protocol": "HTTPS"
-      },
-      "urls": {
-        "gui": "https://ai.diegonmarcos.com"
-      },
-      "docker": {
-        "containerName": "n8n-ai",
-        "network": "public_net"
-      },
-      "features": ["AI Agentic workflows", "LLM integrations"],
-      "status": "development"
-    },
-    "flask-server": {
-      "id": "flask-server",
-      "name": "Flask Server",
+    "cloud-api": {
+      "id": "cloud-api",
+      "name": "cloud-api",
+      "displayName": "Cloud Dashboard API",
       "category": "infra-services",
       "vmId": "oracle-web-server-1",
       "technology": {
         "type": "Python Flask"
       },
-      "docker": {
-        "containerName": "flask-server"
+      "network": {
+        "internalPort": 5000
       },
-      "status": "development"
+      "docker": {
+        "containerName": "cloud-api",
+        "network": "web_network"
+      },
+      "status": "dev"
     },
-    "n8n-server-infra": {
-      "id": "n8n-server-infra",
-      "name": "n8n (Infra)",
+    "cloud-db": {
+      "id": "cloud-db",
+      "name": "cloud-db",
+      "displayName": "Cloud Dashboard Database",
+      "category": "infra-db",
+      "vmId": "oracle-services-server-1",
+      "technology": {
+        "type": "SQLite or PostgreSQL"
+      },
+      "status": "dev"
+    },
+    "n8n-infra-app": {
+      "id": "n8n-infra-app",
+      "name": "n8n-infra-app",
+      "displayName": "n8n (Infra)",
       "category": "infra-services",
       "vmId": "oracle-web-server-1",
       "technology": {
@@ -549,32 +362,269 @@
         "gui": "https://n8n.diegonmarcos.com"
       },
       "docker": {
-        "containerName": "n8n",
-        "network": "public_net"
+        "containerName": "n8n-infra-app",
+        "network": "web_network"
       },
       "features": ["Workflow automation", "400+ integrations", "Webhooks"],
-      "status": "active"
+      "status": "on"
     },
-    "cloud-dashboard-db": {
-      "id": "cloud-dashboard-db",
-      "name": "Cloud_Dashboard-db",
-      "category": "infra-db",
-      "vmId": "oracle-services-server-1",
+    "n8n-ai-app": {
+      "id": "n8n-ai-app",
+      "name": "n8n-ai-app",
+      "displayName": "n8n (AI)",
+      "category": "ai",
+      "vmId": "oracle-arm-server",
       "technology": {
-        "type": "SQLite or PostgreSQL"
+        "image": "n8nio/n8n:latest"
       },
-      "status": "development"
+      "network": {
+        "internalPort": 5678,
+        "externalPort": 443,
+        "domain": "ai.diegonmarcos.com",
+        "protocol": "HTTPS"
+      },
+      "urls": {
+        "gui": "https://ai.diegonmarcos.com"
+      },
+      "docker": {
+        "containerName": "n8n-ai-app",
+        "network": "ai_network"
+      },
+      "features": ["AI Agentic workflows", "LLM integrations"],
+      "status": "hold"
     },
-    "git-server-db": {
-      "id": "git-server-db",
-      "name": "Git_Server-db",
+    "n8n-ai-db": {
+      "id": "n8n-ai-db",
+      "name": "n8n-ai-db",
+      "displayName": "n8n AI Database",
+      "category": "infra-db",
+      "vmId": "oracle-arm-server",
+      "technology": {
+        "type": "PostgreSQL"
+      },
+      "docker": {
+        "containerName": "n8n-ai-db",
+        "network": "ai_network"
+      },
+      "status": "hold"
+    },
+    "git-app": {
+      "id": "git-app",
+      "name": "git-app",
+      "displayName": "Gitea",
+      "category": "coder",
+      "vmId": "oracle-web-server-1",
+      "technology": {
+        "image": "gitea/gitea:latest"
+      },
+      "network": {
+        "internalPort": 3000,
+        "sshPort": 2222,
+        "externalPort": 443,
+        "domain": "git.diegonmarcos.com",
+        "protocol": "HTTPS"
+      },
+      "urls": {
+        "gui": "https://git.diegonmarcos.com"
+      },
+      "docker": {
+        "containerName": "git-app",
+        "network": "web_network"
+      },
+      "features": ["Git hosting", "Issue tracking", "Pull requests", "CI/CD integration"],
+      "status": "dev"
+    },
+    "git-db": {
+      "id": "git-db",
+      "name": "git-db",
+      "displayName": "Gitea Database",
       "category": "infra-db",
       "vmId": "oracle-web-server-1",
       "technology": {
         "type": "SQLite"
       },
-      "notes": "Embedded in Gitea container, uses SQLite for lightweight hosting",
-      "status": "development"
+      "notes": "Embedded in Gitea container",
+      "status": "dev"
+    },
+    "mail-app": {
+      "id": "mail-app",
+      "name": "mail-app",
+      "displayName": "Mail Server",
+      "category": "user",
+      "vmId": "gcloud-arch-1",
+      "technology": {
+        "image": "docker-mailserver/docker-mailserver:latest"
+      },
+      "network": {
+        "smtpPort": 25,
+        "submissionPort": 587,
+        "imapsPort": 993,
+        "domain": "mail.diegonmarcos.com"
+      },
+      "docker": {
+        "containerName": "mail-app",
+        "network": "mail_network"
+      },
+      "features": ["DKIM", "SPF", "DMARC", "Fail2Ban"],
+      "status": "dev"
+    },
+    "mail-db": {
+      "id": "mail-db",
+      "name": "mail-db",
+      "displayName": "Mail Database",
+      "category": "infra-db",
+      "vmId": "gcloud-arch-1",
+      "technology": {
+        "type": "SQLite"
+      },
+      "docker": {
+        "containerName": "mail-db",
+        "network": "mail_network"
+      },
+      "status": "dev"
+    },
+    "terminal-app": {
+      "id": "terminal-app",
+      "name": "terminal-app",
+      "displayName": "Web Terminal",
+      "category": "coder",
+      "vmId": "gcloud-arch-1",
+      "technology": {
+        "image": "wetty or ttyd"
+      },
+      "docker": {
+        "containerName": "terminal-app",
+        "network": "bridge"
+      },
+      "status": "dev"
+    },
+    "vpn-app": {
+      "id": "vpn-app",
+      "name": "vpn-app",
+      "displayName": "OpenVPN",
+      "category": "user",
+      "vmId": "oracle-web-server-1",
+      "technology": {
+        "image": "kylemanna/openvpn:latest"
+      },
+      "network": {
+        "internalPort": 1194,
+        "externalPort": 1194,
+        "protocol": "UDP"
+      },
+      "docker": {
+        "containerName": "vpn-app",
+        "network": "web_network"
+      },
+      "features": ["Secure remote access", "Site-to-site connectivity", "Client certificates"],
+      "status": "dev"
+    },
+    "cache-app": {
+      "id": "cache-app",
+      "name": "cache-app",
+      "displayName": "Redis Cache",
+      "category": "infra-services",
+      "vmId": "oracle-web-server-1",
+      "technology": {
+        "image": "redis:alpine"
+      },
+      "network": {
+        "internalPort": 6379
+      },
+      "docker": {
+        "containerName": "cache-app",
+        "network": "web_network"
+      },
+      "status": "dev"
+    },
+    "npm-oracle-web": {
+      "id": "npm-oracle-web",
+      "name": "npm-oracle-web",
+      "displayName": "NPM (Oracle Web)",
+      "category": "infra-proxy",
+      "vmId": "oracle-web-server-1",
+      "technology": {
+        "image": "jc21/nginx-proxy-manager:latest"
+      },
+      "network": {
+        "adminPort": 81,
+        "httpPort": 80,
+        "httpsPort": 443,
+        "ip": "130.110.251.193"
+      },
+      "urls": {
+        "admin": "http://130.110.251.193:81"
+      },
+      "docker": {
+        "containerName": "npm-oracle-web",
+        "network": "web_network"
+      },
+      "features": ["SSL termination", "Let's Encrypt", "Access lists"],
+      "status": "on"
+    },
+    "npm-oracle-services": {
+      "id": "npm-oracle-services",
+      "name": "npm-oracle-services",
+      "displayName": "NPM (Oracle Services)",
+      "category": "infra-proxy",
+      "vmId": "oracle-services-server-1",
+      "technology": {
+        "image": "jc21/nginx-proxy-manager:latest"
+      },
+      "network": {
+        "adminPort": 81,
+        "httpPort": 80,
+        "httpsPort": 443,
+        "ip": "129.151.228.66"
+      },
+      "urls": {
+        "admin": "http://129.151.228.66:81"
+      },
+      "docker": {
+        "containerName": "npm-oracle-services",
+        "network": "matomo_network"
+      },
+      "status": "on"
+    },
+    "npm-oracle-arm": {
+      "id": "npm-oracle-arm",
+      "name": "npm-oracle-arm",
+      "displayName": "NPM (Oracle ARM)",
+      "category": "infra-proxy",
+      "vmId": "oracle-arm-server",
+      "technology": {
+        "image": "jc21/nginx-proxy-manager:latest"
+      },
+      "network": {
+        "adminPort": 81,
+        "httpPort": 80,
+        "httpsPort": 443
+      },
+      "docker": {
+        "containerName": "npm-oracle-arm",
+        "network": "ai_network"
+      },
+      "status": "hold"
+    },
+    "npm-gcloud": {
+      "id": "npm-gcloud",
+      "name": "npm-gcloud",
+      "displayName": "NPM (GCloud)",
+      "category": "infra-proxy",
+      "vmId": "gcloud-arch-1",
+      "technology": {
+        "image": "jc21/nginx-proxy-manager:latest"
+      },
+      "network": {
+        "adminPort": 81,
+        "httpPort": 80,
+        "httpsPort": 443
+      },
+      "docker": {
+        "containerName": "npm-gcloud",
+        "network": "mail_network"
+      },
+      "status": "dev"
     }
   },
 
@@ -582,39 +632,45 @@
     "primary": "diegonmarcos.com",
     "subdomains": {
       "analytics.diegonmarcos.com": {
-        "service": "matomo",
+        "service": "analytics-app",
         "vmId": "oracle-services-server-1",
         "ip": "129.151.228.66",
         "ssl": true
       },
       "sync.diegonmarcos.com": {
-        "service": "syncthing",
+        "service": "sync-app",
         "vmId": "oracle-web-server-1",
         "ip": "130.110.251.193",
         "ssl": true
       },
       "n8n.diegonmarcos.com": {
-        "service": "n8n-server-infra",
+        "service": "n8n-infra-app",
+        "vmId": "oracle-web-server-1",
+        "ip": "130.110.251.193",
+        "ssl": true
+      },
+      "cloud.diegonmarcos.com": {
+        "service": "cloud-app",
         "vmId": "oracle-web-server-1",
         "ip": "130.110.251.193",
         "ssl": true
       },
       "ai.diegonmarcos.com": {
-        "service": "n8n-server-ai",
+        "service": "n8n-ai-app",
         "vmId": "oracle-arm-server",
         "ip": "pending",
         "ssl": true,
         "status": "planned"
       },
       "mail.diegonmarcos.com": {
-        "service": "mail",
+        "service": "mail-app",
         "vmId": "gcloud-arch-1",
         "ip": "pending",
         "ssl": true,
         "status": "planned"
       },
       "git.diegonmarcos.com": {
-        "service": "git-server",
+        "service": "git-app",
         "vmId": "oracle-web-server-1",
         "ip": "130.110.251.193",
         "ssl": true,
@@ -699,9 +755,9 @@
 
   "resources": {
     "services": {
-      "mail-server": {
-        "id": "mail-server",
-        "name": "Mail Server",
+      "mail": {
+        "id": "mail",
+        "name": "Mail",
         "status": "dev",
         "category": "Productivity",
         "ram": { "min": "520 MB", "max": "1 GB" },
@@ -709,8 +765,8 @@
         "bandwidth": { "min": "1 GB/mo", "max": "10 GB/mo" },
         "notes": "Email stack",
         "components": [
-          { "name": "mailserver", "ram": { "min": "512 MB", "max": "1 GB" }, "storage": { "min": "100 MB", "max": "500 MB" }, "bandwidth": { "min": "1 GB/mo", "max": "10 GB/mo" }, "notes": "App + config" },
-          { "name": "mail-db (SQLite)", "ram": { "min": "8 MB", "max": "32 MB" }, "storage": { "min": "5 GB", "max": "50 GB" }, "bandwidth": null, "notes": "Mailboxes + indexes" }
+          { "name": "mail-app", "ram": { "min": "512 MB", "max": "1 GB" }, "storage": { "min": "100 MB", "max": "500 MB" }, "bandwidth": { "min": "1 GB/mo", "max": "10 GB/mo" }, "notes": "App + config" },
+          { "name": "mail-db", "ram": { "min": "8 MB", "max": "32 MB" }, "storage": { "min": "5 GB", "max": "50 GB" }, "bandwidth": null, "notes": "Mailboxes + indexes (SQLite)" }
         ]
       },
       "npm": {
@@ -729,33 +785,33 @@
           { "name": "npm-gcloud", "ram": { "min": "128 MB", "max": "256 MB" }, "storage": { "min": "100 MB", "max": "500 MB" }, "bandwidth": { "min": "5 GB/mo", "max": "20 GB/mo" }, "notes": "GCloud (dev)" }
         ]
       },
-      "matomo": {
-        "id": "matomo",
-        "name": "Matomo",
+      "analytics": {
+        "id": "analytics",
+        "name": "Analytics",
         "status": "on",
         "category": "Web",
         "ram": { "min": "512 MB", "max": "1 GB" },
         "storage": { "min": "3 GB", "max": "15 GB" },
         "bandwidth": { "min": "500 MB/mo", "max": "2 GB/mo" },
-        "notes": "Analytics platform",
+        "notes": "Matomo Analytics platform",
         "components": [
-          { "name": "matomo-app", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "2 GB", "max": "5 GB" }, "bandwidth": { "min": "500 MB/mo", "max": "2 GB/mo" }, "notes": "PHP FPM Alpine" },
-          { "name": "matomo-db (MariaDB)", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "1 GB", "max": "10 GB" }, "bandwidth": null, "notes": "Grows with analytics data" }
+          { "name": "analytics-app", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "2 GB", "max": "5 GB" }, "bandwidth": { "min": "500 MB/mo", "max": "2 GB/mo" }, "notes": "PHP FPM Alpine" },
+          { "name": "analytics-db", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "1 GB", "max": "10 GB" }, "bandwidth": null, "notes": "MariaDB - grows with analytics data" }
         ]
       },
-      "gitea": {
-        "id": "gitea",
-        "name": "Gitea",
+      "git": {
+        "id": "git",
+        "name": "Git",
         "status": "dev",
         "category": "Productivity",
         "ram": { "min": "264 MB", "max": "544 MB" },
         "storage": { "min": "11 GB", "max": "15 GB" },
         "bandwidth": { "min": "2 GB/mo", "max": "10 GB/mo" },
-        "notes": "Git hosting",
+        "notes": "Gitea hosting",
         "components": [
-          { "name": "gitea", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "1 GB", "max": "5 GB" }, "bandwidth": { "min": "2 GB/mo", "max": "10 GB/mo" }, "notes": "Web + Git server" },
-          { "name": "gitea-db (SQLite)", "ram": { "min": "8 MB", "max": "32 MB" }, "storage": { "min": "Variable", "max": "Variable" }, "bandwidth": null, "notes": "Embedded DB" },
-          { "name": "gitea-repos-db", "ram": null, "storage": { "min": "10 GB", "max": "10 GB" }, "bandwidth": null, "notes": "Git repositories storage" }
+          { "name": "git-app", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "1 GB", "max": "5 GB" }, "bandwidth": { "min": "2 GB/mo", "max": "10 GB/mo" }, "notes": "Web + Git server" },
+          { "name": "git-db", "ram": { "min": "8 MB", "max": "32 MB" }, "storage": { "min": "Variable", "max": "Variable" }, "bandwidth": null, "notes": "SQLite embedded" },
+          { "name": "git-repos", "ram": null, "storage": { "min": "10 GB", "max": "10 GB" }, "bandwidth": null, "notes": "Git repositories storage" }
         ]
       },
       "n8n-infra": {
@@ -768,53 +824,53 @@
         "bandwidth": { "min": "1 GB/mo", "max": "5 GB/mo" },
         "notes": "Workflow automation",
         "components": [
-          { "name": "n8n", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "500 MB", "max": "2 GB" }, "bandwidth": { "min": "1 GB/mo", "max": "5 GB/mo" }, "notes": "Workflows + execution logs" }
+          { "name": "n8n-infra-app", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "500 MB", "max": "2 GB" }, "bandwidth": { "min": "1 GB/mo", "max": "5 GB/mo" }, "notes": "Workflows + execution logs" }
         ]
       },
-      "syncthing": {
-        "id": "syncthing",
+      "sync": {
+        "id": "sync",
         "name": "Sync",
         "status": "on",
         "category": "Productivity",
         "ram": { "min": "128 MB", "max": "256 MB" },
         "storage": { "min": "5.2 GB", "max": "106 GB" },
         "bandwidth": { "min": "10 GB/mo", "max": "50 GB/mo" },
-        "notes": "File sync",
+        "notes": "Syncthing file sync",
         "components": [
-          { "name": "syncthing", "ram": { "min": "128 MB", "max": "256 MB" }, "storage": { "min": "100 MB", "max": "500 MB" }, "bandwidth": { "min": "10 GB/mo", "max": "50 GB/mo" }, "notes": "App + config" },
+          { "name": "sync-app", "ram": { "min": "128 MB", "max": "256 MB" }, "storage": { "min": "100 MB", "max": "500 MB" }, "bandwidth": { "min": "10 GB/mo", "max": "50 GB/mo" }, "notes": "App + config" },
           { "name": "sync-index-db", "ram": null, "storage": { "min": "100 MB", "max": "500 MB" }, "bandwidth": null, "notes": "File metadata index" },
           { "name": "sync-files-db", "ram": null, "storage": { "min": "100 GB", "max": "100 GB" }, "bandwidth": null, "notes": "Synced files storage" },
           { "name": "sync-obj-db", "ram": null, "storage": { "min": "5 GB", "max": "5 GB" }, "bandwidth": null, "notes": "Object/blob storage" }
         ]
       },
-      "redis": {
-        "id": "redis",
-        "name": "Redis",
-        "status": "hold",
+      "cache": {
+        "id": "cache",
+        "name": "Cache",
+        "status": "dev",
         "category": "Cache",
         "ram": { "min": "64 MB", "max": "256 MB" },
         "storage": { "min": "100 MB", "max": "1 GB" },
         "bandwidth": null,
-        "notes": "In-memory store",
+        "notes": "Redis in-memory store",
         "components": [
-          { "name": "redis", "ram": { "min": "64 MB", "max": "256 MB" }, "storage": { "min": "100 MB", "max": "1 GB" }, "bandwidth": null, "notes": "Session/cache data" }
+          { "name": "cache-app", "ram": { "min": "64 MB", "max": "256 MB" }, "storage": { "min": "100 MB", "max": "1 GB" }, "bandwidth": null, "notes": "Session/cache data" }
         ]
       },
-      "openvpn": {
-        "id": "openvpn",
-        "name": "OpenVPN",
+      "vpn": {
+        "id": "vpn",
+        "name": "VPN",
         "status": "dev",
         "category": "Infrastructure",
         "ram": { "min": "64 MB", "max": "128 MB" },
         "storage": { "min": "50 MB", "max": "100 MB" },
         "bandwidth": { "min": "5 GB/mo", "max": "50 GB/mo" },
-        "notes": "VPN server",
+        "notes": "OpenVPN server",
         "components": [
-          { "name": "openvpn", "ram": { "min": "64 MB", "max": "128 MB" }, "storage": { "min": "50 MB", "max": "100 MB" }, "bandwidth": { "min": "5 GB/mo", "max": "50 GB/mo" }, "notes": "Client configs + certs" }
+          { "name": "vpn-app", "ram": { "min": "64 MB", "max": "128 MB" }, "storage": { "min": "50 MB", "max": "100 MB" }, "bandwidth": { "min": "5 GB/mo", "max": "50 GB/mo" }, "notes": "Client configs + certs" }
         ]
       },
-      "cloud-dashboard": {
-        "id": "cloud-dashboard",
+      "cloud": {
+        "id": "cloud",
         "name": "Cloud Dashboard",
         "status": "on",
         "category": "Coder",
@@ -823,34 +879,22 @@
         "bandwidth": { "min": "100 MB/mo", "max": "500 MB/mo" },
         "notes": "Cloud Dashboard",
         "components": [
-          { "name": "front_web", "ram": null, "storage": { "min": "5 MB", "max": "5 MB" }, "bandwidth": { "min": "50 MB/mo", "max": "200 MB/mo" }, "notes": "Static HTML/CSS/JS" },
-          { "name": "flask-py", "ram": { "min": "64 MB", "max": "128 MB" }, "storage": { "min": "50 MB", "max": "100 MB" }, "bandwidth": { "min": "100 MB/mo", "max": "500 MB/mo" }, "notes": "Flask API server" }
+          { "name": "cloud-app", "ram": null, "storage": { "min": "5 MB", "max": "5 MB" }, "bandwidth": { "min": "50 MB/mo", "max": "200 MB/mo" }, "notes": "Static HTML/CSS/JS" },
+          { "name": "cloud-api", "ram": { "min": "64 MB", "max": "128 MB" }, "storage": { "min": "50 MB", "max": "100 MB" }, "bandwidth": { "min": "100 MB/mo", "max": "500 MB/mo" }, "notes": "Flask API server" },
+          { "name": "cloud-db", "ram": { "min": "8 MB", "max": "32 MB" }, "storage": { "min": "50 MB", "max": "200 MB" }, "bandwidth": null, "notes": "SQLite or PostgreSQL" }
         ]
       },
-      "flask-server": {
-        "id": "flask-server",
-        "name": "Flask Server",
-        "status": "on",
-        "category": "Infrastructure",
-        "ram": { "min": "64 MB", "max": "128 MB" },
-        "storage": { "min": "50 MB", "max": "100 MB" },
-        "bandwidth": { "min": "100 MB/mo", "max": "500 MB/mo" },
-        "notes": "Cloud Dashboard API",
-        "components": [
-          { "name": "flask-server", "ram": { "min": "64 MB", "max": "128 MB" }, "storage": { "min": "50 MB", "max": "100 MB" }, "bandwidth": { "min": "100 MB/mo", "max": "500 MB/mo" }, "notes": "Lightweight API" }
-        ]
-      },
-      "web-terminal": {
-        "id": "web-terminal",
-        "name": "Web Terminal",
+      "terminal": {
+        "id": "terminal",
+        "name": "Terminal",
         "status": "dev",
         "category": "Productivity",
         "ram": { "min": "64 MB", "max": "128 MB" },
         "storage": { "min": "50 MB", "max": "100 MB" },
         "bandwidth": { "min": "500 MB/mo", "max": "2 GB/mo" },
-        "notes": "Browser shell",
+        "notes": "Web terminal (wetty/ttyd)",
         "components": [
-          { "name": "wetty/ttyd", "ram": { "min": "64 MB", "max": "128 MB" }, "storage": { "min": "50 MB", "max": "100 MB" }, "bandwidth": { "min": "500 MB/mo", "max": "2 GB/mo" }, "notes": "Session-based" }
+          { "name": "terminal-app", "ram": { "min": "64 MB", "max": "128 MB" }, "storage": { "min": "50 MB", "max": "100 MB" }, "bandwidth": { "min": "500 MB/mo", "max": "2 GB/mo" }, "notes": "Session-based" }
         ]
       },
       "n8n-ai": {
@@ -863,8 +907,8 @@
         "bandwidth": { "min": "5 GB/mo", "max": "20 GB/mo" },
         "notes": "AI Agentic workflows",
         "components": [
-          { "name": "n8n-ai", "ram": { "min": "1 GB", "max": "48 GB" }, "storage": { "min": "2 GB", "max": "10 GB" }, "bandwidth": { "min": "5 GB/mo", "max": "20 GB/mo" }, "notes": "LLM context + workflows" },
-          { "name": "n8n-ai-db (PostgreSQL)", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "1 GB", "max": "10 GB" }, "bandwidth": null, "notes": "Varies by usage" }
+          { "name": "n8n-ai-app", "ram": { "min": "1 GB", "max": "48 GB" }, "storage": { "min": "2 GB", "max": "10 GB" }, "bandwidth": { "min": "5 GB/mo", "max": "20 GB/mo" }, "notes": "LLM context + workflows" },
+          { "name": "n8n-ai-db", "ram": { "min": "256 MB", "max": "512 MB" }, "storage": { "min": "1 GB", "max": "10 GB" }, "bandwidth": null, "notes": "PostgreSQL - varies by usage" }
         ]
       }
     },
@@ -873,7 +917,7 @@
         "id": "oracle-web-server-1",
         "name": "Oracle Web Server 1",
         "status": "on",
-        "services": ["n8n", "Syncthing", "Flask", "NPM", "VPN", "Gitea"],
+        "services": ["n8n-infra-app", "sync-app", "cloud-app", "cloud-api", "npm-oracle-web", "vpn-app", "git-app", "cache-app"],
         "ram": { "min": "800 MB", "max": "1.5 GB" },
         "storage": { "min": "5 GB", "max": "15 GB" },
         "bandwidth": { "min": "20 GB/mo", "max": "80 GB/mo" }
@@ -882,7 +926,7 @@
         "id": "oracle-services-server-1",
         "name": "Oracle Services Server 1",
         "status": "on",
-        "services": ["Matomo", "MariaDB", "NPM"],
+        "services": ["analytics-app", "analytics-db", "cloud-db", "npm-oracle-services"],
         "ram": { "min": "600 MB", "max": "1.2 GB" },
         "storage": { "min": "5 GB", "max": "15 GB" },
         "bandwidth": { "min": "5 GB/mo", "max": "20 GB/mo" }
@@ -891,7 +935,7 @@
         "id": "gcloud-arch-1",
         "name": "GCloud Arch 1",
         "status": "dev",
-        "services": ["Mail", "Terminal", "NPM", "SQLite"],
+        "services": ["mail-app", "mail-db", "terminal-app", "npm-gcloud"],
         "ram": { "min": "800 MB", "max": "1.5 GB" },
         "storage": { "min": "10 GB", "max": "50 GB" },
         "bandwidth": { "min": "5 GB/mo", "max": "15 GB/mo" }
@@ -900,25 +944,25 @@
         "id": "oracle-arm-server",
         "name": "Oracle ARM Server",
         "status": "hold",
-        "services": ["n8n (AI)", "NPM", "PostgreSQL"],
+        "services": ["n8n-ai-app", "n8n-ai-db", "npm-oracle-arm"],
         "ram": { "min": "6 GB", "max": "24 GB" },
         "storage": { "min": "5 GB", "max": "20 GB" },
         "bandwidth": { "min": "10 GB/mo", "max": "40 GB/mo" }
       },
-      "generic-vps-infra": {
-        "id": "generic-vps-infra",
-        "name": "Generic VPS (Infra)",
-        "status": "dev",
-        "services": ["Variable services"],
+      "generic-vps-0-infra": {
+        "id": "generic-vps-0-infra",
+        "name": "Generic_VPS_0_Infra",
+        "status": "tbd",
+        "services": ["TBD"],
         "ram": { "min": "1 GB", "max": "4 GB" },
         "storage": { "min": "20 GB", "max": "100 GB" },
         "bandwidth": { "min": "10 GB/mo", "max": "50 GB/mo" }
       },
-      "generic-vps-ai": {
-        "id": "generic-vps-ai",
-        "name": "Generic VPS (AI)",
-        "status": "dev",
-        "services": ["LLM inference", "AI workloads"],
+      "generic-vps-1-ai": {
+        "id": "generic-vps-1-ai",
+        "name": "Generic_VPS_1_AI",
+        "status": "tbd",
+        "services": ["TBD"],
         "ram": { "min": "8 GB", "max": "32 GB" },
         "storage": { "min": "50 GB", "max": "200 GB" },
         "bandwidth": { "min": "20 GB/mo", "max": "100 GB/mo" }
