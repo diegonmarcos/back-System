@@ -1,14 +1,24 @@
 #!/usr/bin/env python3
 """
 Cloud Infrastructure Dashboard
-A Python TUI for monitoring and managing cloud VMs and services
+A unified Python tool for monitoring and managing cloud VMs and services
 
-Version: 5.0.0
+Modes:
+  - TUI Mode: Interactive terminal dashboard
+  - Server Mode: Flask API for web dashboard
+  - CLI Mode: Quick status output
+
+Version: 6.0.0
 Author: Diego Nepomuceno Marcos
-Last Updated: 2025-12-02
+Last Updated: 2025-12-03
 
-Dependencies: paramiko (optional for SSH), requests (optional for HTTP checks)
-Data Source: cloud-infrastructure.json
+Usage:
+  python cloud_dash.py          # Interactive TUI
+  python cloud_dash.py serve    # Start Flask API server
+  python cloud_dash.py status   # Quick CLI status
+  python cloud_dash.py help     # Show help
+
+Data Source: cloud_dash.json
 """
 
 import json
@@ -16,6 +26,7 @@ import os
 import subprocess
 import sys
 import shutil
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 
@@ -23,9 +34,15 @@ from typing import Optional, Dict, Any, List
 # CONFIGURATION
 # =============================================================================
 
-VERSION = "5.0.0"
+VERSION = "6.0.0"
 SCRIPT_DIR = Path(__file__).parent.resolve()
-CONFIG_FILE = SCRIPT_DIR / "cloud-infrastructure.json"
+CONFIG_FILE = SCRIPT_DIR / "cloud_dash.json"
+STATIC_DIR = SCRIPT_DIR / "front-cloud" / "dist_vanilla"
+TEMPLATE_DIR = SCRIPT_DIR / "front-cloud" / "dist_vanilla"
+
+# Server config
+SERVER_HOST = '0.0.0.0'
+SERVER_PORT = 5000
 
 # Timeouts (seconds)
 SSH_TIMEOUT = 5
@@ -52,13 +69,12 @@ C = Colors()
 
 _config: Optional[Dict[str, Any]] = None
 
-def load_config() -> Dict[str, Any]:
+def load_config(force_reload: bool = False) -> Dict[str, Any]:
     """Load and cache the JSON configuration."""
     global _config
-    if _config is None:
+    if _config is None or force_reload:
         if not CONFIG_FILE.exists():
-            print(f"{C.RED}Error: Config not found: {CONFIG_FILE}{C.RESET}")
-            sys.exit(1)
+            raise FileNotFoundError(f"Config not found: {CONFIG_FILE}")
         with open(CONFIG_FILE, 'r') as f:
             _config = json.load(f)
     return _config
@@ -191,8 +207,28 @@ def check_http(url: str) -> bool:
     except (subprocess.TimeoutExpired, Exception):
         return False
 
+def get_vm_status_dict(vm_id: str) -> Dict:
+    """Get VM status as dictionary (for API)."""
+    ip = get_vm(vm_id, 'network.publicIp')
+
+    if ip == 'pending':
+        return {'status': 'pending', 'label': 'PENDING', 'ping': False, 'ssh': False}
+
+    user = get_vm(vm_id, 'ssh.user')
+    key_path = expand_path(get_vm(vm_id, 'ssh.keyPath') or '')
+
+    ssh_ok = check_ssh(ip, user, key_path)
+    ping_ok = check_ping(ip) if not ssh_ok else True
+
+    if ssh_ok:
+        return {'status': 'online', 'label': 'ONLINE', 'ping': True, 'ssh': True}
+    elif ping_ok:
+        return {'status': 'no_ssh', 'label': 'NO SSH', 'ping': True, 'ssh': False}
+    else:
+        return {'status': 'offline', 'label': 'OFFLINE', 'ping': False, 'ssh': False}
+
 def get_vm_status(vm_id: str) -> str:
-    """Get formatted VM status string."""
+    """Get formatted VM status string (for TUI)."""
     ip = get_vm(vm_id, 'network.publicIp')
 
     if ip == 'pending':
@@ -208,12 +244,12 @@ def get_vm_status(vm_id: str) -> str:
     else:
         return f"{C.RED}○ OFFLINE{C.RESET}"
 
-def get_vm_ram_percent(vm_id: str) -> str:
+def get_vm_ram_percent(vm_id: str) -> Optional[int]:
     """Get RAM usage percentage via SSH."""
     ip = get_vm(vm_id, 'network.publicIp')
 
     if ip == 'pending':
-        return '-'
+        return None
 
     user = get_vm(vm_id, 'ssh.user')
     key_path = expand_path(get_vm(vm_id, 'ssh.keyPath') or '')
@@ -232,18 +268,87 @@ def get_vm_ram_percent(vm_id: str) -> str:
             text=True,
             timeout=SSH_TIMEOUT + 2
         )
-        if result.returncode == 0:
-            return result.stdout.strip() or '-'
-    except (subprocess.TimeoutExpired, Exception):
+        if result.returncode == 0 and result.stdout.strip():
+            return int(result.stdout.strip())
+    except (subprocess.TimeoutExpired, ValueError, Exception):
         pass
-    return '-'
+    return None
 
-def get_svc_status(svc_id: str) -> str:
-    """Get formatted service status string."""
+def get_vm_details(vm_id: str) -> Optional[Dict]:
+    """Get detailed VM information via SSH."""
+    ip = get_vm(vm_id, 'network.publicIp')
+
+    if ip == 'pending':
+        return None
+
+    user = get_vm(vm_id, 'ssh.user')
+    key_path = expand_path(get_vm(vm_id, 'ssh.keyPath') or '')
+
+    remote_cmd = '''
+echo "hostname:$(hostname)"
+echo "uptime:$(uptime -p 2>/dev/null || uptime)"
+echo "kernel:$(uname -r)"
+echo "cpu:$(nproc)"
+echo "ram_used:$(free -h | awk '/^Mem:/{print $3}')"
+echo "ram_total:$(free -h | awk '/^Mem:/{print $2}')"
+echo "ram_percent:$(free | awk '/^Mem:/{printf "%.1f", $3/$2*100}')"
+echo "disk_used:$(df -h / | awk 'NR==2{print $3}')"
+echo "disk_total:$(df -h / | awk 'NR==2{print $2}')"
+echo "containers:$(sudo docker ps -q 2>/dev/null | wc -l)"
+'''
+
+    try:
+        result = subprocess.run(
+            ['ssh', '-i', key_path, '-o', f'ConnectTimeout={SSH_TIMEOUT}',
+             '-o', 'StrictHostKeyChecking=no', f'{user}@{ip}', remote_cmd],
+            capture_output=True, text=True, timeout=SSH_TIMEOUT + 5
+        )
+        if result.returncode == 0:
+            details = {}
+            for line in result.stdout.strip().split('\n'):
+                if ':' in line:
+                    key, value = line.split(':', 1)
+                    details[key.strip()] = value.strip()
+            return details
+    except Exception:
+        pass
+    return None
+
+def get_svc_status_dict(svc_id: str) -> Dict:
+    """Get service status as dictionary (for API)."""
     status = get_svc(svc_id, 'status')
 
-    if status in ('planned', 'development'):
+    # Status: on, dev, hold, tbd
+    if status in ('dev', 'development', 'planned'):
+        return {'status': 'development', 'label': 'DEV', 'healthy': None}
+    if status == 'hold':
+        return {'status': 'hold', 'label': 'HOLD', 'healthy': None}
+    if status == 'tbd':
+        return {'status': 'tbd', 'label': 'TBD', 'healthy': None}
+
+    url = get_svc(svc_id, 'urls.gui') or get_svc(svc_id, 'urls.admin')
+
+    if not url or url == 'null':
+        return {'status': 'no_url', 'label': 'N/A', 'healthy': None}
+
+    healthy = check_http(url)
+    return {
+        'status': 'healthy' if healthy else 'error',
+        'label': 'HEALTHY' if healthy else 'ERROR',
+        'healthy': healthy
+    }
+
+def get_svc_status(svc_id: str) -> str:
+    """Get formatted service status string (for TUI)."""
+    status = get_svc(svc_id, 'status')
+
+    # Status: on, dev, hold, tbd
+    if status in ('dev', 'development', 'planned'):
         return f"{C.BLUE}◑ DEV{C.RESET}"
+    if status in ('hold',):
+        return f"{C.YELLOW}◐ HOLD{C.RESET}"
+    if status in ('tbd',):
+        return f"{C.DIM}○ TBD{C.RESET}"
 
     url = get_svc(svc_id, 'urls.gui') or get_svc(svc_id, 'urls.admin')
 
@@ -254,6 +359,320 @@ def get_svc_status(svc_id: str) -> str:
         return f"{C.GREEN}● HEALTHY{C.RESET}"
     else:
         return f"{C.RED}✖ ERROR{C.RESET}"
+
+def get_container_status(vm_id: str) -> Optional[list]:
+    """Get Docker container status on a VM."""
+    ip = get_vm(vm_id, 'network.publicIp')
+
+    if ip == 'pending':
+        return None
+
+    user = get_vm(vm_id, 'ssh.user')
+    key_path = expand_path(get_vm(vm_id, 'ssh.keyPath') or '')
+
+    try:
+        result = subprocess.run(
+            ['ssh', '-i', key_path, '-o', f'ConnectTimeout={SSH_TIMEOUT}',
+             '-o', 'StrictHostKeyChecking=no', f'{user}@{ip}',
+             'sudo docker ps -a --format "{{.Names}}|{{.Status}}|{{.Ports}}"'],
+            capture_output=True, text=True, timeout=SSH_TIMEOUT + 5
+        )
+        if result.returncode == 0:
+            containers = []
+            for line in result.stdout.strip().split('\n'):
+                if '|' in line:
+                    parts = line.split('|')
+                    containers.append({
+                        'name': parts[0] if len(parts) > 0 else '',
+                        'status': parts[1] if len(parts) > 1 else '',
+                        'ports': parts[2] if len(parts) > 2 else ''
+                    })
+            return containers
+    except Exception:
+        pass
+    return None
+
+# =============================================================================
+# FLASK API SERVER
+# =============================================================================
+
+def run_server(host: str = SERVER_HOST, port: int = SERVER_PORT, debug: bool = False):
+    """Run Flask API server."""
+    try:
+        from flask import Flask, jsonify, request, send_from_directory
+    except ImportError:
+        print(f"{C.RED}Error: Flask not installed. Run: pip install flask{C.RESET}")
+        sys.exit(1)
+
+    app = Flask(__name__, static_folder=str(STATIC_DIR))
+
+    # -------------------------------------------------------------------------
+    # Health & Config
+    # -------------------------------------------------------------------------
+
+    @app.route('/api/health')
+    def api_health():
+        return jsonify({'status': 'ok', 'service': 'cloud-dashboard', 'version': VERSION})
+
+    @app.route('/api/config')
+    def api_config():
+        try:
+            return jsonify(load_config())
+        except FileNotFoundError as e:
+            return jsonify({'error': str(e)}), 404
+
+    @app.route('/api/config/reload', methods=['POST'])
+    def api_config_reload():
+        try:
+            load_config(force_reload=True)
+            return jsonify({'status': 'ok', 'message': 'Configuration reloaded'})
+        except FileNotFoundError as e:
+            return jsonify({'error': str(e)}), 404
+
+    # -------------------------------------------------------------------------
+    # VMs
+    # -------------------------------------------------------------------------
+
+    @app.route('/api/vms')
+    def api_list_vms():
+        category = request.args.get('category')
+        vm_ids = get_vm_ids_by_category(category) if category else get_vm_ids()
+
+        vms = []
+        for vm_id in vm_ids:
+            vm_data = get_vm(vm_id)
+            vms.append({
+                'id': vm_id,
+                'name': vm_data.get('name'),
+                'provider': vm_data.get('provider'),
+                'category': vm_data.get('category'),
+                'ip': vm_data.get('network', {}).get('publicIp'),
+                'instanceType': vm_data.get('instanceType'),
+                'configStatus': vm_data.get('status')
+            })
+        return jsonify({'vms': vms})
+
+    @app.route('/api/vms/categories')
+    def api_vm_categories():
+        categories = [{'id': c, 'name': get_vm_category_name(c)} for c in get_vm_categories()]
+        return jsonify({'categories': categories})
+
+    @app.route('/api/vms/<vm_id>')
+    def api_get_vm(vm_id: str):
+        vm_data = get_vm(vm_id)
+        if not vm_data:
+            return jsonify({'error': f'VM not found: {vm_id}'}), 404
+        return jsonify({'id': vm_id, **vm_data})
+
+    @app.route('/api/vms/<vm_id>/status')
+    def api_vm_status(vm_id: str):
+        vm_data = get_vm(vm_id)
+        if not vm_data:
+            return jsonify({'error': f'VM not found: {vm_id}'}), 404
+
+        status = get_vm_status_dict(vm_id)
+        ram = get_vm_ram_percent(vm_id)
+
+        return jsonify({
+            'id': vm_id,
+            'name': vm_data.get('name'),
+            'ip': vm_data.get('network', {}).get('publicIp'),
+            **status,
+            'ram_percent': ram
+        })
+
+    @app.route('/api/vms/<vm_id>/details')
+    def api_vm_details(vm_id: str):
+        vm_data = get_vm(vm_id)
+        if not vm_data:
+            return jsonify({'error': f'VM not found: {vm_id}'}), 404
+
+        details = get_vm_details(vm_id)
+        if details is None:
+            return jsonify({'error': 'Failed to connect to VM'}), 503
+
+        return jsonify({'id': vm_id, 'name': vm_data.get('name'), 'details': details})
+
+    @app.route('/api/vms/<vm_id>/containers')
+    def api_vm_containers(vm_id: str):
+        vm_data = get_vm(vm_id)
+        if not vm_data:
+            return jsonify({'error': f'VM not found: {vm_id}'}), 404
+
+        containers = get_container_status(vm_id)
+        if containers is None:
+            return jsonify({'error': 'Failed to get container status'}), 503
+
+        return jsonify({'id': vm_id, 'name': vm_data.get('name'), 'containers': containers})
+
+    # -------------------------------------------------------------------------
+    # Services
+    # -------------------------------------------------------------------------
+
+    @app.route('/api/services')
+    def api_list_services():
+        category = request.args.get('category')
+        svc_ids = get_service_ids_by_category(category) if category else get_service_ids()
+
+        services = []
+        for svc_id in svc_ids:
+            svc_data = get_svc(svc_id)
+            url = svc_data.get('urls', {}).get('gui') or svc_data.get('urls', {}).get('admin')
+            services.append({
+                'id': svc_id,
+                'name': svc_data.get('name'),
+                'displayName': svc_data.get('displayName'),
+                'category': svc_data.get('category'),
+                'vmId': svc_data.get('vmId'),
+                'url': url,
+                'configStatus': svc_data.get('status')
+            })
+        return jsonify({'services': services})
+
+    @app.route('/api/services/categories')
+    def api_service_categories():
+        categories = [{'id': c, 'name': get_service_category_name(c)} for c in get_service_categories()]
+        return jsonify({'categories': categories})
+
+    @app.route('/api/services/<svc_id>')
+    def api_get_service(svc_id: str):
+        svc_data = get_svc(svc_id)
+        if not svc_data:
+            return jsonify({'error': f'Service not found: {svc_id}'}), 404
+        return jsonify({'id': svc_id, **svc_data})
+
+    @app.route('/api/services/<svc_id>/status')
+    def api_service_status(svc_id: str):
+        svc_data = get_svc(svc_id)
+        if not svc_data:
+            return jsonify({'error': f'Service not found: {svc_id}'}), 404
+
+        status = get_svc_status_dict(svc_id)
+        url = svc_data.get('urls', {}).get('gui') or svc_data.get('urls', {}).get('admin')
+
+        return jsonify({
+            'id': svc_id,
+            'name': svc_data.get('name'),
+            'displayName': svc_data.get('displayName'),
+            'url': url,
+            **status
+        })
+
+    # -------------------------------------------------------------------------
+    # Dashboard Summary
+    # -------------------------------------------------------------------------
+
+    @app.route('/api/dashboard/summary')
+    def api_dashboard_summary():
+        """Full summary with health checks."""
+        vm_summary = []
+        for cat_id in get_vm_categories():
+            cat_vms = []
+            for vm_id in get_vm_ids_by_category(cat_id):
+                vm_data = get_vm(vm_id)
+                status = get_vm_status_dict(vm_id)
+                ram = get_vm_ram_percent(vm_id)
+                cat_vms.append({
+                    'id': vm_id,
+                    'name': vm_data.get('name'),
+                    'ip': vm_data.get('network', {}).get('publicIp'),
+                    'instanceType': vm_data.get('instanceType'),
+                    **status,
+                    'ram_percent': ram
+                })
+            if cat_vms:
+                vm_summary.append({
+                    'category': cat_id,
+                    'categoryName': get_vm_category_name(cat_id),
+                    'vms': cat_vms
+                })
+
+        svc_summary = []
+        for cat_id in get_service_categories():
+            cat_svcs = []
+            for svc_id in get_service_ids_by_category(cat_id):
+                svc_data = get_svc(svc_id)
+                status = get_svc_status_dict(svc_id)
+                url = svc_data.get('urls', {}).get('gui') or svc_data.get('urls', {}).get('admin')
+                cat_svcs.append({
+                    'id': svc_id,
+                    'name': svc_data.get('name'),
+                    'displayName': svc_data.get('displayName'),
+                    'url': url,
+                    **status
+                })
+            if cat_svcs:
+                svc_summary.append({
+                    'category': cat_id,
+                    'categoryName': get_service_category_name(cat_id),
+                    'services': cat_svcs
+                })
+
+        return jsonify({'vms': vm_summary, 'services': svc_summary})
+
+    @app.route('/api/dashboard/quick-status')
+    def api_quick_status():
+        """Quick status from config only (no health checks)."""
+        vms = []
+        for vm_id in get_vm_ids():
+            vm_data = get_vm(vm_id)
+            vms.append({
+                'id': vm_id,
+                'name': vm_data.get('name'),
+                'ip': vm_data.get('network', {}).get('publicIp'),
+                'provider': vm_data.get('provider'),
+                'category': vm_data.get('category'),
+                'configStatus': vm_data.get('status')
+            })
+
+        services = []
+        for svc_id in get_service_ids():
+            svc_data = get_svc(svc_id)
+            url = svc_data.get('urls', {}).get('gui') or svc_data.get('urls', {}).get('admin')
+            services.append({
+                'id': svc_id,
+                'name': svc_data.get('name'),
+                'displayName': svc_data.get('displayName'),
+                'category': svc_data.get('category'),
+                'vmId': svc_data.get('vmId'),
+                'url': url,
+                'configStatus': svc_data.get('status')
+            })
+
+        return jsonify({'vms': vms, 'services': services})
+
+    @app.route('/api/providers')
+    def api_providers():
+        return jsonify({'providers': load_config().get('providers', {})})
+
+    @app.route('/api/domains')
+    def api_domains():
+        return jsonify(load_config().get('domains', {}))
+
+    # -------------------------------------------------------------------------
+    # Static Files & Dashboard
+    # -------------------------------------------------------------------------
+
+    @app.route('/')
+    @app.route('/dashboard')
+    def serve_dashboard():
+        return send_from_directory(str(STATIC_DIR), 'dashboard.html')
+
+    @app.route('/<path:path>')
+    def serve_static(path):
+        return send_from_directory(str(STATIC_DIR), path)
+
+    # -------------------------------------------------------------------------
+    # Run Server
+    # -------------------------------------------------------------------------
+
+    print(f"{C.CYAN}Starting Cloud Dashboard Server v{VERSION}{C.RESET}")
+    print(f"{C.GREEN}  API:       http://{host}:{port}/api/health{C.RESET}")
+    print(f"{C.GREEN}  Dashboard: http://{host}:{port}/dashboard{C.RESET}")
+    print(f"{C.DIM}  Config:    {CONFIG_FILE}{C.RESET}")
+    print()
+
+    app.run(host=host, port=port, debug=debug)
 
 # =============================================================================
 # TUI HELPERS
@@ -277,7 +696,7 @@ def confirm(message: str) -> bool:
     return response in ('y', 'yes')
 
 # =============================================================================
-# DISPLAY FUNCTIONS
+# TUI DISPLAY FUNCTIONS
 # =============================================================================
 
 def print_header():
@@ -312,9 +731,8 @@ def print_vm_table():
             vm_type = (get_vm(vm_id, 'instanceType') or '')[:14]
             status = get_vm_status(vm_id)
             ram = get_vm_ram_percent(vm_id)
-            ram_display = f"{ram}%" if ram != '-' else '-'
+            ram_display = f"{ram}%" if ram else '-'
 
-            # Status contains ANSI codes, need special handling
             print(f"  | {name:<20} | {ip:<13} | {status} | {ram_display:>4} | {vm_type:<14} |")
 
     print(f"  +{'-'*22}+{'-'*15}+{'-'*10}+{'-'*6}+{'-'*16}+")
@@ -339,7 +757,8 @@ def print_svc_table():
         print(f"  +{'-'*22}+{'-'*38}+{'-'*10}+")
 
         for svc_id in svcs:
-            name = (get_svc(svc_id, 'name') or '')[:20]
+            display_name = get_svc(svc_id, 'displayName') or get_svc(svc_id, 'name') or svc_id
+            name = display_name[:20]
             url = get_svc(svc_id, 'urls.gui') or get_svc(svc_id, 'urls.admin') or ''
 
             if url and url != 'null':
@@ -378,7 +797,7 @@ def display_dashboard():
     print_menu()
 
 # =============================================================================
-# SELECTION HELPERS
+# TUI SELECTION HELPERS
 # =============================================================================
 
 def select_vm(filter_type: str = 'all') -> Optional[str]:
@@ -428,7 +847,7 @@ def select_service(filter_type: str = 'all') -> Optional[str]:
             if not container or container == 'null':
                 continue
         elif filter_type == 'active':
-            if status in ('planned', 'development'):
+            if status in ('dev', 'development', 'planned', 'hold', 'tbd'):
                 continue
 
         options.append((svc_id, name, container))
@@ -454,7 +873,7 @@ def select_service(filter_type: str = 'all') -> Optional[str]:
     return None
 
 # =============================================================================
-# ACTIONS
+# TUI ACTIONS
 # =============================================================================
 
 def action_vm_details():
@@ -481,29 +900,18 @@ def action_vm_details():
 
     print(f"{C.BOLD}Remote System Info:{C.RESET}")
 
-    remote_cmd = '''
-echo "  Hostname: $(hostname)"
-echo "  Uptime:   $(uptime -p 2>/dev/null || uptime)"
-echo "  Kernel:   $(uname -r)"
-echo ""
-echo "Resources:"
-echo "  CPU:      $(nproc) cores"
-echo "  RAM:      $(free -h | awk '/^Mem:/{print $3 "/" $2}')"
-echo "  RAM %:    $(free | awk '/^Mem:/{printf "%.1f%%", $3/$2*100}')"
-echo "  Disk:     $(df -h / | awk 'NR==2{print $3 "/" $2}')"
-echo ""
-echo "Docker:"
-echo "  Running:  $(sudo docker ps -q 2>/dev/null | wc -l) containers"
-'''
-
-    try:
-        result = subprocess.run(
-            ['ssh', '-i', key_path, '-o', f'ConnectTimeout={SSH_TIMEOUT}',
-             '-o', 'StrictHostKeyChecking=no', f'{user}@{ip}', remote_cmd],
-            capture_output=True, text=True, timeout=SSH_TIMEOUT + 5
-        )
-        print(result.stdout)
-    except Exception:
+    details = get_vm_details(vm_id)
+    if details:
+        print(f"  Hostname: {details.get('hostname', '-')}")
+        print(f"  Uptime:   {details.get('uptime', '-')}")
+        print(f"  Kernel:   {details.get('kernel', '-')}")
+        print(f"\nResources:")
+        print(f"  CPU:      {details.get('cpu', '-')} cores")
+        print(f"  RAM:      {details.get('ram_used', '-')}/{details.get('ram_total', '-')} ({details.get('ram_percent', '-')}%)")
+        print(f"  Disk:     {details.get('disk_used', '-')}/{details.get('disk_total', '-')}")
+        print(f"\nDocker:")
+        print(f"  Running:  {details.get('containers', '-')} containers")
+    else:
         print(f"  {C.RED}Failed to connect{C.RESET}")
 
     wait_key()
@@ -666,7 +1074,6 @@ def action_ssh():
     print(f"\n{C.CYAN}Connecting to {name}...{C.RESET}")
     print(f"{C.DIM}Type 'exit' to return{C.RESET}\n")
 
-    # Run SSH interactively
     os.system(f'ssh -i {key_path} -o StrictHostKeyChecking=no {user}@{ip}')
 
 def action_open_url():
@@ -684,7 +1091,6 @@ def action_open_url():
 
     print(f"{C.CYAN}Opening {url}...{C.RESET}")
 
-    # Try to open URL
     if shutil.which('xdg-open'):
         subprocess.Popen(['xdg-open', url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     elif shutil.which('open'):
@@ -714,7 +1120,7 @@ def action_quick_status():
             status = get_vm_status(vm_id)
             ram = get_vm_ram_percent(vm_id)
 
-            if ram == '-':
+            if not ram:
                 print(f"  {name:<25} {ip:<16} {status}")
             else:
                 print(f"  {name:<25} {ip:<16} {status} RAM: {ram}%")
@@ -728,9 +1134,9 @@ def action_quick_status():
 
         print(f"{C.BOLD}{C.MAGENTA}{cat_name} Services:{C.RESET}")
         for svc_id in svcs:
-            name = get_svc(svc_id, 'name')
+            display_name = get_svc(svc_id, 'displayName') or get_svc(svc_id, 'name') or svc_id
             status = get_svc_status(svc_id)
-            print(f"  {name:<25} {status}")
+            print(f"  {display_name:<25} {status}")
         print()
 
     wait_key()
@@ -741,8 +1147,8 @@ def action_quick_status():
 
 def cli_status():
     """Print status for CLI mode (no colors)."""
-    print("Cloud Infrastructure Status")
-    print("=" * 28)
+    print(f"Cloud Infrastructure Status v{VERSION}")
+    print("=" * 40)
     print()
 
     for cat in get_vm_categories():
@@ -775,18 +1181,22 @@ def cli_status():
 
         print(f"{cat_name} Services:")
         for svc_id in svcs:
-            name = get_svc(svc_id, 'name')
+            display_name = get_svc(svc_id, 'displayName') or get_svc(svc_id, 'name') or svc_id
             url = get_svc(svc_id, 'urls.gui') or get_svc(svc_id, 'urls.admin')
             status = get_svc(svc_id, 'status')
 
-            if status in ('planned', 'development'):
-                print(f"  {name}: DEV/PLANNED")
+            if status in ('dev', 'development', 'planned'):
+                print(f"  {display_name}: DEV")
+            elif status == 'hold':
+                print(f"  {display_name}: HOLD")
+            elif status == 'tbd':
+                print(f"  {display_name}: TBD")
             elif not url or url == 'null':
-                print(f"  {name}: NO URL")
+                print(f"  {display_name}: NO URL")
             elif check_http(url):
-                print(f"  {name}: HEALTHY")
+                print(f"  {display_name}: HEALTHY")
             else:
-                print(f"  {name}: ERROR")
+                print(f"  {display_name}: ERROR")
         print()
 
 def cli_help():
@@ -797,16 +1207,28 @@ Usage: {sys.argv[0]} [command]
 
 Commands:
   (no args)     Launch interactive TUI dashboard
+  serve         Start Flask API server (for web dashboard)
+  serve --debug Start Flask in debug mode
   status        Show quick status of all VMs and services
   help          Show this help message
 
-Interactive Commands:
+TUI Commands:
   1 - VM Details          4 - Restart Container    7 - SSH to VM
   2 - Container Status    5 - View Logs            8 - Open URL
   3 - Reboot VM           6 - Stop/Start           R - Refresh
   S - Quick Status        Q - Quit
 
+API Endpoints (when running serve):
+  GET /api/health              - API health check
+  GET /api/vms                 - List all VMs
+  GET /api/vms/<id>/status     - VM health status
+  GET /api/services            - List all services
+  GET /api/services/<id>/status - Service health status
+  GET /api/dashboard/summary   - Full dashboard with health checks
+  GET /api/dashboard/quick-status - Quick status (no health checks)
+
 Config: {CONFIG_FILE}
+Static: {STATIC_DIR}
 """)
 
 # =============================================================================
@@ -814,7 +1236,7 @@ Config: {CONFIG_FILE}
 # =============================================================================
 
 def main_loop():
-    """Main interactive loop."""
+    """Main interactive TUI loop."""
     while True:
         display_dashboard()
         cmd = input("  Command: ").strip().lower()
@@ -829,7 +1251,7 @@ def main_loop():
             '7': action_ssh,
             '8': action_open_url,
             's': action_quick_status,
-            'r': lambda: None,  # Refresh (just redraw)
+            'r': lambda: None,
         }
 
         if cmd == 'q':
@@ -845,19 +1267,26 @@ def main_loop():
 
 def main():
     """Entry point."""
-    # Check dependencies
+    # Check basic dependencies
     for cmd in ['ssh', 'curl', 'ping']:
         if not shutil.which(cmd):
             print(f"{C.RED}Error: Missing dependency: {cmd}{C.RESET}")
             sys.exit(1)
 
-    # Load config to validate
-    load_config()
+    # Validate config
+    try:
+        load_config()
+    except FileNotFoundError as e:
+        print(f"{C.RED}Error: {e}{C.RESET}")
+        sys.exit(1)
 
     # Parse command
     if len(sys.argv) > 1:
         cmd = sys.argv[1]
-        if cmd == 'status':
+        if cmd == 'serve':
+            debug = '--debug' in sys.argv
+            run_server(debug=debug)
+        elif cmd == 'status':
             cli_status()
         elif cmd in ('help', '--help', '-h'):
             cli_help()
