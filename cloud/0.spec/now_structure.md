@@ -11,8 +11,8 @@ CLOUD DASHBOARD
 
 # Index.html
 - Services
-    - Cards
-    - Tree
+    - Cards Front
+    - Cards Back
 
 - Architeture
     - Resources
@@ -21,7 +21,8 @@ CLOUD DASHBOARD
 
 - Monitoring
     - Backlog
-    - Status (live)
+    - Status (Tree)
+    - Status (List)
 
 
 
@@ -38,7 +39,7 @@ CLOUD DASHBOARD
 ## Cards
 
 Front
-`3 collumns  User vs Coder`
+`3 collumns  User vs Coder vs AI`
     User
     - Sync
     - Mail
