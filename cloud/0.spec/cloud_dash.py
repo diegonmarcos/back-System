@@ -44,6 +44,14 @@ TEMPLATE_DIR = SCRIPT_DIR / "front-cloud" / "dist_vanilla"
 SERVER_HOST = '0.0.0.0'
 SERVER_PORT = 5000
 
+# GitHub OAuth config
+# Create an OAuth App at: https://github.com/settings/developers
+# Set callback URL to: https://cloud.diegonmarcos.com/cloud_dash.html
+GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID', 'Ov23liOg9JhezyYUCHmS')
+GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET', '66b4c7574336946f42b1b8645010e467c003ec98')
+# Allowed GitHub usernames that can perform admin actions (reboot, etc.)
+GITHUB_ALLOWED_USERS = os.environ.get('GITHUB_ALLOWED_USERS', 'diegonmarcos').split(',')
+
 # Timeouts (seconds)
 SSH_TIMEOUT = 5
 PING_TIMEOUT = 2
@@ -406,6 +414,22 @@ def run_server(host: str = SERVER_HOST, port: int = SERVER_PORT, debug: bool = F
 
     app = Flask(__name__, static_folder=str(STATIC_DIR))
 
+    # Enable CORS for API endpoints
+    @app.after_request
+    def add_cors_headers(response):
+        # Allow requests from any origin for the dashboard
+        origin = request.headers.get('Origin', '*')
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response
+
+    @app.route('/api/<path:path>', methods=['OPTIONS'])
+    def handle_options(path):
+        """Handle CORS preflight requests."""
+        return '', 204
+
     # -------------------------------------------------------------------------
     # Health & Config
     # -------------------------------------------------------------------------
@@ -648,6 +672,168 @@ def run_server(host: str = SERVER_HOST, port: int = SERVER_PORT, debug: bool = F
     @app.route('/api/domains')
     def api_domains():
         return jsonify(load_config().get('domains', {}))
+
+    # -------------------------------------------------------------------------
+    # GitHub OAuth & Authentication
+    # -------------------------------------------------------------------------
+
+    @app.route('/api/auth/callback')
+    def api_github_callback():
+        """Exchange GitHub OAuth code for access token and redirect back to frontend."""
+        import requests as req
+        from urllib.parse import urlencode
+
+        code = request.args.get('code')
+        frontend_url = 'https://cloud.diegonmarcos.com/cloud_dash.html'
+
+        if not code:
+            return f'<script>window.location.href="{frontend_url}?error=no_code";</script>'
+
+        if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET:
+            return f'<script>window.location.href="{frontend_url}?error=not_configured";</script>'
+
+        # Exchange code for access token
+        try:
+            token_response = req.post(
+                'https://github.com/login/oauth/access_token',
+                headers={'Accept': 'application/json'},
+                data={
+                    'client_id': GITHUB_CLIENT_ID,
+                    'client_secret': GITHUB_CLIENT_SECRET,
+                    'code': code
+                },
+                timeout=10
+            )
+            token_data = token_response.json()
+
+            if 'error' in token_data:
+                return f'<script>window.location.href="{frontend_url}?error=oauth_failed";</script>'
+
+            access_token = token_data.get('access_token')
+            if not access_token:
+                return f'<script>window.location.href="{frontend_url}?error=no_token";</script>'
+
+            # Get user info
+            user_response = req.get(
+                'https://api.github.com/user',
+                headers={
+                    'Authorization': f'Bearer {access_token}',
+                    'Accept': 'application/json'
+                },
+                timeout=10
+            )
+            user_data = user_response.json()
+
+            # Check if user is allowed
+            username = user_data.get('login', '')
+            is_admin = username in GITHUB_ALLOWED_USERS
+
+            # Redirect back to frontend with token in URL fragment (not query param for security)
+            import json
+            user_json = json.dumps({
+                'login': username,
+                'avatar_url': user_data.get('avatar_url', ''),
+                'name': user_data.get('name', ''),
+                'is_admin': is_admin
+            })
+
+            # Use JavaScript to store in localStorage and redirect
+            return f'''
+            <script>
+                localStorage.setItem('github_token', '{access_token}');
+                localStorage.setItem('github_user', '{user_json}');
+                window.location.href = '{frontend_url}';
+            </script>
+            '''
+
+        except Exception as e:
+            return f'<script>window.location.href="{frontend_url}?error=exception";</script>'
+
+    def verify_github_token(token: str) -> Optional[Dict]:
+        """Verify GitHub token and return user info if valid and authorized."""
+        import requests as req
+
+        if not token:
+            return None
+
+        try:
+            response = req.get(
+                'https://api.github.com/user',
+                headers={
+                    'Authorization': f'Bearer {token}',
+                    'Accept': 'application/json'
+                },
+                timeout=10
+            )
+            if response.status_code != 200:
+                return None
+
+            user_data = response.json()
+            username = user_data.get('login', '')
+
+            if username not in GITHUB_ALLOWED_USERS:
+                return None
+
+            return user_data
+        except Exception:
+            return None
+
+    # -------------------------------------------------------------------------
+    # VM Actions (Authenticated)
+    # -------------------------------------------------------------------------
+
+    @app.route('/api/vm/<vm_id>/reboot', methods=['POST'])
+    def api_vm_reboot(vm_id: str):
+        """Reboot a VM (requires GitHub authentication)."""
+        # Check authorization
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Authorization required'}), 401
+
+        token = auth_header[7:]  # Remove 'Bearer ' prefix
+        user = verify_github_token(token)
+        if not user:
+            return jsonify({'error': 'Invalid token or unauthorized user'}), 403
+
+        # Get VM info
+        vm_data = get_vm(vm_id)
+        if not vm_data:
+            return jsonify({'error': f'VM not found: {vm_id}'}), 404
+
+        ip = get_vm(vm_id, 'network.publicIp')
+        if ip == 'pending':
+            return jsonify({'error': 'VM IP is pending'}), 400
+
+        user_ssh = get_vm(vm_id, 'ssh.user')
+        key_path = expand_path(get_vm(vm_id, 'ssh.keyPath') or '')
+
+        # Execute reboot
+        try:
+            subprocess.run(
+                ['ssh', '-i', key_path,
+                 '-o', 'BatchMode=yes',
+                 '-o', f'ConnectTimeout={SSH_TIMEOUT}',
+                 '-o', 'StrictHostKeyChecking=no',
+                 f'{user_ssh}@{ip}', 'sudo reboot'],
+                capture_output=True,
+                timeout=SSH_TIMEOUT + 5
+            )
+            return jsonify({
+                'status': 'ok',
+                'message': f'Reboot signal sent to {vm_id}',
+                'vm': vm_id,
+                'initiated_by': user.get('login')
+            })
+        except subprocess.TimeoutExpired:
+            # Timeout is expected as connection drops during reboot
+            return jsonify({
+                'status': 'ok',
+                'message': f'Reboot signal sent to {vm_id}',
+                'vm': vm_id,
+                'initiated_by': user.get('login')
+            })
+        except Exception as e:
+            return jsonify({'error': f'Failed to reboot: {str(e)}'}), 500
 
     # -------------------------------------------------------------------------
     # Static Files & Dashboard
