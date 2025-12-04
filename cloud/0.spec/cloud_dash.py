@@ -326,7 +326,7 @@ def get_svc_status_dict(svc_id: str) -> Dict:
     if status == 'tbd':
         return {'status': 'tbd', 'label': 'TBD', 'healthy': None}
 
-    url = get_svc(svc_id, 'urls.gui') or get_svc(svc_id, 'urls.admin')
+    url = get_svc(svc_id, 'urls.health') or get_svc(svc_id, 'urls.gui') or get_svc(svc_id, 'urls.admin')
 
     if not url or url == 'null':
         return {'status': 'no_url', 'label': 'N/A', 'healthy': None}
@@ -350,7 +350,7 @@ def get_svc_status(svc_id: str) -> str:
     if status in ('tbd',):
         return f"{C.DIM}○ TBD{C.RESET}"
 
-    url = get_svc(svc_id, 'urls.gui') or get_svc(svc_id, 'urls.admin')
+    url = get_svc(svc_id, 'urls.health') or get_svc(svc_id, 'urls.gui') or get_svc(svc_id, 'urls.admin')
 
     if not url or url == 'null':
         return f"{C.DIM}- N/A{C.RESET}"

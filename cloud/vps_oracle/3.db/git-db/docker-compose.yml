@@ -1,0 +1,51 @@
+version: '3.8'
+
+# SQLite Database for Gitea (Embedded)
+# VM: oracle-web-server-1 (130.110.251.193)
+# Note: This is embedded in the git-app container
+
+# No separate container needed for SQLite
+# This file is for documentation purposes
+
+# The database is stored at:
+# - Container path: /data/gitea/gitea.db
+# - Volume: gitea_data
+
+# To backup:
+# docker cp git-app:/data/gitea/gitea.db ./backup/gitea.db
+
+# To restore:
+# docker cp ./backup/gitea.db git-app:/data/gitea/gitea.db
+# docker restart git-app
+
+# For PostgreSQL migration (if needed):
+services:
+  git-db:
+    image: postgres:16-alpine
+    container_name: git-db
+    restart: unless-stopped
+    profiles:
+      - postgres  # Only start with: docker compose --profile postgres up
+    environment:
+      - POSTGRES_DB=${GITEA_DB_NAME:-gitea}
+      - POSTGRES_USER=${GITEA_DB_USER:-gitea}
+      - POSTGRES_PASSWORD=${GITEA_DB_PASSWORD:-changeme}
+    volumes:
+      - git_db_data:/var/lib/postgresql/data
+    networks:
+      - web_network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+networks:
+  web_network:
+    name: web_network
+    driver: bridge
+
+volumes:
+  git_db_data:
+    name: git_db_data
