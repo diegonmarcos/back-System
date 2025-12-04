@@ -37,8 +37,7 @@ from typing import Optional, Dict, Any, List
 VERSION = "6.0.0"
 SCRIPT_DIR = Path(__file__).parent.resolve()
 CONFIG_FILE = SCRIPT_DIR / "cloud_dash.json"
-STATIC_DIR = SCRIPT_DIR / "front-cloud" / "dist_vanilla"
-TEMPLATE_DIR = SCRIPT_DIR / "front-cloud" / "dist_vanilla"
+FRONTEND_URL = "https://cloud.diegonmarcos.com/cloud_dash.html"
 
 # Server config
 SERVER_HOST = '0.0.0.0'
@@ -412,7 +411,7 @@ def run_server(host: str = SERVER_HOST, port: int = SERVER_PORT, debug: bool = F
         print(f"{C.RED}Error: Flask not installed. Run: pip install flask{C.RESET}")
         sys.exit(1)
 
-    app = Flask(__name__, static_folder=str(STATIC_DIR))
+    app = Flask(__name__)
 
     # Enable CORS for API endpoints
     @app.after_request
@@ -684,7 +683,7 @@ def run_server(host: str = SERVER_HOST, port: int = SERVER_PORT, debug: bool = F
         from urllib.parse import urlencode
 
         code = request.args.get('code')
-        frontend_url = 'https://cloud.diegonmarcos.com/cloud_dash.html'
+        frontend_url = FRONTEND_URL
 
         if not code:
             return f'<script>window.location.href="{frontend_url}?error=no_code";</script>'
@@ -836,17 +835,13 @@ def run_server(host: str = SERVER_HOST, port: int = SERVER_PORT, debug: bool = F
             return jsonify({'error': f'Failed to reboot: {str(e)}'}), 500
 
     # -------------------------------------------------------------------------
-    # Static Files & Dashboard
+    # Root redirect to frontend
     # -------------------------------------------------------------------------
 
     @app.route('/')
-    @app.route('/dashboard')
-    def serve_dashboard():
-        return send_from_directory(str(STATIC_DIR), 'dashboard.html')
-
-    @app.route('/<path:path>')
-    def serve_static(path):
-        return send_from_directory(str(STATIC_DIR), path)
+    def root_redirect():
+        """Redirect to the frontend dashboard."""
+        return f'<script>window.location.href="{FRONTEND_URL}";</script>'
 
     # -------------------------------------------------------------------------
     # Run Server
