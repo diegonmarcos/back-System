@@ -1,0 +1,69 @@
+version: '3.8'
+
+# n8n Workflow Automation (Infra)
+# VM: oracle-web-server-1 (130.110.251.193)
+# Optimized for 1GB RAM constraint
+
+services:
+  n8n-infra-app:
+    image: n8nio/n8n:latest
+    container_name: n8n-infra-app
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # Authentication
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-changeme}
+
+      # Database (SQLite for low memory usage)
+      - DB_TYPE=sqlite
+      - DB_SQLITE_DATABASE=/home/node/.n8n/database.sqlite
+
+      # Webhook URL
+      - WEBHOOK_URL=https://n8n.diegonmarcos.com/
+      - N8N_HOST=n8n.diegonmarcos.com
+      - N8N_PROTOCOL=https
+
+      # Execution settings (optimized for low memory)
+      - EXECUTIONS_PROCESS=main
+      - EXECUTIONS_MODE=regular
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+
+      # Timezone
+      - GENERIC_TIMEZONE=Europe/Paris
+      - TZ=Europe/Paris
+
+      # Security
+      - N8N_SECURE_COOKIE=true
+
+      # Memory optimization
+      - NODE_OPTIONS=--max-old-space-size=256
+
+    volumes:
+      - n8n_infra_data:/home/node/.n8n
+    networks:
+      - web_network
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+        reservations:
+          memory: 150M
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  web_network:
+    name: web_network
+    driver: bridge
+
+volumes:
+  n8n_infra_data:
+    name: n8n_infra_data

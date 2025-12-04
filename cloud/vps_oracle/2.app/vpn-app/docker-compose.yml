@@ -1,0 +1,42 @@
+version: '3.8'
+
+# OpenVPN Server
+# VM: oracle-web-server-1 (130.110.251.193)
+
+services:
+  vpn-app:
+    image: kylemanna/openvpn:latest
+    container_name: vpn-app
+    restart: unless-stopped
+    ports:
+      - "1194:1194/udp"
+    volumes:
+      - openvpn_data:/etc/openvpn
+    networks:
+      - web_network
+    cap_add:
+      - NET_ADMIN
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
+networks:
+  web_network:
+    name: web_network
+    driver: bridge
+
+volumes:
+  openvpn_data:
+    name: openvpn_data
+
+# Setup Instructions:
+# 1. Initialize PKI:
+#    docker run -v openvpn_data:/etc/openvpn --rm kylemanna/openvpn ovpn_genconfig -u udp://vpn.diegonmarcos.com
+#    docker run -v openvpn_data:/etc/openvpn --rm -it kylemanna/openvpn ovpn_initpki
+#
+# 2. Generate client certificate:
+#    docker run -v openvpn_data:/etc/openvpn --rm -it kylemanna/openvpn easyrsa build-client-full CLIENT nopass
+#    docker run -v openvpn_data:/etc/openvpn --rm kylemanna/openvpn ovpn_getclient CLIENT > CLIENT.ovpn
