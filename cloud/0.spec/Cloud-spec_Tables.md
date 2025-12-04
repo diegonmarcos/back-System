@@ -1,4 +1,35 @@
-CLOUD DASHBOARD
+# Cloud Dashboard - Frontend Specification
+
+> **Document Type**: Frontend Design Specification
+> **Parent Document**: Cloud-spec_.md (Main Specification)
+> **Data Source**: cloud_dash.json (cloud-infrastructure.json)
+> **Version**: 3.2.0 | **Updated**: 2025-12-04
+
+## Overview
+
+This document specifies the **frontend structure** of the Cloud Dashboard. It serves as:
+
+1. **Design Blueprint**: Defines the UI layout, views, and components
+2. **Mermaid Source of Truth**: Contains authoritative Mermaid diagrams for architecture visualization
+3. **Data Mapping**: Specifies which JSON fields populate which UI elements
+
+### Relationship to Other Documents
+
+```
+Cloud-spec_.md (Main Spec)
+├── Sections 1-14: Infrastructure, Security, Network, API
+├── Section 15: Dashboard Architecture (Flask API ↔ JS ↔ HTML)
+└── Section 16: Frontend Views (references THIS document)
+
+Cloud-spec_Tables.md (THIS FILE)
+├── Page Structure: index.html navigation
+├── Services Views: Front/Back, Cards/Lists
+├── Architecture Views: Mermaid diagrams
+└── Monitoring Views: Status tables and trees
+
+cloud_dash.json
+└── Data consumed by both Flask API and frontend JS
+```
 
 ---
 

@@ -29,6 +29,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any, List
+from functools import lru_cache
 
 # =============================================================================
 # CONFIGURATION
@@ -157,6 +158,115 @@ def expand_path(path: str) -> str:
     if path and path.startswith('~'):
         return os.path.expanduser(path)
     return path or ''
+
+# =============================================================================
+# HELPER FUNCTIONS FOR METRICS & COSTS
+# =============================================================================
+
+def run_ccusage(args: List[str], timeout: int = 30) -> Dict[str, Any]:
+    """Run ccusage CLI and return JSON output."""
+    try:
+        result = subprocess.run(
+            ['ccusage'] + args + ['--json'],
+            capture_output=True, text=True, timeout=timeout
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return json.loads(result.stdout)
+        return {"error": result.stderr or "Empty response"}
+    except subprocess.TimeoutExpired:
+        return {"error": f"Timeout after {timeout}s"}
+    except FileNotFoundError:
+        return {"error": "ccusage not found. Install: npm i -g ccusage"}
+    except Exception as e:
+        return {"error": str(e)}
+
+def run_ssh_command(vm_id: str, command: str, timeout: int = 10) -> Dict[str, Any]:
+    """Run SSH command on VM and return output."""
+    vm = get_vm(vm_id)
+    if not vm:
+        return {"error": f"VM {vm_id} not found"}
+
+    ssh_user = vm.get("ssh", {}).get("user", "ubuntu")
+    ssh_host = vm.get("network", {}).get("publicIp")
+
+    if not ssh_host or ssh_host == "pending":
+        return {"error": f"VM {vm_id} has no IP"}
+
+    key_path = expand_path(vm.get("ssh", {}).get("keyPath", ""))
+
+    try:
+        result = subprocess.run(
+            ["ssh", "-i", key_path, "-o", "ConnectTimeout=5", "-o", "StrictHostKeyChecking=no",
+             f"{ssh_user}@{ssh_host}", command],
+            capture_output=True, text=True, timeout=timeout
+        )
+        return {"output": result.stdout, "error": result.stderr if result.returncode != 0 else None}
+    except subprocess.TimeoutExpired:
+        return {"error": "SSH timeout"}
+    except Exception as e:
+        return {"error": str(e)}
+
+def parse_free_output(output: str) -> Optional[Dict[str, Any]]:
+    """Parse 'free -m' output to get memory stats."""
+    try:
+        lines = output.strip().split('\n')
+        mem_line = [l for l in lines if l.startswith('Mem:')][0]
+        parts = mem_line.split()
+        return {
+            "total_mb": int(parts[1]),
+            "used_mb": int(parts[2]),
+            "free_mb": int(parts[3]),
+            "available_mb": int(parts[6]) if len(parts) > 6 else int(parts[3]),
+            "percent_used": round(int(parts[2]) / int(parts[1]) * 100, 1)
+        }
+    except:
+        return None
+
+def parse_df_output(output: str) -> Optional[Dict[str, Any]]:
+    """Parse 'df -h /' output to get disk stats."""
+    try:
+        lines = output.strip().split('\n')
+        data_line = lines[1]
+        parts = data_line.split()
+        return {
+            "total": parts[1],
+            "used": parts[2],
+            "available": parts[3],
+            "percent_used": int(parts[4].replace('%', ''))
+        }
+    except:
+        return None
+
+def parse_uptime_output(output: str) -> Optional[Dict[str, Any]]:
+    """Parse 'uptime' output to get load average."""
+    try:
+        # Format: "16:30:01 up 5 days, 4:23, 1 user, load average: 0.08, 0.03, 0.01"
+        load_part = output.split('load average:')[1].strip()
+        loads = [float(x.strip().replace(',', '')) for x in load_part.split(',')[:3]]
+        return {
+            "load_1m": loads[0],
+            "load_5m": loads[1],
+            "load_15m": loads[2]
+        }
+    except:
+        return None
+
+def parse_docker_stats(output: str) -> List[Dict[str, str]]:
+    """Parse docker stats output."""
+    if not output:
+        return []
+    results = []
+    for line in output.strip().split('\n'):
+        if not line:
+            continue
+        parts = line.split('\t')
+        if len(parts) >= 3:
+            results.append({
+                "name": parts[0],
+                "cpu": parts[1],
+                "memory": parts[2]
+            })
+    return results
 
 # =============================================================================
 # HEALTH CHECK FUNCTIONS
@@ -671,6 +781,165 @@ def run_server(host: str = SERVER_HOST, port: int = SERVER_PORT, debug: bool = F
     @app.route('/api/domains')
     def api_domains():
         return jsonify(load_config().get('domains', {}))
+
+    # -------------------------------------------------------------------------
+    # Cost API Endpoints
+    # -------------------------------------------------------------------------
+
+    @app.route('/api/costs/infra')
+    def api_costs_infra():
+        """Get infrastructure costs from config."""
+        config = load_config()
+        return jsonify(config.get("costs", {}).get("infra", {}))
+
+    @app.route('/api/costs/ai/now')
+    def api_costs_ai_now():
+        """Current 5h block with projections."""
+        return jsonify(run_ccusage(['blocks', '-a']))
+
+    @app.route('/api/costs/ai/daily')
+    def api_costs_ai_daily():
+        """Daily breakdown with model costs."""
+        return jsonify(run_ccusage(['daily', '-b']))
+
+    @app.route('/api/costs/ai/weekly')
+    def api_costs_ai_weekly():
+        """Weekly aggregation."""
+        return jsonify(run_ccusage(['weekly', '-b']))
+
+    @app.route('/api/costs/ai/monthly')
+    def api_costs_ai_monthly():
+        """Monthly totals."""
+        return jsonify(run_ccusage(['monthly', '-b']))
+
+    # -------------------------------------------------------------------------
+    # Metrics API Endpoints
+    # -------------------------------------------------------------------------
+
+    @app.route('/api/metrics/vms')
+    def api_metrics_vms():
+        """Get metrics for all active VMs."""
+        config = load_config()
+        vms = config.get("virtualMachines", {})
+        results = {}
+
+        for vm_id, vm in vms.items():
+            if vm.get("status") not in ["active", "on"]:
+                continue
+
+            ip = vm.get("network", {}).get("publicIp")
+            if not ip or ip == "pending":
+                continue
+
+            # Collect metrics via SSH
+            memory = run_ssh_command(vm_id, "free -m")
+            disk = run_ssh_command(vm_id, "df -h /")
+            load = run_ssh_command(vm_id, "uptime")
+            docker = run_ssh_command(vm_id, "sudo docker stats --no-stream --format '{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}'")
+
+            results[vm_id] = {
+                "name": vm.get("name"),
+                "ip": ip,
+                "memory": parse_free_output(memory.get("output", "")) if not memory.get("error") else None,
+                "disk": parse_df_output(disk.get("output", "")) if not disk.get("error") else None,
+                "load": parse_uptime_output(load.get("output", "")) if not load.get("error") else None,
+                "containers": parse_docker_stats(docker.get("output", "")) if not docker.get("error") else [],
+                "error": memory.get("error") or disk.get("error") or load.get("error")
+            }
+
+        return jsonify(results)
+
+    @app.route('/api/metrics/vms/<vm_id>')
+    def api_metrics_vm(vm_id: str):
+        """Get metrics for single VM."""
+        config = load_config()
+        vm = config.get("virtualMachines", {}).get(vm_id)
+
+        if not vm:
+            return jsonify({"error": f"VM {vm_id} not found"}), 404
+
+        memory = run_ssh_command(vm_id, "free -m")
+        disk = run_ssh_command(vm_id, "df -h /")
+        load = run_ssh_command(vm_id, "uptime")
+        docker = run_ssh_command(vm_id, "sudo docker stats --no-stream --format '{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}'")
+
+        return jsonify({
+            "vm_id": vm_id,
+            "name": vm.get("name"),
+            "memory": parse_free_output(memory.get("output", "")) if not memory.get("error") else {"error": memory.get("error")},
+            "disk": parse_df_output(disk.get("output", "")) if not disk.get("error") else {"error": disk.get("error")},
+            "load": parse_uptime_output(load.get("output", "")) if not load.get("error") else {"error": load.get("error")},
+            "containers": parse_docker_stats(docker.get("output", "")) if not docker.get("error") else {"error": docker.get("error")}
+        })
+
+    @app.route('/api/metrics/services/<service_id>')
+    def api_metrics_service(service_id: str):
+        """Get metrics for a specific Docker container."""
+        config = load_config()
+        service = config.get("services", {}).get(service_id)
+
+        if not service:
+            return jsonify({"error": f"Service {service_id} not found"}), 404
+
+        # Find which VM runs this service
+        for vm_id, vm in config.get("virtualMachines", {}).items():
+            if service_id in vm.get("services", []):
+                container_name = service.get("deployment", {}).get("containerName", service_id)
+                stats = run_ssh_command(vm_id, f"sudo docker stats --no-stream --format 'json' {container_name}")
+
+                if stats.get("error"):
+                    return jsonify({"error": stats.get("error")}), 500
+
+                try:
+                    return jsonify(json.loads(stats.get("output", "{}")))
+                except:
+                    return jsonify({"raw": stats.get("output")})
+
+        return jsonify({"error": "Service VM not found"}), 404
+
+    @app.route('/api/capacity')
+    def api_capacity():
+        """Get infrastructure capacity assessment."""
+        config = load_config()
+        estimates = config.get("resourceEstimates", {})
+
+        return jsonify({
+            "vms": {
+                "oracle-web-server-1": {
+                    "total_ram_mb": 1024,
+                    "estimated_used": estimates.get("vmAllocations", {}).get("oracle-web-server-1", {}).get("ram", {}),
+                    "services": config.get("virtualMachines", {}).get("oracle-web-server-1", {}).get("services", []),
+                    "status": "AT_LIMIT"
+                },
+                "oracle-services-server-1": {
+                    "total_ram_mb": 1024,
+                    "estimated_used": estimates.get("vmAllocations", {}).get("oracle-services-server-1", {}).get("ram", {}),
+                    "services": config.get("virtualMachines", {}).get("oracle-services-server-1", {}).get("services", []),
+                    "status": "CLOSE"
+                },
+                "gcloud-arch-1": {
+                    "total_ram_mb": 1024,
+                    "estimated_used": estimates.get("vmAllocations", {}).get("gcloud-arch-1", {}).get("ram", {}),
+                    "services": config.get("virtualMachines", {}).get("gcloud-arch-1", {}).get("services", []),
+                    "status": "DEV"
+                },
+                "oracle-arm-server": {
+                    "total_ram_mb": 24576,
+                    "estimated_used": estimates.get("vmAllocations", {}).get("oracle-arm-server", {}).get("ram", {}),
+                    "services": config.get("virtualMachines", {}).get("oracle-arm-server", {}).get("services", []),
+                    "status": "HOLD"
+                }
+            },
+            "summary": {
+                "nonAi": estimates.get("nonAi", {}),
+                "ai": estimates.get("ai", {})
+            },
+            "recommendations": [
+                "oracle-web-server-1 is at RAM limit - consider moving services",
+                "gcloud-arch-1 needs deployment (mail, terminal)",
+                "oracle-arm-server waiting for Oracle approval (AI workloads)"
+            ]
+        })
 
     # -------------------------------------------------------------------------
     # GitHub OAuth & Authentication

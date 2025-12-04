@@ -999,5 +999,69 @@
         }
       }
     }
+  },
+
+  "costs": {
+    "infra": {
+      "oracle": {
+        "name": "Oracle Cloud",
+        "tier": "always-free",
+        "monthly": 0,
+        "resources": {
+          "vms": "2x E2.1.Micro + 1x A1.Flex",
+          "storage": "200GB block",
+          "bandwidth": "10TB egress"
+        },
+        "overageRates": {
+          "storage": 0.0255,
+          "bandwidth": 0.0085
+        }
+      },
+      "gcloud": {
+        "name": "Google Cloud",
+        "tier": "free-tier",
+        "monthly": 0,
+        "resources": {
+          "vms": "1x e2-micro",
+          "storage": "30GB standard",
+          "bandwidth": "1GB egress"
+        }
+      },
+      "cloudflare": { "name": "Cloudflare", "tier": "free", "monthly": 0 },
+      "letsencrypt": { "name": "Let's Encrypt", "tier": "free", "monthly": 0 }
+    },
+    "ai": {
+      "claude": {
+        "name": "Claude (Anthropic)",
+        "plan": "max5x",
+        "monthlyBudget": 100.00,
+        "alertThresholds": [50, 75, 90, 100],
+        "expensiveModelAlert": 10,
+        "planLimits": {
+          "pro": { "messages": 45, "tokens": 90000, "window": "5h" },
+          "max5x": { "messages": 225, "tokens": 450000, "window": "5h" },
+          "max20x": { "messages": 900, "tokens": 1800000, "window": "5h" }
+        },
+        "pricing": {
+          "haiku": { "input": 0.80, "output": 4.00, "cacheRead": 0.08, "cacheCreate": 1.00 },
+          "sonnet": { "input": 3.00, "output": 15.00, "cacheRead": 0.30, "cacheCreate": 3.75 },
+          "opus": { "input": 15.00, "output": 75.00, "cacheRead": 1.50, "cacheCreate": 18.75 }
+        },
+        "dataSource": "ccusage"
+      },
+      "gemini": {
+        "name": "Gemini (Google)",
+        "status": "planned",
+        "planLimits": {
+          "flash": { "messages": 166, "tokens": 332000, "window": "24h" },
+          "pro": { "messages": 33, "tokens": 66000, "window": "24h" }
+        },
+        "pricing": {
+          "flash": { "input": 1.25, "output": 5.00, "cacheRead": 0.31 },
+          "pro": { "input": 1.25, "output": 5.00, "cacheRead": 0.31 }
+        },
+        "dataSource": "tbd"
+      }
+    }
   }
 }
