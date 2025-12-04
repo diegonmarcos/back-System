@@ -2,7 +2,7 @@
 
 > **Single Source of Truth**: `cloud-infrastructure.json`
 > **Dashboard**: `cloud-dashboard.py` (TUI + Flask API)
-> **Version**: 3.0.0 | **Updated**: 2025-12-03
+> **Version**: 3.2.0 | **Updated**: 2025-12-04
 
 ---
 
@@ -20,8 +20,11 @@
 10. [SSH & Access Commands](#10-ssh--access-commands)
 11. [Front-End Integration](#11-front-end-integration)
 12. [Operations & Maintenance](#12-operations--maintenance)
+12A. [Monitoring Dashboard Specification](#12a-monitoring-dashboard-specification)
 13. [Diagrams](#13-diagrams)
 14. [Authentication & Admin API](#14-authentication--admin-api)
+15. [Dashboard Architecture](#15-dashboard-architecture)
+16. [Frontend Views Specification](#16-frontend-views-specification)
 
 ---
 
@@ -715,6 +718,35 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
 ## 11. Front-End Integration
 
+### 11.0 Web Development Guidelines
+
+All frontend development for the Cloud Dashboard **MUST** follow the web development standards defined in:
+
+```
+/front-Github_io/1.ops/
+├── 0_Stack_Main.md           ← Technology stack & framework decisions
+├── 1_Folder_Structure.md     ← Project structure & file organization
+├── 2_Build_Deploy_Watch.md   ← Build scripts, CI/CD, dev servers
+└── 3_Analytics.md            ← Matomo tracking & meta tags
+```
+
+**Cloud Dashboard Classification:**
+| Project | Type | Framework | CSS | JS | Build | Port |
+|---------|------|-----------|-----|-----|-------|------|
+| Cloud | Type 3 (Private Dashboard) | Vanilla | Sass | TypeScript | CSR (Client-Side) | :8006 |
+
+**Required Standards:**
+1. **Stack**: Follow `0_Stack_Main.md` for framework selection and build strategy
+2. **Structure**: Follow `1_Folder_Structure.md` for `src_vanilla/`, `dist/`, `public/` organization
+3. **Build**: Use `cloud/1.ops/build.sh` which integrates with `1.ops/build_main.sh`
+4. **Analytics**: Include Matomo Tag Manager header and custom tracking per `3_Analytics.md`
+5. **CI/CD**: All builds must pass `.github/workflows/deploy.yml` pipeline
+
+**Cross-Reference:**
+- Frontend source: `/front-Github_io/cloud/src_vanilla/`
+- Build script: `/front-Github_io/cloud/1.ops/build.sh`
+- Symlink in backend: `/back-System/cloud/0.spec/front-cloud/` → `/front-Github_io/cloud/`
+
 ### 11.1 Data Source
 
 The front-end dashboard reads from `cloud-infrastructure.json`:
@@ -927,6 +959,293 @@ docker compose up -d compromised-service
 # - Update passwords
 # - Patch vulnerabilities
 # - Update monitoring
+```
+
+---
+
+## 12A. Monitoring Dashboard Specification
+
+The web dashboard (`cloud_dash.html`) provides three monitoring sections with a unified data architecture.
+
+### 12A.1 Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           MONITORING DASHBOARD                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  cloud_dash.json (Single Source of Truth - Architect Maintained)            │
+│  ├── providers, vms, services, domains (existing)                           │
+│  └── costs (NEW)                                                             │
+│      ├── infra: { oracle: $0, gcloud: $0 }                                  │
+│      └── ai: { claude: { pricing, budget, plan }, gemini: planned }         │
+│                                                                              │
+│  cloud_dash.py (Flask API Server - Port 5000)                               │
+│  ├── /api/dashboard/summary  → Status tab data                              │
+│  ├── /api/metrics/*          → Performance tab data                         │
+│  └── /api/costs/*            → Cost tab data                                │
+│      ├── /api/costs/infra    → Static from cloud_dash.json                  │
+│      └── /api/costs/ai/*     → ccusage_report.py (reads config from JSON)   │
+│                                                                              │
+│  cloud_dash.html (Frontend - 3 Tabs)                                        │
+│  ├── Status Tab     ✅ Implemented                                          │
+│  ├── Performance Tab 📝 Pending (Tasks 2.2, 2.3)                            │
+│  └── Cost Tab        📝 Pending (Tasks 2.4, 2.5)                            │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 12A.2 Section Overview
+
+| Section | Purpose | Data Source | Update Frequency |
+|---------|---------|-------------|------------------|
+| **Status** | Live health of VMs and services | Flask API `/api/dashboard/summary` | 30s auto-refresh |
+| **Performance** | Resource utilization metrics | Flask API `/api/metrics/*` | 60s auto-refresh |
+| **Cost** | Usage costs (Infra + AI) | Flask API `/api/costs/*` | Daily aggregation |
+
+### 12A.3 Status Section (Implemented)
+
+Current implementation in `cloud_dash.html`:
+
+**VM Status Table Columns:**
+| Column | Data Source | Interaction |
+|--------|-------------|-------------|
+| Mode | `status` field | Badge (ON/DEV/HOLD) |
+| VM | `displayName` | Static text |
+| IP | `network.publicIp` | Click to copy |
+| SSH | SSH command | Click to copy |
+| RAM | `specs.memory` | Static range |
+| Storage | `specs.storage` | Static range |
+| Status | Live ping/SSH check | Auto-refresh indicator |
+| Action | Reboot button | Requires OAuth |
+
+**Service Status Table Columns:**
+| Column | Data Source | Interaction |
+|--------|-------------|-------------|
+| Mode | `status` field | Badge (ON/DEV/HOLD) |
+| Service | `displayName` | Static text |
+| URL | `urls.gui` | Click to open |
+| IP:Port | `network.publicIp:internalPort` | Click to copy |
+| RAM | `resources.ram` | Static range |
+| Storage | `resources.storage` | Static range |
+| Status | Live HTTP check | Auto-refresh indicator |
+
+**Status Indicator States:**
+| State | CSS Class | Color | Meaning |
+|-------|-----------|-------|---------|
+| Online | `.live-status.online` | Green | Responding to ping/HTTP |
+| Offline | `.live-status.offline` | Red | Not responding |
+| Checking | `.live-status.checking` | Gray | Request in progress |
+| Pending | `.live-status.pending` | Yellow | Waiting for resource |
+| Dev | `.live-status.dev` | Blue | In development |
+| Hold | `.live-status.hold` | Yellow | On hold |
+
+### 12A.4 Performance Section (To Implement)
+
+**Metrics to Track:**
+
+| Metric | Per VM | Per Service | Per DB | Unit | Source |
+|--------|:------:|:-----------:|:------:|------|--------|
+| CPU Usage | ✓ | ✓ | ✓ | % | SSH `top` / Docker stats |
+| RAM Usage | ✓ | ✓ | ✓ | MB/GB | SSH `free` / Docker stats |
+| VRAM Usage | ✓ | - | - | MB/GB | SSH `nvidia-smi` (if GPU) |
+| Storage Used | ✓ | ✓ | ✓ | GB | SSH `df` / Docker stats |
+| Storage Available | ✓ | - | - | GB | SSH `df` |
+| Bandwidth In | ✓ | ✓ | - | MB/s | SSH `vnstat` |
+| Bandwidth Out | ✓ | ✓ | - | MB/s | SSH `vnstat` |
+| Network I/O | - | ✓ | ✓ | MB | Docker stats |
+| Connections | - | ✓ | ✓ | count | Service-specific |
+
+**API Endpoints (To Implement):**
+```
+GET /api/metrics/vms                    # All VM metrics
+GET /api/metrics/vms/<id>               # Single VM metrics
+GET /api/metrics/vms/<id>/history       # Historical data (24h)
+GET /api/metrics/services/<id>          # Service metrics
+GET /api/metrics/services/<id>/history  # Historical data (24h)
+```
+
+**UI Components:**
+- Gauge charts for CPU/RAM/Storage
+- Sparkline graphs for historical trends
+- Color-coded thresholds (Green <70%, Yellow 70-90%, Red >90%)
+
+### 12A.5 Cost Section (To Implement)
+
+Cost tracking is split into two categories, with configuration stored in `cloud_dash.json`.
+
+#### JSON Configuration Schema (to add to cloud_dash.json)
+
+```json
+{
+  "costs": {
+    "infra": {
+      "oracle": {
+        "name": "Oracle Cloud",
+        "tier": "always-free",
+        "monthly": 0,
+        "resources": {
+          "vms": "2x E2.1.Micro + 1x A1.Flex",
+          "storage": "200GB block",
+          "bandwidth": "10TB egress"
+        },
+        "overageRates": {
+          "storage": 0.0255,
+          "bandwidth": 0.0085
+        }
+      },
+      "gcloud": {
+        "name": "Google Cloud",
+        "tier": "free-tier",
+        "monthly": 0,
+        "resources": {
+          "vms": "1x e2-micro",
+          "storage": "30GB standard",
+          "bandwidth": "1GB egress"
+        }
+      },
+      "cloudflare": { "name": "Cloudflare", "tier": "free", "monthly": 0 },
+      "letsencrypt": { "name": "Let's Encrypt", "tier": "free", "monthly": 0 }
+    },
+    "ai": {
+      "claude": {
+        "name": "Claude (Anthropic)",
+        "plan": "max5x",
+        "monthlyBudget": 100.00,
+        "alertThresholds": [50, 75, 90, 100],
+        "expensiveModelAlert": 10,
+        "planLimits": {
+          "pro": { "messages": 45, "tokens": 90000, "window": "5h" },
+          "max5x": { "messages": 225, "tokens": 450000, "window": "5h" },
+          "max20x": { "messages": 900, "tokens": 1800000, "window": "5h" }
+        },
+        "pricing": {
+          "haiku": { "input": 0.80, "output": 4.00, "cacheRead": 0.08, "cacheCreate": 1.00 },
+          "sonnet": { "input": 3.00, "output": 15.00, "cacheRead": 0.30, "cacheCreate": 3.75 },
+          "opus": { "input": 15.00, "output": 75.00, "cacheRead": 1.50, "cacheCreate": 18.75 }
+        },
+        "dataSource": "ccusage"
+      },
+      "gemini": {
+        "name": "Gemini (Google)",
+        "status": "planned",
+        "planLimits": {
+          "flash": { "messages": 166, "tokens": 332000, "window": "24h" },
+          "pro": { "messages": 33, "tokens": 66000, "window": "24h" }
+        },
+        "pricing": {
+          "flash": { "input": 1.25, "output": 5.00, "cacheRead": 0.31 },
+          "pro": { "input": 1.25, "output": 5.00, "cacheRead": 0.31 }
+        },
+        "dataSource": "tbd"
+      }
+    }
+  }
+}
+```
+
+#### Infra Costs (Fixed + Variable)
+
+| Cost Type | Provider | Metric | Rate | Notes |
+|-----------|----------|--------|------|-------|
+| **VPS Fixed** | Oracle | Always Free | $0/mo | 2x E2.1.Micro + 1x A1.Flex |
+| **VPS Fixed** | GCloud | Free Tier | $0/mo | 1x e2-micro |
+| **Storage** | Oracle | Block Volume | $0.0255/GB/mo | Beyond free tier |
+| **Bandwidth** | Oracle | Egress | $0.0085/GB | Beyond 10TB/mo |
+| **Domain** | Cloudflare | DNS | $0/year | Free tier |
+| **SSL** | Let's Encrypt | Certificates | $0 | Auto-renewed |
+
+**API Endpoints:**
+```
+GET /api/costs/infra                    # Current month summary (from cloud_dash.json)
+```
+
+#### AI Costs (Pay-per-Use)
+
+| Provider | Model | Input Tokens | Output Tokens | Cache Read | Cache Create |
+|----------|-------|--------------|---------------|------------|--------------|
+| **Anthropic** | Claude Haiku 3.5 | $0.80/1M | $4.00/1M | $0.08/1M | $1.00/1M |
+| **Anthropic** | Claude Sonnet 4.5 | $3.00/1M | $15.00/1M | $0.30/1M | $3.75/1M |
+| **Anthropic** | Claude Opus 4 | $15.00/1M | $75.00/1M | $1.50/1M | $18.75/1M |
+| **Google** | Gemini Flash 3.0 | $1.25/1M | $5.00/1M | $0.31/1M | - |
+| **Google** | Gemini Pro 3.0 | $1.25/1M | $5.00/1M | $0.31/1M | - |
+
+**Data Flow (Simplified):**
+```
+~/.claude/projects/*.jsonl
+    │
+    └── ccusage CLI (npm package) ← Use directly, no wrapper needed!
+            │
+            └── cloud_dash.py calls subprocess.run(['ccusage', ...])
+                    │
+                    └── /api/costs/ai/* endpoints
+```
+
+**ccusage Commands (all support --json):**
+```bash
+ccusage blocks -a --json      # Current 5h block with projections, burn rate
+ccusage daily --json -b       # Daily breakdown with model costs
+ccusage monthly --json -b     # Monthly totals with model breakdown
+ccusage weekly --json -b      # Weekly aggregation
+ccusage session --json        # Per-conversation breakdown
+ccusage blocks --live         # Real-time TUI monitoring
+```
+
+**API Endpoints (direct ccusage integration):**
+```
+GET /api/costs/ai/now      → ccusage blocks -a --json
+GET /api/costs/ai/daily    → ccusage daily --json -b
+GET /api/costs/ai/monthly  → ccusage monthly --json -b
+GET /api/costs/ai/weekly   → ccusage weekly --json -b
+```
+
+**Flask Implementation (simple subprocess):**
+```python
+import subprocess, json
+
+@app.route('/api/costs/ai/now')
+def api_costs_ai_now():
+    result = subprocess.run(['ccusage', 'blocks', '-a', '--json'],
+                          capture_output=True, text=True, timeout=30)
+    return jsonify(json.loads(result.stdout))
+
+@app.route('/api/costs/ai/daily')
+def api_costs_ai_daily():
+    result = subprocess.run(['ccusage', 'daily', '--json', '-b'],
+                          capture_output=True, text=True, timeout=30)
+    return jsonify(json.loads(result.stdout))
+```
+
+**UI Components:**
+- Current 5h window: Usage bar, token breakdown, burn rate
+- Budget tracker: MTD vs limit, projected EOM cost
+- Model distribution: Pie chart (Haiku/Sonnet/Opus %)
+- Daily trend: Sparkline of cost over time
+- Alerts: Warning when Opus > 10%, budget > 75%
+
+### 12A.6 Dashboard Tab Structure
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Cloud Dashboard                              [Login] [Refresh] │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌──────────┐ ┌─────────────┐ ┌────────┐                       │
+│  │  Status  │ │ Performance │ │  Cost  │                       │
+│  └──────────┘ └─────────────┘ └────────┘                       │
+│     ▲ Active                                                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  [Status Tab Content - VMs, Services, Live indicators]          │
+│                                                                  │
+│  OR                                                              │
+│                                                                  │
+│  [Performance Tab Content - Gauges, Sparklines, Metrics]        │
+│                                                                  │
+│  OR                                                              │
+│                                                                  │
+│  [Cost Tab Content - Infra costs, AI costs, Charts]             │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -1145,6 +1464,12 @@ GitHub App settings:
 
 | Date | Change |
 |------|--------|
+| 2025-12-04 | **v3.2.0** - Added Section 15 (Dashboard Architecture) and Section 16 (Frontend Views Spec) |
+| 2025-12-04 | Detailed Source of Truth hierarchy with 4-layer flow diagram |
+| 2025-12-04 | Added Runtime Data Flow diagram (Browser → GitHub Pages → Flask API → JSON) |
+| 2025-12-04 | Documented JS-to-API integration with code examples |
+| 2025-12-04 | Added Front/Back view specs with Card and List layouts |
+| 2025-12-04 | Updated Cloud-spec_Tables.md header as proper Frontend Specification |
 | 2025-12-04 | **v3.1.0** - Added OAuth 2.0 (GitHub) authentication spec for admin endpoints |
 | 2025-12-03 | **v3.0.0** - Unified cloud-dashboard.py (TUI + Flask API in single file) |
 | 2025-12-03 | Established naming convention: `{service}-app`, `{service}-db`, `npm-{provider}-{vm}` |
@@ -1185,13 +1510,273 @@ flask-server/                              ← FLASK SERVER DEPLOYMENT
 ### Source of Truth Hierarchy
 
 ```
-1. Cloud-spec_.md / Cloud-spec_Tables.md    ← Human-readable documentation
-        ↓
-2. cloud-infrastructure.json                ← Machine-readable data
-        ↓
-3. cloud-dashboard.py                       ← TUI + API (reads JSON)
-        ↓
-4. front-cloud/ (HTML/CSS/JS)               ← Web dashboard (calls API)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         SOURCE OF TRUTH FLOW                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  1. DESIGN LAYER (Human-Authored)                                           │
+│     ┌──────────────────────────────────────────────────────────────┐        │
+│     │  Cloud-spec_.md          Cloud-spec_Tables.md                │        │
+│     │  ├─ Architecture text    ├─ Service Registry tables          │        │
+│     │  ├─ Security specs       ├─ Resource matrices                │        │
+│     │  ├─ Network design       ├─ Mermaid diagrams (baseline)      │        │
+│     │  └─ API documentation    └─ Status monitoring tables         │        │
+│     └──────────────────────────────────────────────────────────────┘        │
+│                                    │                                         │
+│                                    ▼                                         │
+│  2. DATA LAYER (Machine-Readable)                                           │
+│     ┌──────────────────────────────────────────────────────────────┐        │
+│     │  cloud-infrastructure.json (cloud_dash.json)                 │        │
+│     │  ├─ VMs: IPs, specs, SSH config                              │        │
+│     │  ├─ Services: URLs, ports, Docker config                     │        │
+│     │  ├─ Providers: Console URLs, CLI commands                    │        │
+│     │  └─ Resources: RAM, storage, bandwidth estimates             │        │
+│     └──────────────────────────────────────────────────────────────┘        │
+│                                    │                                         │
+│                                    ▼                                         │
+│  3. API LAYER (Flask Server)                                                │
+│     ┌──────────────────────────────────────────────────────────────┐        │
+│     │  cloud_dash.py (TUI + Flask API)                             │        │
+│     │  ├─ Reads JSON config                                        │        │
+│     │  ├─ Performs health checks (ping, SSH, HTTP)                 │        │
+│     │  ├─ Exposes REST API endpoints                               │        │
+│     │  └─ Handles OAuth authentication                             │        │
+│     └──────────────────────────────────────────────────────────────┘        │
+│                                    │                                         │
+│                                    ▼                                         │
+│  4. PRESENTATION LAYER (Frontend)                                           │
+│     ┌──────────────────────────────────────────────────────────────┐        │
+│     │  front-cloud/ (HTML/CSS/JS)                                  │        │
+│     │  ├─ cloud_dash.html: Fetches data via JS from Flask API      │        │
+│     │  ├─ arch.html: Renders Mermaid diagrams as HTML              │        │
+│     │  ├─ ai-arch.html: AI architecture visualization              │        │
+│     │  └─ index.html: Navigation hub                               │        │
+│     └──────────────────────────────────────────────────────────────┘        │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Data Flow: How Components Interact
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         RUNTIME DATA FLOW                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  User Browser                                                                │
+│       │                                                                      │
+│       ▼                                                                      │
+│  ┌─────────────────┐    HTTP GET     ┌─────────────────────────────────┐    │
+│  │  cloud_dash.html │ ─────────────► │  GitHub Pages / Static Host     │    │
+│  │  (Static HTML)   │ ◄───────────── │  (diegonmarcos.github.io/cloud) │    │
+│  └────────┬─────────┘    HTML/JS     └─────────────────────────────────┘    │
+│           │                                                                  │
+│           │ JavaScript fetch()                                               │
+│           ▼                                                                  │
+│  ┌─────────────────────────────────────────────────────────────────┐        │
+│  │  Flask API (cloud.diegonmarcos.com/api/*)                       │        │
+│  │                                                                  │        │
+│  │  GET /api/vms              → List all VMs from JSON             │        │
+│  │  GET /api/vms/<id>/status  → Live health check (ping, SSH)      │        │
+│  │  GET /api/services         → List all services from JSON        │        │
+│  │  GET /api/services/<id>/status → Live HTTP check                │        │
+│  │  GET /api/dashboard/summary    → Full dashboard with checks     │        │
+│  │  POST /api/vm/<id>/reboot      → Admin action (requires OAuth)  │        │
+│  └────────┬─────────────────────────────────────────────────────────┘        │
+│           │                                                                  │
+│           │ Reads                                                            │
+│           ▼                                                                  │
+│  ┌─────────────────────────────────────────────────────────────────┐        │
+│  │  cloud_dash.json (cloud-infrastructure.json)                    │        │
+│  │  Single source of truth for all infrastructure data             │        │
+│  └─────────────────────────────────────────────────────────────────┘        │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 15. Dashboard Architecture
+
+### 15.1 Overview
+
+The Cloud Dashboard consists of three main components:
+
+| Component | Technology | Location | Purpose |
+|-----------|------------|----------|---------|
+| **cloud-app** | HTML/CSS/JS | GitHub Pages | Static frontend UI |
+| **cloud-api** | Python Flask | Oracle VM | REST API + OAuth |
+| **cloud_dash.json** | JSON | Oracle VM | Infrastructure data |
+
+### 15.2 Frontend-to-API Integration
+
+The frontend HTML fetches all data dynamically from the Flask API via JavaScript:
+
+```javascript
+// Frontend JavaScript (cloud_dash.html)
+
+// 1. Fetch VM list on page load
+async function loadVMs() {
+    const response = await fetch('https://cloud.diegonmarcos.com/api/vms');
+    const vms = await response.json();
+    renderVMTable(vms);
+}
+
+// 2. Fetch live status for each VM
+async function checkVMStatus(vmId) {
+    const response = await fetch(`https://cloud.diegonmarcos.com/api/vms/${vmId}/status`);
+    const status = await response.json();
+    updateStatusIndicator(vmId, status);
+}
+
+// 3. Admin actions (requires OAuth token)
+async function rebootVM(vmId) {
+    const token = localStorage.getItem('github_token');
+    const response = await fetch(`https://cloud.diegonmarcos.com/api/vm/${vmId}/reboot`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return response.json();
+}
+```
+
+### 15.3 API Endpoint → Frontend Mapping
+
+| Frontend Feature | API Endpoint | Data Used |
+|------------------|--------------|-----------|
+| VM Table | `GET /api/vms` | name, IP, status, services |
+| VM Status Indicators | `GET /api/vms/<id>/status` | ping, ssh, uptime |
+| Service Cards | `GET /api/services` | name, URL, status |
+| Service Health | `GET /api/services/<id>/status` | http_check, response_time |
+| Reboot Button | `POST /api/vm/<id>/reboot` | success/error message |
+| Login State | `GET /api/auth/me` | username, avatar |
+
+### 15.4 Architecture Visualization Pages
+
+The dashboard includes pages that render Mermaid diagrams from the spec files:
+
+| Page | Source | Content |
+|------|--------|---------|
+| `arch.html` | Cloud-spec_Tables.md (Mermaid) | Infrastructure tree diagram |
+| `ai-arch.html` | Cloud-spec_Tables.md (Mermaid) | AI services architecture |
+
+**Rendering Process:**
+1. Mermaid code is authored in `Cloud-spec_Tables.md` (source of truth)
+2. HTML pages include Mermaid.js library
+3. Mermaid code is embedded in `<pre class="mermaid">` blocks
+4. Mermaid.js renders SVG diagrams at runtime
+
+---
+
+## 16. Frontend Views Specification
+
+### 16.1 Page Structure
+
+The dashboard is organized into distinct views:
+
+```
+index.html (Navigation Hub)
+├── Services Section
+│   ├── Front View (User-Facing Services)
+│   │   ├── Card View: Visual cards with icons
+│   │   └── List View: Sortable table with status
+│   └── Back View (Infrastructure Services)
+│       ├── Card View: Admin service cards
+│       └── List View: Detailed status table
+│
+├── Architecture Section
+│   ├── Resources: Resource allocation charts
+│   ├── Server: Infrastructure tree (arch.html)
+│   └── AI: AI architecture (ai-arch.html)
+│
+└── Monitoring Section
+    ├── Backlog: Pending tasks and issues
+    ├── Status Tree: Hierarchical health view
+    └── Status List: Flat table view (cloud_dash.html)
+```
+
+### 16.2 Front View (User-Facing Services)
+
+**Card Layout: 3 Columns**
+
+| User | Coder | AI |
+|------|-------|-----|
+| sync-app | terminal-app | n8n-ai-app |
+| mail-app | git-app | ai-webchat (future) |
+| vpn-app | analytics-app | ai-cli (future) |
+
+**Card Component:**
+```
+┌─────────────────────────┐
+│  🔄 Syncthing           │  ← Icon + Display Name
+│  ───────────────────    │
+│  sync.diegonmarcos.com  │  ← URL (clickable)
+│  Status: ● Online       │  ← Live status indicator
+│  [Open] [Copy SSH]      │  ← Action buttons
+└─────────────────────────┘
+```
+
+### 16.3 Back View (Infrastructure Services)
+
+**Card Layout: 2 Columns**
+
+| Root (Cloud Management) | Infra (Service Infrastructure) |
+|-------------------------|--------------------------------|
+| **Cloud Providers** | **User Services** |
+| - Oracle Cloud Console | - sync-app, mail-app, vpn-app |
+| - Google Cloud Console | **Databases** |
+| **VMs (SSH Access)** | - analytics-db, git-db, etc. |
+| - oracle-web-server-1 | **Infra Services** |
+| - oracle-services-server-1 | - n8n-infra-app, cloud-api, cache-app |
+| - oracle-arm-server | **Proxies** |
+| - gcloud-arch-1 | - npm-oracle-web, npm-oracle-services |
+
+### 16.4 List View Columns
+
+**Services List:**
+| Column | Source | Notes |
+|--------|--------|-------|
+| Mode | `status` field | on/dev/hold/tbd |
+| Service | `displayName` | Human-readable name |
+| IP:Port | `network.publicIp` + `network.internalPort` | Click to copy |
+| URL | `urls.gui` | Click to open |
+| SSH | `ssh.command` | Click to copy |
+| RAM | `resources.ram` | From JSON estimates |
+| Storage | `resources.storage` | From JSON estimates |
+| Status | Live API check | Green/Yellow/Red indicator |
+
+**VMs List:**
+| Column | Source | Notes |
+|--------|--------|-------|
+| Mode | `status` field | on/dev/hold/tbd |
+| VM | `displayName` | Human-readable name |
+| IP | `network.publicIp` | Click to copy |
+| SSH | SSH command | Click to copy |
+| Services | Count of hosted services | Expandable list |
+| RAM | `specs.memory` | VM specification |
+| Storage | `specs.storage` | VM specification |
+| Status | Live ping/SSH check | Green/Yellow/Red indicator |
+
+### 16.5 View Toggle Behavior
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Services                                                    │
+│  ┌──────────┐ ┌──────────┐    ┌──────┐ ┌──────┐            │
+│  │  Front   │ │   Back   │    │ Cards│ │ List │            │
+│  └──────────┘ └──────────┘    └──────┘ └──────┘            │
+│     ▲ Active                     ▲ Active                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐                     │
+│  │  User   │  │  Coder  │  │   AI    │    ← Column headers │
+│  ├─────────┤  ├─────────┤  ├─────────┤                     │
+│  │ 🔄 Sync │  │ 💻 Term │  │ 🤖 n8n  │                     │
+│  │ 📧 Mail │  │ 📊 Git  │  │   AI    │                     │
+│  │ 🔐 VPN  │  │ 📈 Stats│  │         │                     │
+│  └─────────┘  └─────────┘  └─────────┘                     │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
