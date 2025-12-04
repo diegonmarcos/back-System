@@ -21,6 +21,7 @@
 11. [Front-End Integration](#11-front-end-integration)
 12. [Operations & Maintenance](#12-operations--maintenance)
 13. [Diagrams](#13-diagrams)
+14. [Authentication & Admin API](#14-authentication--admin-api)
 
 ---
 
@@ -1027,10 +1028,124 @@ sequenceDiagram
 
 ---
 
+## 14. Authentication & Admin API
+
+### 14.1 Overview
+
+The dashboard supports **GitHub OAuth 2.0** authentication for admin operations. Public endpoints (status, health) remain unauthenticated. Admin endpoints (reboot, restart, stop/start) require login.
+
+### 14.2 Authentication Flow
+
+```
++------------------+     +------------------+     +------------------+
+|   Dashboard UI   |     |   Flask API      |     |   GitHub OAuth   |
++--------+---------+     +--------+---------+     +--------+---------+
+         |                        |                        |
+         | 1. Click "Login"       |                        |
+         |----------------------->|                        |
+         |                        | 2. Redirect to GitHub  |
+         |                        |----------------------->|
+         |                        |                        |
+         |                        | 3. User authorizes     |
+         |                        |<-----------------------|
+         |                        |                        |
+         | 4. Return JWT token    |                        |
+         |<-----------------------|                        |
+         |                        |                        |
+         | 5. Admin commands      |                        |
+         | (with Bearer token)    |                        |
+         |----------------------->|                        |
+         |                        |                        |
+```
+
+### 14.3 Endpoint Access Levels
+
+| Access Level | Endpoints | Auth Required |
+|--------------|-----------|---------------|
+| **Public** | `/api/health`, `/api/vms`, `/api/services`, `/api/dashboard/*` | No |
+| **Admin** | `/api/admin/vms/*/reboot`, `/api/admin/vms/*/containers/*/restart` | Yes (JWT) |
+
+### 14.4 Admin API Endpoints
+
+| Endpoint | Method | Description | Auth |
+|----------|--------|-------------|------|
+| `POST /api/auth/github` | POST | Initiate GitHub OAuth flow | No |
+| `GET /api/auth/callback` | GET | GitHub OAuth callback | No |
+| `GET /api/auth/me` | GET | Get current user info | Yes |
+| `POST /api/auth/logout` | POST | Invalidate session | Yes |
+| `POST /api/admin/vms/<id>/reboot` | POST | Reboot VM via SSH | Yes |
+| `POST /api/admin/vms/<id>/containers/<name>/restart` | POST | Restart Docker container | Yes |
+| `POST /api/admin/vms/<id>/containers/<name>/stop` | POST | Stop Docker container | Yes |
+| `POST /api/admin/vms/<id>/containers/<name>/start` | POST | Start Docker container | Yes |
+| `POST /api/admin/services/<id>/restart` | POST | Restart service (container) | Yes |
+
+### 14.5 GitHub OAuth Configuration
+
+```bash
+# Required environment variables
+GITHUB_CLIENT_ID=your_client_id
+GITHUB_CLIENT_SECRET=your_client_secret
+JWT_SECRET_KEY=your_jwt_secret
+ALLOWED_GITHUB_USERS=diegonmarcos  # Comma-separated usernames
+```
+
+GitHub App settings:
+- **Authorization callback URL**: `https://cloud.diegonmarcos.com/api/auth/callback`
+- **Scopes**: `read:user` (only need username verification)
+
+### 14.6 Dashboard UI Changes
+
+**Before Login:**
+```
++------------------------------------------+
+|  Cloud Dashboard            [Login] btn  |
++------------------------------------------+
+|  VMs        | Services                   |
+|  - Status   | - Status                   |
+|  (read-only)| (read-only)                |
++------------------------------------------+
+```
+
+**After Login:**
+```
++------------------------------------------+
+|  Cloud Dashboard    [diego] [Logout] btn |
++------------------------------------------+
+|  VMs                | Services           |
+|  - Status           | - Status           |
+|  - [Reboot] btn     | - [Restart] btn    |
+|  - [Containers]     | - [Stop/Start]     |
+|    - [Restart]      |                    |
+|    - [Stop/Start]   |                    |
++------------------------------------------+
+```
+
+### 14.7 Security Considerations
+
+1. **JWT Expiration**: Tokens expire after 24 hours
+2. **Username Whitelist**: Only `ALLOWED_GITHUB_USERS` can access admin endpoints
+3. **HTTPS Only**: OAuth flow requires HTTPS
+4. **CSRF Protection**: State parameter in OAuth flow
+5. **Rate Limiting**: Admin endpoints rate-limited to prevent abuse
+6. **Audit Logging**: All admin actions logged with timestamp and user
+
+### 14.8 Implementation Status
+
+| Component | Status |
+|-----------|--------|
+| GitHub OAuth flow | `dev` |
+| JWT token generation | `dev` |
+| Admin endpoints | `dev` |
+| Dashboard UI (login button) | `dev` |
+| Dashboard UI (admin controls) | `dev` |
+
+---
+
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| 2025-12-04 | **v3.1.0** - Added OAuth 2.0 (GitHub) authentication spec for admin endpoints |
 | 2025-12-03 | **v3.0.0** - Unified cloud-dashboard.py (TUI + Flask API in single file) |
 | 2025-12-03 | Established naming convention: `{service}-app`, `{service}-db`, `npm-{provider}-{vm}` |
 | 2025-12-03 | New status values: `on`, `dev`, `hold`, `tbd` (replaces active/pending/development/planned) |
@@ -1082,4 +1197,4 @@ flask-server/                              ← FLASK SERVER DEPLOYMENT
 ---
 
 **Maintainer**: Diego Nepomuceno Marcos
-**Last Updated**: 2025-12-03
+**Last Updated**: 2025-12-04
