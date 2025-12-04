@@ -1,0 +1,48 @@
+version: '3.8'
+
+# Cloud Dashboard API (Flask)
+# VM: oracle-web-server-1 (130.110.251.193)
+
+services:
+  cloud-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cloud-api:latest
+    container_name: cloud-api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+      - CONFIG_PATH=/app/config/cloud_dash.json
+    volumes:
+      - ./config:/app/config:ro
+      - cloud_api_data:/app/data
+    networks:
+      - web_network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  web_network:
+    name: web_network
+    driver: bridge
+
+volumes:
+  cloud_api_data:
+    name: cloud_api_data
+
+# Note: The Dockerfile should be in the same directory
+# See flask-server/ for the full implementation

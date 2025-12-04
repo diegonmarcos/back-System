@@ -1,0 +1,43 @@
+version: '3.8'
+
+# PostgreSQL for Cloud Dashboard
+# VM: oracle-services-server-1 (129.151.228.66)
+
+services:
+  cloud-db:
+    image: postgres:16-alpine
+    container_name: cloud-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${CLOUD_DB_NAME:-cloud_dash}
+      - POSTGRES_USER=${CLOUD_DB_USER:-cloud}
+      - POSTGRES_PASSWORD=${CLOUD_DB_PASSWORD:-changeme}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - cloud_db_data:/var/lib/postgresql/data
+    networks:
+      - matomo_network  # Shared network on services server
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CLOUD_DB_USER:-cloud} -d ${CLOUD_DB_NAME:-cloud_dash}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  matomo_network:
+    name: matomo_network
+    driver: bridge
+
+volumes:
+  cloud_db_data:
+    name: cloud_db_data
+
+# Alternative: SQLite (embedded in cloud-api container)
+# No separate container needed for SQLite

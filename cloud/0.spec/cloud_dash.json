@@ -53,6 +53,7 @@
       "id": "oracle-web-server-1",
       "name": "Oracle Web Server 1",
       "provider": "oracle",
+      "ociInstanceId": "ocid1.instance.oc1.eu-marseille-1.anwxeljruadvczacbwylmkqr253ay7binepapgsyopllfayovkzaky6oigbq",
       "category": "services",
       "instanceType": "VM.Standard.E2.1.Micro",
       "specs": {
@@ -85,6 +86,7 @@
       "id": "oracle-services-server-1",
       "name": "Oracle Services Server 1",
       "provider": "oracle",
+      "ociInstanceId": "ocid1.instance.oc1.eu-marseille-1.anwxeljruadvczacgwg5rkrjyomuxvjtvtuk5xrbmy7hmslwn4pse4kw5jkq",
       "category": "services",
       "instanceType": "VM.Standard.E2.1.Micro",
       "specs": {
@@ -326,11 +328,14 @@
       "network": {
         "internalPort": 5000
       },
+      "urls": {
+        "health": "http://130.110.251.193:5000/api/health"
+      },
       "docker": {
         "containerName": "cloud-api",
         "network": "web_network"
       },
-      "status": "dev"
+      "status": "on"
     },
     "cloud-db": {
       "id": "cloud-db",
