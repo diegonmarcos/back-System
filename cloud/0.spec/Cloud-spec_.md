@@ -234,7 +234,7 @@ ssh ubuntu@129.151.228.66
 | dev | ↳ vpn-app | | 64-128 MB | 50-100 MB | 5-50 GB/mo | Client configs + certs |
 | | **cloud** | Coder | | | | Cloud Dashboard |
 | on | ↳ cloud-app | | - | 5 MB | 50-200 MB/mo | Static HTML/CSS/JS |
-| dev | ↳ cloud-api | | 64-128 MB | 50-100 MB | 100-500 MB/mo | Flask API server |
+| dev | ↳ flask-app | | 64-128 MB | 50-100 MB | 100-500 MB/mo | Flask Web Server |
 | dev | ↳ cloud-db | | 8-32 MB | 50-200 MB | - | SQLite or PostgreSQL |
 | | **terminal** | Productivity | | | | Web terminal |
 | dev | ↳ terminal-app | | 64-128 MB | 50-100 MB | 500 MB-2 GB/mo | wetty/ttyd session-based |
@@ -247,7 +247,7 @@ ssh ubuntu@129.151.228.66
 
 | Status | VM | Services | Total RAM (Est) | Total Storage (Est) | Bandwidth (Est) |
 |--------|-----|----------|-----------------|---------------------|-----------------|
-| on | Oracle Web Server 1 | n8n-infra-app, sync-app, cloud-app, cloud-api, npm-oracle-web, vpn-app, git-app, cache-app | ~800 MB - 1.5 GB | ~5-15 GB | ~20-80 GB/mo |
+| on | Oracle Web Server 1 | n8n-infra-app, sync-app, cloud-app, flask-app, npm-oracle-web, vpn-app, git-app, cache-app | ~800 MB - 1.5 GB | ~5-15 GB | ~20-80 GB/mo |
 | on | Oracle Services Server 1 | analytics-app, analytics-db, cloud-db, npm-oracle-services | ~600 MB - 1.2 GB | ~5-15 GB | ~5-20 GB/mo |
 | hold | Oracle ARM Server | n8n-ai-app, n8n-ai-db, npm-oracle-arm | ~1.5-5 GB | ~5-20 GB | ~10-40 GB/mo |
 | dev | GCloud Arch 1 | mail-app, mail-db, terminal-app, npm-gcloud | ~800 MB - 1.5 GB | ~10-50 GB | ~5-15 GB/mo |
@@ -1487,24 +1487,46 @@ GitHub App settings:
 ## File Structure
 
 ```
-0.spec/                                    ← SOURCE OF TRUTH FOLDER
-├── Cloud-spec_.md                          ← Main specification (this file)
-├── Cloud-spec_Tables.md                    ← Architecture reference tables
-├── cloud-infrastructure.json               ← PRIMARY DATA SOURCE (JSON)
-├── cloud-dashboard.py                      ← UNIFIED DASHBOARD (TUI + Flask API) v6.0.0
-├── front-cloud/                            ← Symlink to website repo
-│   ├── src_vanilla/                        ← HTML/CSS/JS source
-│   └── dist_vanilla/                       ← Built static files
-└── archive/
-    └── csv/                                ← Legacy CSV files (deprecated)
-
-flask-server/                              ← FLASK SERVER DEPLOYMENT
-├── cloud_dashboard.py                      ← Symlink → 0.spec/cloud-dashboard.py
-├── cloud-infrastructure.json               ← Symlink → 0.spec/cloud-infrastructure.json
-├── run.py                                  ← Entry point (calls cloud_dashboard.run_server)
-├── templates/
-│   └── dashboard.html                      ← Symlink → front-cloud/dist_vanilla/dashboard.html
-└── venv/                                   ← Python virtual environment (Flask)
+/home/diego/Documents/Git/back-System/cloud/
+│
+├── 0.spec/                                 ← SOURCE OF TRUTH FOLDER
+│   ├── Cloud-spec_.md                      ← Main specification (this file)
+│   ├── Cloud-spec_Tables.md                ← Architecture reference tables
+│   ├── cloud_dash.json                     ← PRIMARY DATA SOURCE (JSON)
+│   ├── cloud_dash.py                       ← UNIFIED DASHBOARD (TUI + Flask API)
+│   ├── front-cloud/                        ← Symlink to website repo
+│   │   ├── src_vanilla/                    ← HTML/CSS/JS source
+│   │   └── dist_vanilla/                   ← Built static files
+│   └── TASKS_OVERVIEW.md                   ← Task management and project structure
+│
+├── vps_oracle/                             ← ORACLE CLOUD VMs
+│   │
+│   ├── vm-oci-f-micro_1/                   ← 24/7 FREE E2.Micro (Mail)
+│   │   ├── 1.os/oci-f-micro_1.md
+│   │   ├── 2.app/mail-app/
+│   │   └── 3.db/mail-db/
+│   │
+│   ├── vm-oci-f-micro_2/                   ← 24/7 FREE E2.Micro (Analytics)
+│   │   ├── 1.os/oci-f-micro_2.md
+│   │   ├── 2.app/analytics-app/, npm-app/
+│   │   └── 3.db/analytics-db/
+│   │
+│   ├── vm-oci-f-arm_1/                     ← HOLD FREE A1.Flex ARM (AI)
+│   │   ├── 1.os/oci-f-arm_1.md
+│   │   ├── 2.app/n8n-ai-app/
+│   │   └── 3.db/n8n-ai-db/
+│   │
+│   └── vm-oci-p-flex_1/                    ← Wake-on-Demand PAID E4.Flex (Dev)
+│       ├── 1.os/oci-p-flex_1.md
+│       ├── 2.app/n8n-infra-app/, sync-app/, flask-app/, git-app/, vpn-app/, terminal-app/, cache-app/
+│       └── 3.db/cloud-db/, git-db/
+│
+└── vps_gcloud/                             ← GOOGLE CLOUD VMs
+    │
+    └── vm-gcp-f-micro_1/                   ← 24/7 FREE e2-micro (NPM Proxy)
+        ├── 1.os/gcp-f-micro_1.md
+        ├── 2.app/npm-app/, mail-app/, terminal-app/, billing-disabler/
+        └── 3.db/mail-db/
 ```
 
 ### Source of Truth Hierarchy
@@ -1605,7 +1627,7 @@ The Cloud Dashboard consists of three main components:
 | Component | Technology | Location | Purpose |
 |-----------|------------|----------|---------|
 | **cloud-app** | HTML/CSS/JS | GitHub Pages | Static frontend UI |
-| **cloud-api** | Python Flask | Oracle VM | REST API + OAuth |
+| **flask-app** | Python Flask | Oracle VM | REST API + OAuth |
 | **cloud_dash.json** | JSON | Oracle VM | Infrastructure data |
 
 ### 15.2 Frontend-to-API Integration
@@ -1727,7 +1749,7 @@ index.html (Navigation Hub)
 | - Google Cloud Console | **Databases** |
 | **VMs (SSH Access)** | - analytics-db, git-db, etc. |
 | - oracle-web-server-1 | **Infra Services** |
-| - oracle-services-server-1 | - n8n-infra-app, cloud-api, cache-app |
+| - oracle-services-server-1 | - n8n-infra-app, flask-app, cache-app |
 | - oracle-arm-server | **Proxies** |
 | - gcloud-arch-1 | - npm-oracle-web, npm-oracle-services |
 
