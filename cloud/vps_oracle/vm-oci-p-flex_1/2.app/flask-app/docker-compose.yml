@@ -1,0 +1,48 @@
+version: '3.8'
+
+# Flask Web Server
+# VM: oci-p-flex_1 (84.235.234.87)
+
+services:
+  flask-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: flask-app:latest
+    container_name: flask-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+      - CONFIG_PATH=/app/config/cloud_dash.json
+    volumes:
+      - ./config:/app/config:ro
+      - flask_app_data:/app/data
+    networks:
+      - web_network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  web_network:
+    name: web_network
+    driver: bridge
+
+volumes:
+  flask_app_data:
+    name: flask_app_data
+
+# Note: The Dockerfile should be in the same directory
+# Flask Web Server serves both API endpoints and web pages

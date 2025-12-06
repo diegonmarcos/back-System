@@ -88,11 +88,11 @@
       "notes": "Mail services only (docker-mailserver)",
       "availability": "24/7",
       "runtimeStatus": {
-        "online": true,
+        "Online": true,
         "ping": true,
         "ssh": true,
-        "ramPercent": 40,
-        "lastCheck": "2025-12-06T00:25:49.641336"
+        "ramPercent": 42,
+        "lastCheck": "2025-12-05T23:58:57.442762"
       }
     },
     "oci-f-micro_2": {
@@ -140,11 +140,11 @@
       "notes": "Matomo Analytics only (no NPM)",
       "availability": "24/7",
       "runtimeStatus": {
-        "online": true,
+        "Online": true,
         "ping": true,
         "ssh": true,
-        "ramPercent": 83,
-        "lastCheck": "2025-12-06T00:25:53.262785"
+        "ramPercent": 80,
+        "lastCheck": "2025-12-05T23:59:00.627029"
       }
     },
     "oci-f-arm_1": {
@@ -190,11 +190,11 @@
       "status": "pending",
       "notes": "n8n-server (AI Agentic)",
       "runtimeStatus": {
-        "online": false,
+        "Online": false,
         "ping": false,
         "ssh": false,
         "ramPercent": null,
-        "lastCheck": "2025-12-06T00:25:53.269523"
+        "lastCheck": "2025-12-05T23:59:00.632752"
       }
     },
     "gcp-f-micro_1": {
@@ -243,11 +243,11 @@
       "role": "proxy",
       "availability": "24/7",
       "runtimeStatus": {
-        "online": true,
+        "Online": true,
         "ping": true,
         "ssh": true,
         "ramPercent": 45,
-        "lastCheck": "2025-12-06T00:25:59.091773"
+        "lastCheck": "2025-12-05T23:59:06.766368"
       }
     },
     "oci-p-flex_1": {
@@ -314,11 +314,11 @@
       "notes": "Dormant VM - wakes on HTTP request",
       "ociInstanceId": "ocid1.instance.oc1.eu-marseille-1.anwxeljruadvczachwpa3qrh7n25vfez3smidz4o7gpmtj4ga4d7zqlja5yq",
       "runtimeStatus": {
-        "online": true,
+        "Online": true,
         "ping": true,
         "ssh": true,
-        "ramPercent": 10,
-        "lastCheck": "2025-12-06T00:26:02.891950"
+        "ramPercent": 9,
+        "lastCheck": "2025-12-05T23:59:09.631627"
       }
     }
   },
