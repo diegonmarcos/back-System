@@ -253,7 +253,7 @@ Totals
 |--------|-----|--------------|----------|-----------------|---------------------|-----------------|------|
 | on | oci-f-micro_1 | 24/7 | mail-app, mail-db, npm-gcloud (SINGLE CENTRAL)
 | on | oci-f-micro_2 | 24/7 | analytics-app, analytics-db, npm-gcloud (SINGLE CENTRAL)
-| on | gcp-f-micro_1 | 24/7 | npm-gcloud | ~128-256 MB | ~100-500 MB | ~5-20 GB/mo | $0 (Free) |
+| on | gcp-f-micro_1 | 24/7 | npm-gcloud, authelia, authelia-redis | ~160-320 MB | ~150-600 MB | ~5-20 GB/mo | $0 (Free) |
 | **wake** | **oci-p-flex_1** | **Wake-on-Demand** | n8n-infra-app, sync-app, cloud-app, flask-app, photoview-app, photos-db, photoprism-app*, immich-app*, git-app, vpn-app, terminal-app, cache-app | ~1.5-3.2 GB | ~20-200 GB | ~20-100 GB/mo | **$5.50/mo** |
 | hold | oci-f-arm_1 | Hold | n8n-ai-app, n8n-ai-db, npm-gcloud (on hold)
 | tbd | generic-vps | TBD | Variable services | ~1-4 GB | ~20-100 GB | ~10-50 GB/mo | TBD |
@@ -329,7 +329,9 @@ Totals
 | vpn-app | 64-128 MB | 50-100 MB | 5-50 GB/mo | dev |
 | terminal-app | 64-128 MB | 50-100 MB | 500 MB-2 GB/mo | dev |
 | cache-app | 64-256 MB | 100 MB-1 GB | - | dev |
-| **TOTAL** | **~900 MB - 2 GB** | **~117-125 GB** | **~19-118 GB/mo** | |
+| photoview-app | 100-150 MB | 100-200 MB | 50-300 MB/mo | dev |
+| photos-db | 50-200 MB | 100-300 MB | - | dev |
+| **TOTAL** | **~1.2-2.6 GB** | **~117-125 GB** | **~19-118 GB/mo** | |
 | **Capacity Check** | **11-25%** | **117-125%** | - | **STORAGE LIMIT** |
 
 > **Warning:** Storage exceeds 100 GB capacity due to sync-files-db (~100 GB). Consider external storage or reducing synced files.
@@ -426,6 +428,7 @@ In the Srcipt:
 | dev | **git-app** | 84.235.234.87:3000 | git.diegonmarcos.com | ssh ubuntu@84.235.234.87 | 264-544 MB | 11-15 GB | dev |
 | on | **analytics-app** | 129.151.228.66:8080 | analytics.diegonmarcos.com | ssh ubuntu@129.151.228.66 | 512 MB-1 GB | 3-15 GB | on |
 | on | **cloud-app** | 84.235.234.87:80 | cloud.diegonmarcos.com | ssh ubuntu@84.235.234.87 | - | ~5 MB | on |
+| dev | **photoview-app** | 84.235.234.87:8080 | photos.diegonmarcos.com | ssh ubuntu@84.235.234.87 | 100-150 MB | 100-200 MB | dev |
 
 ##### Infra Services
 
@@ -435,6 +438,7 @@ In the Srcipt:
 | hold | **n8n-ai-app** | [pending]:5678 | ai.diegonmarcos.com | ssh ubuntu@[ARM IP] | 1-48 GB | 3-20 GB | hold |
 | dev | **flask-app** | 84.235.234.87:5000 | flask.diegonmarcos.com | ssh ubuntu@84.235.234.87 | 64-128 MB | 50-100 MB | dev |
 | dev | **cache-app** | 84.235.234.87:6379 | - | ssh ubuntu@84.235.234.87 | 64-256 MB | 100 MB-1 GB | dev |
+| dev | **authelia** | 34.55.55.234:9091 | - | gcloud compute ssh arch-1 --zone us-central1-a | 32-64 MB | 50-100 MB | dev |
 
 ##### Proxies (NPM)
 
@@ -452,8 +456,8 @@ In the Srcipt:
 |------|----|----|-----|----------|-----|---------|--------|
 | on | oci-f-micro_1 | 130.110.251.193 | ssh ubuntu@130.110.251.193 | mail-app, mail-db, npm-gcloud (SINGLE CENTRAL)
 | on | oci-f-micro_2 | 129.151.228.66 | ssh ubuntu@129.151.228.66 | analytics-app, analytics-db, npm-gcloud (SINGLE CENTRAL)
-| on | gcp-f-micro_1 | 34.55.55.234 | gcloud compute ssh arch-1 --zone us-central1-a | npm-gcloud | 128-256 MB | 100-500 MB | on |
-| wake | oci-p-flex_1 | 84.235.234.87 | ssh ubuntu@84.235.234.87 | n8n-infra-app, sync-app, cloud-app, flask-app, git-app, vpn-app, terminal-app, cache-app | 900 MB-2 GB | 17-130 GB | wake |
+| on | gcp-f-micro_1 | 34.55.55.234 | gcloud compute ssh arch-1 --zone us-central1-a | npm-gcloud, authelia, authelia-redis | 160-320 MB | 150-600 MB | on |
+| wake | oci-p-flex_1 | 84.235.234.87 | ssh ubuntu@84.235.234.87 | n8n-infra-app, sync-app, cloud-app, flask-app, photoview-app, photos-db, git-app, vpn-app, terminal-app, cache-app | 1.2-2.6 GB | 17-130 GB | wake |
 | hold | oci-f-arm_1 | [pending] | ssh ubuntu@[ARM IP] | n8n-ai-app, n8n-ai-db, npm-gcloud (on hold)
 | tbd | generic-vps-infra | [pending] | - | TBD | 1-4 GB | 20-100 GB | tbd |
 | tbd | generic-vps-ai | [pending] | - | TBD | 8-32 GB | 50-200 GB | tbd |
@@ -661,6 +665,8 @@ Cloud Infrastructure
 | vpn-app | OpenVPN | user | oci-p-flex_1 | dev_network | Wake | dev |
 | terminal-app | Web Terminal | coder | oci-p-flex_1 | dev_network | Wake | dev |
 | cache-app | Redis Cache | infra-services | oci-p-flex_1 | dev_network | Wake | dev |
+| photoview-app | PhotoView (Photo Gallery) | coder | oci-p-flex_1 | dev_network | Wake | dev |
+| photos-db | Photos Metadata DB | infra-db | oci-p-flex_1 | dev_network | Wake | dev |
 | **Hold Services (ARM - future)** |
 | n8n-ai-app | n8n (AI) | ai | oci-f-arm_1 | ai_network | Hold | hold |
 | npm-gcloud (on hold)
@@ -681,6 +687,7 @@ Cloud Infrastructure
 | n8n-infra-db | n8n Infra DB | SQLite | 64-128 MB | 500 MB - 2 GB | n8n-infra-app | oci-p-flex_1 | on |
 | n8n-ai-db | n8n AI DB | PostgreSQL | 256-512 MB | 1-10 GB | n8n-ai-app | oci-f-arm_1 | hold |
 | cloud-db | Cloud Dashboard DB | SQLite/PostgreSQL | 8-32 MB | 50-200 MB | cloud-app | oci-p-flex_1 | dev |
+| photos-db | Photos Metadata DB | PostgreSQL | 50-200 MB | 100-300 MB | photoview-app | oci-p-flex_1 | dev |
 | cache-app | Redis Cache | Redis (In-Memory) | 64-256 MB | 100 MB - 1 GB | System-wide | oci-p-flex_1 | dev |
 
 ## VM Specifications
@@ -741,6 +748,7 @@ Cloud Infrastructure
 | n8n.diegonmarcos.com | n8n-infra-app | oci-p-flex_1 | 84.235.234.87 | ✓ | Wake | on |
 | cloud.diegonmarcos.com | cloud-app | oci-p-flex_1 | 84.235.234.87 | ✓ | Wake | on |
 | git.diegonmarcos.com | git-app | oci-p-flex_1 | 84.235.234.87 | ✓ | Wake | dev |
+| photos.diegonmarcos.com | photoview-app + Authelia 2FA | oci-p-flex_1 | 84.235.234.87 | ✓ | Wake | dev |
 | **Hold Services** |
 | ai.diegonmarcos.com | n8n-ai-app | oci-f-arm_1 | [pending] | ✓ | Hold | hold |
 
@@ -765,6 +773,9 @@ Cloud Infrastructure
 | mail-app | 993 | 993 | TCP | IMAPS |
 | cache-app | 6379 | - | TCP | Internal only |
 | flask-app | 5000 | - | TCP | Internal only |
+| photoview-app | 8080 | 443 (via NPM) | HTTPS | Photo gallery with Authelia auth |
+| authelia | 9091 | 127.0.0.1:9091 | HTTP | 2FA auth server (internal only) |
+| authelia-redis | 6379 | 127.0.0.1:6379 | TCP | Session store (internal only) |
 
 ## Docker Images
 
@@ -780,6 +791,9 @@ Cloud Infrastructure
 | vpn-app | kylemanna/openvpn | latest |
 | cache-app | redis | alpine |
 | npm-* | jc21/nginx-proxy-manager | latest |
+| photoview-app | photoview/photoview | latest |
+| authelia | authelia/authelia | latest |
+| authelia-redis | redis | alpine |
 
 ## Cloud Provider Summary
 
@@ -793,9 +807,11 @@ Cloud Infrastructure
 | Category ID | Name | Description | Services |
 |-------------|------|-------------|----------|
 | user | User Services | End-user productivity | sync-app, mail-app, vpn-app |
-| coder | Coder Services | Developer tools | terminal-app, cloud-app, analytics-app, git-app |
+| coder | Coder Services | Developer tools | terminal-app, cloud-app, analytics-app, git-app, photoview-app |
 | ai | AI Services | AI and automation | n8n-ai-app |
+| photos | Photo Management | Photo gallery and metadata | photoview-app, photos-db |
 | infra-proxy | Proxies | Nginx Proxy Managers | npm-gcloud (SINGLE CENTRAL)
+| infra-auth | Authentication | 2FA and auth services | authelia, authelia-redis |
 | infra-db | Databases | Database services | All *-db services |
 | infra-services | Infra Services | Infrastructure automation | n8n-infra-app, flask-app, cache-app |
 
