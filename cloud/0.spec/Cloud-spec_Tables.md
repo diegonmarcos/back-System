@@ -130,9 +130,9 @@ Back
         - cache-app
 
     - Proxies (Web and SSH)
-        - npm-oracle-services
-        - npm-oracle-web
-        - npm-oracle-arm
+        - npm-gcloud (SINGLE CENTRAL)
+        - npm-gcloud (SINGLE CENTRAL)
+        - npm-gcloud (on hold)
         - npm-gcloud
 
 
@@ -230,9 +230,9 @@ Back
 | on | **n8n-infra** | **256-512 MB** | **500 MB-2 GB** | **1-5 GB/mo** | Workflow automation |
 |  | ↳ n8n-infra-app | 256-512 MB | 500 MB - 2 GB | 1-5 GB/mo | Workflows + execution logs |
 | on | **npm** | **512 MB-1 GB** | **400 MB-2 GB** | **20-80 GB/mo** | Reverse proxy (4 instances) |
-|  | ↳ npm-oracle-web | 128-256 MB | 100-500 MB | 5-20 GB/mo | Oracle Web Server 1 |
-|  | ↳ npm-oracle-services | 128-256 MB | 100-500 MB | 5-20 GB/mo | Oracle Services Server 1 |
-|  | ↳ npm-oracle-arm | 128-256 MB | 100-500 MB | 5-20 GB/mo | Oracle ARM (hold) |
+|  | ↳ npm-gcloud (SINGLE CENTRAL)
+|  | ↳ npm-gcloud (SINGLE CENTRAL)
+|  | ↳ npm-gcloud (on hold)
 |  | ↳ npm-gcloud | 128-256 MB | 100-500 MB | 5-20 GB/mo | GCloud (dev) |
 | dev | **cache** | **64-256 MB** | **100 MB-1 GB** | **-** | Redis in-memory store |
 |  | ↳ cache-app | 64-256 MB | 100 MB - 1 GB | - | Session/cache data |
@@ -251,11 +251,11 @@ Totals
 
 | Mode | VM | Availability | Services | Total RAM (Est) | Total Storage (Est) | Bandwidth (Est) | Cost |
 |--------|-----|--------------|----------|-----------------|---------------------|-----------------|------|
-| on | oci-f-micro_1 | 24/7 | mail-app, mail-db, npm-oracle-web | ~650 MB - 1 GB | ~5-50 GB | ~6-30 GB/mo | $0 (Free) |
-| on | oci-f-micro_2 | 24/7 | analytics-app, analytics-db, npm-oracle-services | ~640 MB - 1.3 GB | ~4-16 GB | ~6-22 GB/mo | $0 (Free) |
+| on | oci-f-micro_1 | 24/7 | mail-app, mail-db, npm-gcloud (SINGLE CENTRAL)
+| on | oci-f-micro_2 | 24/7 | analytics-app, analytics-db, npm-gcloud (SINGLE CENTRAL)
 | on | gcp-f-micro_1 | 24/7 | npm-gcloud | ~128-256 MB | ~100-500 MB | ~5-20 GB/mo | $0 (Free) |
 | **wake** | **oci-p-flex_1** | **Wake-on-Demand** | n8n-infra-app, sync-app, cloud-app, flask-app, photoview-app, photos-db, photoprism-app*, immich-app*, git-app, vpn-app, terminal-app, cache-app | ~1.5-3.2 GB | ~20-200 GB | ~20-100 GB/mo | **$5.50/mo** |
-| hold | oci-f-arm_1 | Hold | n8n-ai-app, n8n-ai-db, npm-oracle-arm | ~1.4-48.5 GB | ~3-20 GB | ~5-20 GB/mo | $0 (Free) |
+| hold | oci-f-arm_1 | Hold | n8n-ai-app, n8n-ai-db, npm-gcloud (on hold)
 | tbd | generic-vps | TBD | Variable services | ~1-4 GB | ~20-100 GB | ~10-50 GB/mo | TBD |
 |--------|---------|--------------|----------|-----------|---------------|-----------------|------|
 | | **Total 24/7 (FREE)** | | | **~1.4-2.5 GB** | **~9-66 GB** | **~17-72 GB/mo** | **$0/mo** |
@@ -275,11 +275,11 @@ Totals
 |---------|-----|---------|-----------|--------|
 | mail-app | 512 MB - 1 GB | 100-500 MB | 1-10 GB/mo | dev |
 | mail-db | 8-32 MB | 5-50 GB | - | dev |
-| npm-oracle-web | 128-256 MB | 100-500 MB | 5-20 GB/mo | on |
+| npm-gcloud (SINGLE CENTRAL)
 | **TOTAL** | **~650 MB - 1.3 GB** | **~5-51 GB** | **~6-30 GB/mo** | |
 | **Capacity Check** | **65-130%** | **11-108%** | - | **AT LIMIT** |
 
-> **Note:** Mail uses most RAM. When mail is ON, this VM will be at capacity. Consider disabling npm-oracle-web if needed.
+> **Note:** Mail uses most RAM. When mail is ON, this VM will be at capacity. Consider disabling npm-gcloud (SINGLE CENTRAL)
 
 ---
 
@@ -290,7 +290,7 @@ Totals
 |---------|-----|---------|-----------|--------|
 | analytics-app | 256-512 MB | 2-5 GB | 500 MB-2 GB/mo | on |
 | analytics-db | 256-512 MB | 1-10 GB | - | on |
-| npm-oracle-services | 128-256 MB | 100-500 MB | 5-20 GB/mo | on |
+| npm-gcloud (SINGLE CENTRAL)
 | **TOTAL** | **~640 MB - 1.3 GB** | **~3-16 GB** | **~6-22 GB/mo** | |
 | **Capacity Check** | **64-130%** | **6-34%** | - | **AT LIMIT** |
 
@@ -343,7 +343,7 @@ Totals
 |---------|-----|---------|-----------|--------|
 | n8n-ai-app | 1-48 GB | 2-10 GB | 5-20 GB/mo | hold |
 | n8n-ai-db | 256-512 MB | 1-10 GB | - | hold |
-| npm-oracle-arm | 128-256 MB | 100-500 MB | 5-20 GB/mo | hold |
+| npm-gcloud (on hold)
 | **TOTAL** | **~1.4-48.8 GB** | **~3-21 GB** | **~10-40 GB/mo** | |
 | **Capacity Check** | **6-203%** | **2-11%** | - | **RAM VARIABLE** |
 
@@ -368,7 +368,7 @@ Totals
 
 | Mode | VM | Services | Total RAM (Est) | Total Storage (Est) | Bandwidth (Est) |
 |--------|-----|----------|-----------------|---------------------|-----------------|
-| hold | Oracle ARM Server | n8n-ai-app, n8n-ai-db, npm-oracle-arm | ~6-24 GB | ~5-20 GB | ~10-40 GB/mo |
+| hold | Oracle ARM Server | n8n-ai-app, n8n-ai-db, npm-gcloud (on hold)
 | tbd | Generic VPS (AI) | LLM inference, AI workloads | ~8-32 GB | ~50-200 GB | ~20-100 GB/mo |
 |--------|---------|----------|-----------|---------------|-----------------|
 | | **Total HOLD** | | **~6-24 GB** | **~5-20 GB** | **~10-40 GB/mo** |
@@ -440,9 +440,9 @@ In the Srcipt:
 
 | Mode | Service | IP:port | URL | SSH | RAM | Storage | Status |
 |------|---------|---------|-----|-----|-----|---------|--------|
-| on | **npm-oracle-services** | 129.151.228.66:81 | - | ssh ubuntu@129.151.228.66 | 128-256 MB | 100-500 MB | on |
-| on | **npm-oracle-web** | 130.110.251.193:81 | - | ssh ubuntu@130.110.251.193 | 128-256 MB | 100-500 MB | on |
-| hold | **npm-oracle-arm** | [pending]:81 | - | ssh ubuntu@[ARM IP] | 128-256 MB | 100-500 MB | hold |
+| on | **npm-gcloud (SINGLE CENTRAL)
+| on | **npm-gcloud (SINGLE CENTRAL)
+| hold | **npm-gcloud (on hold)
 | on | **npm-gcloud** | 34.55.55.234:81 | - | gcloud compute ssh arch-1 --zone us-central1-a | 128-256 MB | 100-500 MB | on |
 | tbd | **npm-generic-vps** | [pending]:81 | - | - | 128-256 MB | 100-500 MB | tbd |
 
@@ -450,11 +450,11 @@ In the Srcipt:
 
 | Mode | VM | IP | SSH | Services | RAM | Storage | Status |
 |------|----|----|-----|----------|-----|---------|--------|
-| on | oci-f-micro_1 | 130.110.251.193 | ssh ubuntu@130.110.251.193 | mail-app, mail-db, npm-oracle-web | 650 MB-1.3 GB | 5-51 GB | on |
-| on | oci-f-micro_2 | 129.151.228.66 | ssh ubuntu@129.151.228.66 | analytics-app, analytics-db, npm-oracle-services | 640 MB-1.3 GB | 3-16 GB | on |
+| on | oci-f-micro_1 | 130.110.251.193 | ssh ubuntu@130.110.251.193 | mail-app, mail-db, npm-gcloud (SINGLE CENTRAL)
+| on | oci-f-micro_2 | 129.151.228.66 | ssh ubuntu@129.151.228.66 | analytics-app, analytics-db, npm-gcloud (SINGLE CENTRAL)
 | on | gcp-f-micro_1 | 34.55.55.234 | gcloud compute ssh arch-1 --zone us-central1-a | npm-gcloud | 128-256 MB | 100-500 MB | on |
 | wake | oci-p-flex_1 | 84.235.234.87 | ssh ubuntu@84.235.234.87 | n8n-infra-app, sync-app, cloud-app, flask-app, git-app, vpn-app, terminal-app, cache-app | 900 MB-2 GB | 17-130 GB | wake |
-| hold | oci-f-arm_1 | [pending] | ssh ubuntu@[ARM IP] | n8n-ai-app, n8n-ai-db, npm-oracle-arm | 1.4-48.8 GB | 3-21 GB | hold |
+| hold | oci-f-arm_1 | [pending] | ssh ubuntu@[ARM IP] | n8n-ai-app, n8n-ai-db, npm-gcloud (on hold)
 | tbd | generic-vps-infra | [pending] | - | TBD | 1-4 GB | 20-100 GB | tbd |
 | tbd | generic-vps-ai | [pending] | - | TBD | 8-32 GB | 50-200 GB | tbd |
 
@@ -481,7 +481,7 @@ graph TD
             OCI_CLI["oci CLI"]
 
             subgraph VM_Micro1["VM: oci-f-micro_1 (Mail Server)"]
-                OM1_NPM["npm-oracle-web"]
+                OM1_NPM["npm-gcloud (SINGLE CENTRAL)
                 subgraph OM1_Services["Services"]
                     OM1_Mail["mail-app"]
                 end
@@ -491,7 +491,7 @@ graph TD
             end
 
             subgraph VM_Micro2["VM: oci-f-micro_2 (Analytics)"]
-                OM2_NPM["npm-oracle-services"]
+                OM2_NPM["npm-gcloud (SINGLE CENTRAL)
                 subgraph OM2_Services["Services"]
                     OM2_Matomo["analytics-app"]
                 end
@@ -520,7 +520,7 @@ graph TD
             end
 
             subgraph VM_ARM["VM: oci-f-arm_1 (AI - Hold)"]
-                OA_NPM["npm-oracle-arm"]
+                OA_NPM["npm-gcloud (on hold)
                 subgraph OA_Services["Services"]
                     OA_n8nAI["n8n-ai-app"]
                 end
@@ -572,14 +572,14 @@ Cloud Infrastructure
 │   │   ├── [CLI] oci
 │   │   │
 │   │   ├── VM: oci-f-micro_1 [on] (Mail Server)
-│   │   │   ├── npm-oracle-web [on]
+│   │   │   ├── npm-gcloud (SINGLE CENTRAL)
 │   │   │   ├── Services
 │   │   │   │   └── mail-app [dev]
 │   │   │   └── Data
 │   │   │       └── mail-db [dev]
 │   │   │
 │   │   ├── VM: oci-f-micro_2 [on] (Analytics)
-│   │   │   ├── npm-oracle-services [on]
+│   │   │   ├── npm-gcloud (SINGLE CENTRAL)
 │   │   │   ├── Services
 │   │   │   │   └── analytics-app [on]
 │   │   │   └── Data
@@ -602,7 +602,7 @@ Cloud Infrastructure
 │   │   │       └── n8n-infra-db [on]
 │   │   │
 │   │   └── VM: oci-f-arm_1 [hold] (AI Server)
-│   │       ├── npm-oracle-arm [hold]
+│   │       ├── npm-gcloud (on hold)
 │   │       ├── Services
 │   │       │   └── n8n-ai-app [hold]
 │   │       └── Data
@@ -647,10 +647,10 @@ Cloud Infrastructure
 | **24/7 Services (FREE TIER)** |
 | mail-app | Mail Server | user | oci-f-micro_1 | mail_network | 24/7 | dev |
 | mail-db | Mail Database | user | oci-f-micro_1 | mail_network | 24/7 | dev |
-| npm-oracle-web | NPM (Oracle Web) | infra-proxy | oci-f-micro_1 | mail_network | 24/7 | on |
+| npm-gcloud (SINGLE CENTRAL)
 | analytics-app | Matomo Analytics | coder | oci-f-micro_2 | matomo_network | 24/7 | on |
 | analytics-db | Matomo DB | coder | oci-f-micro_2 | matomo_network | 24/7 | on |
-| npm-oracle-services | NPM (Oracle Services) | infra-proxy | oci-f-micro_2 | matomo_network | 24/7 | on |
+| npm-gcloud (SINGLE CENTRAL)
 | npm-gcloud | NPM (GCloud) | infra-proxy | gcp-f-micro_1 | proxy_network | 24/7 | on |
 | **Wake-on-Demand Services (PAID - oci-p-flex_1)** |
 | n8n-infra-app | n8n (Infra) | infra-services | oci-p-flex_1 | dev_network | Wake | on |
@@ -663,7 +663,7 @@ Cloud Infrastructure
 | cache-app | Redis Cache | infra-services | oci-p-flex_1 | dev_network | Wake | dev |
 | **Hold Services (ARM - future)** |
 | n8n-ai-app | n8n (AI) | ai | oci-f-arm_1 | ai_network | Hold | hold |
-| npm-oracle-arm | NPM (Oracle ARM) | infra-proxy | oci-f-arm_1 | ai_network | Hold | hold |
+| npm-gcloud (on hold)
 
 > **Note**: Services on `oci-p-flex_1` are only available when the VM is running. Check status and wake if needed.
 
@@ -795,7 +795,7 @@ Cloud Infrastructure
 | user | User Services | End-user productivity | sync-app, mail-app, vpn-app |
 | coder | Coder Services | Developer tools | terminal-app, cloud-app, analytics-app, git-app |
 | ai | AI Services | AI and automation | n8n-ai-app |
-| infra-proxy | Proxies | Nginx Proxy Managers | npm-oracle-web, npm-oracle-services, npm-oracle-arm, npm-gcloud |
+| infra-proxy | Proxies | Nginx Proxy Managers | npm-gcloud (SINGLE CENTRAL)
 | infra-db | Databases | Database services | All *-db services |
 | infra-services | Infra Services | Infrastructure automation | n8n-infra-app, flask-app, cache-app |
 
