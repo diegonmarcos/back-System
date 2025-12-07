@@ -214,6 +214,12 @@ Back
 | on | **cloud** | **64-128 MB** | **55-105 MB** | **150-700 MB/mo** | Cloud Dashboard |
 |  | ↳ cloud-app | - | ~5 MB | 50-200 MB/mo | Static HTML/CSS/JS |
 |  | ↳ flask-app | 64-128 MB | 50-100 MB | 100-500 MB/mo | Flask Web Server |
+| dev | **photos** | **150-350 MB** | **200-500 MB** | **100-500 MB/mo** | Photo library management |
+|  | ↳ photoview-app | 100-150 MB | 100-200 MB | 50-300 MB/mo | Lightweight photo viewer (Phase 1) |
+|  | ↳ photoprism-app | - | - | - | Full-featured viewer (Phase 2) |
+|  | ↳ immich-app | - | - | - | Feature-rich viewer no ML (Phase 2) |
+|  | ↳ photos-db | 50-200 MB | 100-300 MB | - | PostgreSQL metadata (EXIF, location, AI results) |
+|  | ↳ photos-webhook | - | <5 MB | - | Python S3 event processor (triggered only) |
 | on | **analytics** | **512 MB-1 GB** | **3-15 GB** | **500 MB-2 GB/mo** | Matomo Analytics platform |
 |  | ↳ analytics-app | 256-512 MB | 2-5 GB | 500 MB-2 GB/mo | PHP FPM Alpine |
 |  | ↳ analytics-db | 256-512 MB | 1-10 GB | - | MariaDB - grows with data |
@@ -248,7 +254,7 @@ Totals
 | on | oci-f-micro_1 | 24/7 | mail-app, mail-db, npm-oracle-web | ~650 MB - 1 GB | ~5-50 GB | ~6-30 GB/mo | $0 (Free) |
 | on | oci-f-micro_2 | 24/7 | analytics-app, analytics-db, npm-oracle-services | ~640 MB - 1.3 GB | ~4-16 GB | ~6-22 GB/mo | $0 (Free) |
 | on | gcp-f-micro_1 | 24/7 | npm-gcloud | ~128-256 MB | ~100-500 MB | ~5-20 GB/mo | $0 (Free) |
-| **wake** | **oci-p-flex_1** | **Wake-on-Demand** | n8n-infra-app, sync-app, cloud-app, flask-app, git-app, vpn-app, terminal-app, cache-app | ~1.2-2.5 GB | ~17-130 GB | ~15-70 GB/mo | **$5.50/mo** |
+| **wake** | **oci-p-flex_1** | **Wake-on-Demand** | n8n-infra-app, sync-app, cloud-app, flask-app, photoview-app, photos-db, photoprism-app*, immich-app*, git-app, vpn-app, terminal-app, cache-app | ~1.5-3.2 GB | ~20-200 GB | ~20-100 GB/mo | **$5.50/mo** |
 | hold | oci-f-arm_1 | Hold | n8n-ai-app, n8n-ai-db, npm-oracle-arm | ~1.4-48.5 GB | ~3-20 GB | ~5-20 GB/mo | $0 (Free) |
 | tbd | generic-vps | TBD | Variable services | ~1-4 GB | ~20-100 GB | ~10-50 GB/mo | TBD |
 |--------|---------|--------------|----------|-----------|---------------|-----------------|------|
@@ -663,17 +669,19 @@ Cloud Infrastructure
 
 ## Database Registry
 
-| DB ID | Display Name | Technology | Parent Service | VM | Status |
-|-------|--------------|------------|----------------|-----|--------|
-| mail-db | Mail DB | SQLite | mail-app | oci-f-micro_1 | dev |
-| analytics-db | Matomo DB | MariaDB 11.4 | analytics-app | oci-f-micro_2 | on |
-| sync-index-db | Sync Index DB | LevelDB (embedded) | sync-app | oci-p-flex_1 | on |
-| sync-files-db | Sync Files | File Storage | sync-app | oci-p-flex_1 | on |
-| sync-obj-db | Sync Objects | Blob Storage | sync-app | oci-p-flex_1 | on |
-| git-db | Gitea DB | SQLite | git-app | oci-p-flex_1 | dev |
-| git-repos | Git Repositories | File Storage | git-app | oci-p-flex_1 | dev |
-| n8n-infra-db | n8n Infra DB | SQLite | n8n-infra-app | oci-p-flex_1 | on |
-| n8n-ai-db | n8n AI DB | PostgreSQL | n8n-ai-app | oci-f-arm_1 | hold |
+| DB ID | Display Name | Technology | RAM (Independent) | Storage (Typical) | Parent Service | VM | Status |
+|-------|--------------|------------|-------------------|-------------------|----------------|-----|--------|
+| mail-db | Mail DB | SQLite | 8-32 MB | 5-50 GB | mail-app | oci-f-micro_1 | dev |
+| analytics-db | Matomo DB | MariaDB 11.4 | 256-512 MB | 1-10 GB | analytics-app | oci-f-micro_2 | on |
+| sync-index-db | Sync Index DB | LevelDB (embedded) | Negligible (<5 MB) | 100-500 MB | sync-app | oci-p-flex_1 | on |
+| sync-files-db | Sync Files | File Storage | None (No RAM) | ~100 GB | sync-app | oci-p-flex_1 | on |
+| sync-obj-db | Sync Objects | Blob Storage | None (No RAM) | ~5 GB | sync-app | oci-p-flex_1 | on |
+| git-db | Gitea DB | SQLite | 8-32 MB | Variable | git-app | oci-p-flex_1 | dev |
+| git-repos | Git Repositories | File Storage | None (No RAM) | ~10 GB | git-app | oci-p-flex_1 | dev |
+| n8n-infra-db | n8n Infra DB | SQLite | 64-128 MB | 500 MB - 2 GB | n8n-infra-app | oci-p-flex_1 | on |
+| n8n-ai-db | n8n AI DB | PostgreSQL | 256-512 MB | 1-10 GB | n8n-ai-app | oci-f-arm_1 | hold |
+| cloud-db | Cloud Dashboard DB | SQLite/PostgreSQL | 8-32 MB | 50-200 MB | cloud-app | oci-p-flex_1 | dev |
+| cache-app | Redis Cache | Redis (In-Memory) | 64-256 MB | 100 MB - 1 GB | System-wide | oci-p-flex_1 | dev |
 
 ## VM Specifications
 
