@@ -698,6 +698,67 @@
       },
       "status": "dev"
     },
+    "photos": {
+      "id": "photos",
+      "name": "photos",
+      "displayName": "Photo Gallery (PhotoView + 2FA)",
+      "category": "coder",
+      "vmId": "oci-p-flex_1",
+      "childServices": [
+        "photoview-app",
+        "photoview-db",
+        "photos-db",
+        "authelia"
+      ],
+      "urls": {
+        "gui": "https://photos.diegonmarcos.com"
+      },
+      "notes": "PhotoView with Authelia 2FA authentication via npm-gcloud",
+      "status": "on"
+    },
+    "photoview-app": {
+      "id": "photoview-app",
+      "name": "photoview-app",
+      "displayName": "photoview-app",
+      "parentService": "photos",
+      "category": "coder",
+      "vmId": "oci-p-flex_1",
+      "network": {
+        "proxyAddress": "photoview:80"
+      },
+      "status": "on"
+    },
+    "photoview-db": {
+      "id": "photoview-db",
+      "name": "photoview-db",
+      "displayName": "photoview-db",
+      "parentService": "photos",
+      "category": "coder",
+      "vmId": "oci-p-flex_1",
+      "status": "on"
+    },
+    "photos-db": {
+      "id": "photos-db",
+      "name": "photos-db",
+      "displayName": "photos-db (PostgreSQL metadata)",
+      "parentService": "photos",
+      "category": "coder",
+      "vmId": "oci-p-flex_1",
+      "status": "on"
+    },
+    "authelia": {
+      "id": "authelia",
+      "name": "authelia",
+      "displayName": "Authelia (2FA)",
+      "parentService": "photos",
+      "category": "infra-services",
+      "vmId": "gcp-f-micro_1",
+      "network": {
+        "proxyAddress": "authelia:9091"
+      },
+      "notes": "TOTP 2FA authentication server for photos.diegonmarcos.com",
+      "status": "on"
+    },
     "n8n-ai": {
       "id": "n8n-ai",
       "name": "n8n-ai",
@@ -785,6 +846,15 @@
         "ip": "84.235.234.87",
         "ssl": false,
         "status": "dev"
+      },
+      "photos.diegonmarcos.com": {
+        "service": "photoview-app",
+        "vmId": "oci-p-flex_1",
+        "authenticationVmId": "gcp-f-micro_1",
+        "ip": "34.55.55.234",
+        "ssl": true,
+        "authentication": "Authelia 2FA",
+        "status": "on"
       }
     }
   },
