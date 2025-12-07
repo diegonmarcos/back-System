@@ -1523,10 +1523,10 @@ GitHub App settings:
 │
 └── vps_gcloud/                             ← GOOGLE CLOUD VMs
     │
-    └── vm-gcp-f-micro_1/                   ← 24/7 FREE e2-micro (NPM Proxy)
-        ├── 1.os/gcp-f-micro_1.md
-        ├── 2.app/npm-app/, mail-app/, terminal-app/, billing-disabler/
-        └── 3.db/mail-db/
+    └── vm-arch-1/                          ← 24/7 FREE e2-micro (NPM Proxy + Authelia)
+        ├── 1.os/arch-1.md
+        ├── 2.app/npm-app/, authelia-app/, mail-app/, terminal-app/, billing-disabler/
+        └── 3.db/mail-db/, authelia-db/
 ```
 
 ### Source of Truth Hierarchy
