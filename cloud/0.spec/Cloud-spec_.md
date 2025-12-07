@@ -38,11 +38,10 @@
 | n8n-infra-app | n8n (Infra) | https://n8n.diegonmarcos.com | on |
 | cloud-app | Cloud Dashboard | https://cloud.diegonmarcos.com | on |
 
-### Proxy Admin Panels
+### Proxy Admin Panel (SINGLE NPM)
 | Server | URL |
 |--------|-----|
-| Oracle Web Server 1 | http://130.110.251.193:81 |
-| Oracle Services Server 1 | http://129.151.228.66:81 |
+| GCloud NPM (Central) | http://34.55.55.234:81 |
 
 ### Cloud Consoles
 | Provider | URL |
@@ -224,9 +223,9 @@ ssh ubuntu@129.151.228.66
 | on | ↳ sync-files-db | | - | ~100 GB | - | Synced files storage |
 | on | ↳ sync-obj-db | | - | ~5 GB | - | Object/blob storage |
 | | **npm** | Infrastructure | | | | Reverse proxy (4 instances) |
-| on | ↳ npm-oracle-web | | 128-256 MB | 100-500 MB | 5-20 GB/mo | SSL certs + configs |
-| on | ↳ npm-oracle-services | | 128-256 MB | 100-500 MB | 5-20 GB/mo | SSL certs + configs |
-| hold | ↳ npm-oracle-arm | | 128-256 MB | 100-500 MB | 5-20 GB/mo | SSL certs + configs |
+| on | ↳ npm-gcloud (SINGLE CENTRAL PROXY)
+| on | ↳ npm-gcloud (SINGLE CENTRAL PROXY)
+| hold | ↳ npm-gcloud (on hold - ARM not deployed)
 | dev | ↳ npm-gcloud | | 128-256 MB | 100-500 MB | 5-20 GB/mo | SSL certs + configs |
 | | **cache** | Cache | | | | Redis in-memory store |
 | dev | ↳ cache-app | | 64-256 MB | 100 MB - 1 GB | - | Session/cache data |
@@ -247,9 +246,9 @@ ssh ubuntu@129.151.228.66
 
 | Status | VM | Services | Total RAM (Est) | Total Storage (Est) | Bandwidth (Est) |
 |--------|-----|----------|-----------------|---------------------|-----------------|
-| on | Oracle Web Server 1 | n8n-infra-app, sync-app, cloud-app, flask-app, npm-oracle-web, vpn-app, git-app, cache-app | ~800 MB - 1.5 GB | ~5-15 GB | ~20-80 GB/mo |
-| on | Oracle Services Server 1 | analytics-app, analytics-db, cloud-db, npm-oracle-services | ~600 MB - 1.2 GB | ~5-15 GB | ~5-20 GB/mo |
-| hold | Oracle ARM Server | n8n-ai-app, n8n-ai-db, npm-oracle-arm | ~1.5-5 GB | ~5-20 GB | ~10-40 GB/mo |
+| on | Oracle Web Server 1 | n8n-infra-app, sync-app, cloud-app, flask-app, npm-gcloud (SINGLE CENTRAL PROXY)
+| on | Oracle Services Server 1 | analytics-app, analytics-db, cloud-db, npm-gcloud (SINGLE CENTRAL PROXY)
+| hold | Oracle ARM Server | n8n-ai-app, n8n-ai-db, npm-gcloud (on hold - ARM not deployed)
 | dev | GCloud Arch 1 | mail-app, mail-db, terminal-app, npm-gcloud | ~800 MB - 1.5 GB | ~10-50 GB | ~5-15 GB/mo |
 | | **Total ON** | | **~1.4-2.7 GB** | **~10-30 GB** | **~25-100 GB/mo** |
 | | **Total DEV** | | **~2.3-6.5 GB** | **~15-70 GB** | **~15-55 GB/mo** |
@@ -831,7 +830,7 @@ All services follow a consistent naming pattern:
 |---------|---------|-------------|
 | `{service}-app` | `analytics-app`, `sync-app` | Application/service container |
 | `{service}-db` | `analytics-db`, `git-db` | Database container |
-| `npm-{provider}-{vm}` | `npm-oracle-web`, `npm-gcloud` | NPM proxy per VM |
+| `npm-{provider}-{vm}` | `npm-gcloud (SINGLE CENTRAL PROXY)
 | `n8n-{type}-app` | `n8n-infra-app`, `n8n-ai-app` | n8n workflow variants |
 
 ---
@@ -1751,7 +1750,7 @@ index.html (Navigation Hub)
 | - oracle-web-server-1 | **Infra Services** |
 | - oracle-services-server-1 | - n8n-infra-app, flask-app, cache-app |
 | - oracle-arm-server | **Proxies** |
-| - gcloud-arch-1 | - npm-oracle-web, npm-oracle-services |
+| - gcloud-arch-1 | - npm-gcloud (SINGLE CENTRAL PROXY)
 
 ### 16.4 List View Columns
 
