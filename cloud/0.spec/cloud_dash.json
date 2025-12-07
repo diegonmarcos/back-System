@@ -88,11 +88,11 @@
       "notes": "Mail services only (docker-mailserver)",
       "availability": "24/7",
       "runtimeStatus": {
-        "online": true,
-        "ping": true,
-        "ssh": true,
-        "ramPercent": 40,
-        "lastCheck": "2025-12-06T00:25:49.641336"
+        "online": false,
+        "ping": false,
+        "ssh": false,
+        "ramPercent": null,
+        "lastCheck": "2025-12-06T23:03:22.104079"
       }
     },
     "oci-f-micro_2": {
@@ -140,11 +140,11 @@
       "notes": "Matomo Analytics only (no NPM)",
       "availability": "24/7",
       "runtimeStatus": {
-        "online": true,
-        "ping": true,
-        "ssh": true,
-        "ramPercent": 83,
-        "lastCheck": "2025-12-06T00:25:53.262785"
+        "online": false,
+        "ping": false,
+        "ssh": false,
+        "ramPercent": null,
+        "lastCheck": "2025-12-06T23:03:25.073311"
       }
     },
     "oci-f-arm_1": {
@@ -194,7 +194,7 @@
         "ping": false,
         "ssh": false,
         "ramPercent": null,
-        "lastCheck": "2025-12-06T00:25:53.269523"
+        "lastCheck": "2025-12-06T23:03:25.078065"
       }
     },
     "gcp-f-micro_1": {
@@ -243,11 +243,11 @@
       "role": "proxy",
       "availability": "24/7",
       "runtimeStatus": {
-        "online": true,
+        "online": false,
         "ping": true,
-        "ssh": true,
-        "ramPercent": 45,
-        "lastCheck": "2025-12-06T00:25:59.091773"
+        "ssh": false,
+        "ramPercent": null,
+        "lastCheck": "2025-12-06T23:03:27.246496"
       }
     },
     "oci-p-flex_1": {
@@ -314,11 +314,11 @@
       "notes": "Dormant VM - wakes on HTTP request",
       "ociInstanceId": "ocid1.instance.oc1.eu-marseille-1.anwxeljruadvczachwpa3qrh7n25vfez3smidz4o7gpmtj4ga4d7zqlja5yq",
       "runtimeStatus": {
-        "online": true,
-        "ping": true,
-        "ssh": true,
-        "ramPercent": 10,
-        "lastCheck": "2025-12-06T00:26:02.891950"
+        "online": false,
+        "ping": false,
+        "ssh": false,
+        "ramPercent": null,
+        "lastCheck": "2025-12-06T23:03:29.989821"
       }
     }
   },
@@ -652,57 +652,13 @@
     "npm": {
       "id": "npm",
       "name": "npm",
-      "displayName": "NPM Proxies",
+      "displayName": "NPM Central Proxy",
       "category": "infra-proxy",
       "childServices": [
-        "npm-oracle-web",
-        "npm-oracle-services",
-        "npm-oracle-arm",
         "npm-gcloud"
       ],
+      "notes": "SINGLE central reverse proxy on gcp-f-micro_1. All services route through this.",
       "status": "on"
-    },
-    "npm-oracle-web": {
-      "id": "npm-oracle-web",
-      "name": "npm-oracle-web",
-      "displayName": "npm-oracle-web",
-      "parentService": "npm",
-      "category": "infra-proxy",
-      "vmId": "oci-f-micro_1",
-      "network": {
-        "proxyAddress": "npm-oracle-web:81"
-      },
-      "urls": {
-        "admin": "http://130.110.251.193:81"
-      },
-      "status": "on"
-    },
-    "npm-oracle-services": {
-      "id": "npm-oracle-services",
-      "name": "npm-oracle-services",
-      "displayName": "npm-oracle-services",
-      "parentService": "npm",
-      "category": "infra-proxy",
-      "vmId": "oci-f-micro_2",
-      "network": {
-        "proxyAddress": "npm-oracle-services:81"
-      },
-      "urls": {
-        "admin": "http://129.151.228.66:81"
-      },
-      "status": "on"
-    },
-    "npm-oracle-arm": {
-      "id": "npm-oracle-arm",
-      "name": "npm-oracle-arm",
-      "displayName": "npm-oracle-arm",
-      "parentService": "npm",
-      "category": "infra-proxy",
-      "vmId": "oci-f-arm_1",
-      "network": {
-        "proxyAddress": "npm-oracle-arm:81"
-      },
-      "status": "hold"
     },
     "npm-gcloud": {
       "id": "npm-gcloud",

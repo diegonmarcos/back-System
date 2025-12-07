@@ -376,12 +376,16 @@ def parse_free_output(output: str) -> Optional[Dict[str, Any]]:
         lines = output.strip().split('\n')
         mem_line = [l for l in lines if l.startswith('Mem:')][0]
         parts = mem_line.split()
+        total_mb = int(parts[1])
+        used_mb = int(parts[2])
         return {
-            "total_mb": int(parts[1]),
-            "used_mb": int(parts[2]),
+            "total_mb": total_mb,
+            "used_mb": used_mb,
             "free_mb": int(parts[3]),
             "available_mb": int(parts[6]) if len(parts) > 6 else int(parts[3]),
-            "percent_used": round(int(parts[2]) / int(parts[1]) * 100, 1)
+            "percent_used": round(used_mb / total_mb * 100, 1),
+            "total": total_mb * 1024 * 1024,  # bytes for frontend
+            "used": used_mb * 1024 * 1024  # bytes for frontend
         }
     except:
         return None
@@ -392,9 +396,24 @@ def parse_df_output(output: str) -> Optional[Dict[str, Any]]:
         lines = output.strip().split('\n')
         data_line = lines[1]
         parts = data_line.split()
+
+        def parse_size_to_bytes(size_str):
+            """Convert human-readable size (e.g., '50G', '20M') to bytes."""
+            size_str = size_str.upper()
+            multipliers = {'K': 1024, 'M': 1024**2, 'G': 1024**3, 'T': 1024**4}
+            for unit, mult in multipliers.items():
+                if unit in size_str:
+                    return int(float(size_str.replace(unit, '')) * mult)
+            return int(size_str)  # Already in bytes
+
+        total_bytes = parse_size_to_bytes(parts[1])
+        used_bytes = parse_size_to_bytes(parts[2])
+
         return {
-            "total": parts[1],
-            "used": parts[2],
+            "total": total_bytes,  # bytes for frontend
+            "used": used_bytes,  # bytes for frontend
+            "total_human": parts[1],
+            "used_human": parts[2],
             "available": parts[3],
             "percent_used": int(parts[4].replace('%', ''))
         }
@@ -1163,6 +1182,137 @@ def run_server(host: str = SERVER_HOST, port: int = SERVER_PORT, debug: bool = F
 
         return jsonify({"error": "Service VM not found"}), 404
 
+    @app.route('/api/metrics/services')
+    def api_metrics_all_services():
+        """Get metrics for all running services/containers."""
+        config = load_config()
+        services = config.get("services", {})
+        vms = config.get("virtualMachines", {})
+        results = []
+
+        # Get docker stats from all active VMs
+        for vm_id, vm in vms.items():
+            if vm.get("status") not in ["active", "on"]:
+                continue
+
+            ip = vm.get("network", {}).get("publicIp")
+            if not ip or ip == "pending":
+                continue
+
+            # Get all container stats from this VM
+            docker_stats = run_ssh_command(vm_id, "sudo docker stats --no-stream --format '{{.Name}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.BlockIO}}'")
+            if docker_stats.get("error"):
+                continue
+
+            # Parse each container's stats
+            for line in docker_stats.get("output", "").strip().split('\n'):
+                if not line:
+                    continue
+                parts = line.split('\t')
+                if len(parts) < 4:
+                    continue
+
+                container_name = parts[0]
+                mem_usage = parts[1]  # e.g., "256MiB / 8GiB"
+                mem_perc = parts[2]  # e.g., "3.12%"
+                block_io = parts[3]  # e.g., "10MB / 5MB"
+
+                # Parse memory usage
+                try:
+                    mem_parts = mem_usage.split('/')
+                    used_str = mem_parts[0].strip()
+                    total_str = mem_parts[1].strip() if len(mem_parts) > 1 else "0"
+
+                    def parse_mem_size(size_str):
+                        """Parse docker memory size (e.g., '256MiB', '8GiB') to bytes."""
+                        size_str = size_str.upper().replace('IB', '')  # Convert MiB -> M, GiB -> G
+                        multipliers = {'K': 1024, 'M': 1024**2, 'G': 1024**3, 'T': 1024**4}
+                        for unit, mult in multipliers.items():
+                            if unit in size_str:
+                                return int(float(size_str.replace(unit, '')) * mult)
+                        return int(float(size_str))
+
+                    ram_bytes = parse_mem_size(used_str)
+                except:
+                    ram_bytes = 0
+
+                # Parse block I/O for storage
+                try:
+                    io_parts = block_io.split('/')
+                    storage_bytes = parse_mem_size(io_parts[1].strip()) if len(io_parts) > 1 else 0
+                except:
+                    storage_bytes = 0
+
+                # Find matching service
+                service_id = None
+                service_name = container_name
+                for sid, svc in services.items():
+                    container = svc.get("deployment", {}).get("containerName", sid)
+                    if container == container_name or sid in container_name:
+                        service_id = sid
+                        service_name = svc.get("displayName", svc.get("name", container_name))
+                        break
+
+                results.append({
+                    "id": service_id or container_name,
+                    "name": service_name,
+                    "vm_id": vm_id,
+                    "container": container_name,
+                    "ram": ram_bytes,
+                    "storage": storage_bytes,
+                    "vram": 0  # Not available from docker stats
+                })
+
+        return jsonify(results)
+
+    @app.route('/api/service/<service_id>/kill', methods=['POST'])
+    def api_service_kill(service_id: str):
+        """Kill (stop) a service container. Requires GitHub authentication."""
+        # Verify GitHub auth
+        user, error = verify_github_auth()
+        if error:
+            return jsonify(error[0]), error[1]
+
+        config = load_config()
+        services = config.get("services", {})
+        service = services.get(service_id)
+
+        if not service:
+            return jsonify({"error": f"Service {service_id} not found"}), 404
+
+        # Find which VM runs this service
+        vm_id = service.get("vmId")
+        if not vm_id:
+            # Fallback: search in VMs
+            for vid, vm in config.get("virtualMachines", {}).items():
+                if service_id in vm.get("services", []):
+                    vm_id = vid
+                    break
+
+        if not vm_id:
+            return jsonify({"error": "Service VM not found"}), 404
+
+        # Get container name
+        container_name = service.get("deployment", {}).get("containerName", service_id)
+
+        # Stop the container
+        result = run_ssh_command(vm_id, f"sudo docker stop {container_name}")
+
+        if result.get("error"):
+            return jsonify({
+                "error": f"Failed to stop container: {result.get('error')}",
+                "service": service_id,
+                "container": container_name
+            }), 500
+
+        return jsonify({
+            "status": "killed",
+            "message": f"Container {container_name} stopped successfully",
+            "service": service_id,
+            "container": container_name,
+            "initiated_by": user.get('login')
+        })
+
     @app.route('/api/capacity')
     def api_capacity():
         """Get infrastructure capacity assessment."""
@@ -1283,6 +1433,68 @@ def run_server(host: str = SERVER_HOST, port: int = SERVER_PORT, debug: bool = F
         except Exception as e:
             return f'<script>window.location.href="{frontend_url}?error=exception";</script>'
 
+    @app.route('/api/auth/github/callback', methods=['POST'])
+    def api_github_callback_json():
+        """Exchange GitHub OAuth code for access token (JSON API version)."""
+        import requests as req
+
+        data = request.get_json() or {}
+        code = data.get('code')
+
+        if not code:
+            return jsonify({'error': 'No authorization code provided'}), 400
+
+        if not GITHUB_CLIENT_ID or not GITHUB_CLIENT_SECRET:
+            return jsonify({'error': 'OAuth not configured'}), 500
+
+        try:
+            # Exchange code for access token
+            token_response = req.post(
+                'https://github.com/login/oauth/access_token',
+                headers={'Accept': 'application/json'},
+                data={
+                    'client_id': GITHUB_CLIENT_ID,
+                    'client_secret': GITHUB_CLIENT_SECRET,
+                    'code': code
+                },
+                timeout=10
+            )
+            token_data = token_response.json()
+
+            if 'error' in token_data:
+                return jsonify({'error': token_data.get('error_description', 'OAuth failed')}), 400
+
+            access_token = token_data.get('access_token')
+            if not access_token:
+                return jsonify({'error': 'No access token received'}), 400
+
+            # Get user info
+            user_response = req.get(
+                'https://api.github.com/user',
+                headers={
+                    'Authorization': f'Bearer {access_token}',
+                    'Accept': 'application/json'
+                },
+                timeout=10
+            )
+            user_data = user_response.json()
+
+            username = user_data.get('login', '')
+            is_admin = username in GITHUB_ALLOWED_USERS
+
+            return jsonify({
+                'access_token': access_token,
+                'user': {
+                    'login': username,
+                    'avatar_url': user_data.get('avatar_url', ''),
+                    'name': user_data.get('name', ''),
+                    'is_admin': is_admin
+                }
+            })
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
     def verify_github_token(token: str) -> Optional[Dict]:
         """Verify GitHub token and return user info if valid and authorized."""
         import requests as req
@@ -1368,6 +1580,270 @@ def run_server(host: str = SERVER_HOST, port: int = SERVER_PORT, debug: bool = F
             })
         except Exception as e:
             return jsonify({'error': f'Failed to reboot: {str(e)}'}), 500
+
+    # -------------------------------------------------------------------------
+    # Container Management Endpoints (require GitHub auth)
+    # -------------------------------------------------------------------------
+
+    def verify_github_auth():
+        """Verify GitHub authentication and return user info or error."""
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return None, ({'error': 'Authorization required'}, 401)
+
+        token = auth_header.split(' ')[1]
+        import requests as req
+        try:
+            response = req.get(
+                'https://api.github.com/user',
+                headers={'Authorization': f'Bearer {token}', 'Accept': 'application/json'},
+                timeout=10
+            )
+            user = response.json()
+            if user.get('login') not in GITHUB_ALLOWED_USERS:
+                return None, ({'error': 'Unauthorized user'}, 403)
+            return user, None
+        except:
+            return None, ({'error': 'Invalid token'}, 401)
+
+    @app.route('/api/vm/<vm_id>/container/<container>/stop', methods=['POST'])
+    def api_container_stop(vm_id: str, container: str):
+        """Stop a container (requires GitHub authentication)."""
+        user, error = verify_github_auth()
+        if error:
+            return jsonify(error[0]), error[1]
+
+        vm = load_config().get('virtualMachines', {}).get(vm_id)
+        if not vm:
+            return jsonify({'error': f'VM not found: {vm_id}'}), 404
+
+        ip = vm.get('network', {}).get('publicIp')
+        ssh_user = vm.get('ssh', {}).get('user', 'ubuntu')
+        key_path = expand_path(vm.get('ssh', {}).get('keyPath', ''))
+
+        try:
+            result = subprocess.run(
+                ['ssh', '-i', key_path, '-o', 'ConnectTimeout=10', '-o', 'StrictHostKeyChecking=no',
+                 f'{ssh_user}@{ip}', f'sudo docker stop {container}'],
+                capture_output=True, text=True, timeout=30
+            )
+            if result.returncode == 0:
+                return jsonify({'status': 'ok', 'message': f'Container {container} stopped', 'initiated_by': user.get('login')})
+            return jsonify({'error': result.stderr or 'Failed to stop container'}), 500
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/vm/<vm_id>/container/<container>/start', methods=['POST'])
+    def api_container_start(vm_id: str, container: str):
+        """Start a container (requires GitHub authentication)."""
+        user, error = verify_github_auth()
+        if error:
+            return jsonify(error[0]), error[1]
+
+        vm = load_config().get('virtualMachines', {}).get(vm_id)
+        if not vm:
+            return jsonify({'error': f'VM not found: {vm_id}'}), 404
+
+        ip = vm.get('network', {}).get('publicIp')
+        ssh_user = vm.get('ssh', {}).get('user', 'ubuntu')
+        key_path = expand_path(vm.get('ssh', {}).get('keyPath', ''))
+
+        try:
+            result = subprocess.run(
+                ['ssh', '-i', key_path, '-o', 'ConnectTimeout=10', '-o', 'StrictHostKeyChecking=no',
+                 f'{ssh_user}@{ip}', f'sudo docker start {container}'],
+                capture_output=True, text=True, timeout=30
+            )
+            if result.returncode == 0:
+                return jsonify({'status': 'ok', 'message': f'Container {container} started', 'initiated_by': user.get('login')})
+            return jsonify({'error': result.stderr or 'Failed to start container'}), 500
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/vm/<vm_id>/container/<container>/restart', methods=['POST'])
+    def api_container_restart(vm_id: str, container: str):
+        """Restart a container (requires GitHub authentication)."""
+        user, error = verify_github_auth()
+        if error:
+            return jsonify(error[0]), error[1]
+
+        vm = load_config().get('virtualMachines', {}).get(vm_id)
+        if not vm:
+            return jsonify({'error': f'VM not found: {vm_id}'}), 404
+
+        ip = vm.get('network', {}).get('publicIp')
+        ssh_user = vm.get('ssh', {}).get('user', 'ubuntu')
+        key_path = expand_path(vm.get('ssh', {}).get('keyPath', ''))
+
+        try:
+            result = subprocess.run(
+                ['ssh', '-i', key_path, '-o', 'ConnectTimeout=10', '-o', 'StrictHostKeyChecking=no',
+                 f'{ssh_user}@{ip}', f'sudo docker restart {container}'],
+                capture_output=True, text=True, timeout=60
+            )
+            if result.returncode == 0:
+                return jsonify({'status': 'ok', 'message': f'Container {container} restarted', 'initiated_by': user.get('login')})
+            return jsonify({'error': result.stderr or 'Failed to restart container'}), 500
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/vm/<vm_id>/container/<container>/logs')
+    def api_container_logs(vm_id: str, container: str):
+        """Get container logs (last 100 lines)."""
+        vm = load_config().get('virtualMachines', {}).get(vm_id)
+        if not vm:
+            return jsonify({'error': f'VM not found: {vm_id}'}), 404
+
+        ip = vm.get('network', {}).get('publicIp')
+        ssh_user = vm.get('ssh', {}).get('user', 'ubuntu')
+        key_path = expand_path(vm.get('ssh', {}).get('keyPath', ''))
+        lines = request.args.get('lines', '100')
+
+        try:
+            result = subprocess.run(
+                ['ssh', '-i', key_path, '-o', 'ConnectTimeout=10', '-o', 'StrictHostKeyChecking=no',
+                 f'{ssh_user}@{ip}', f'sudo docker logs --tail {lines} {container}'],
+                capture_output=True, text=True, timeout=30
+            )
+            return jsonify({
+                'container': container,
+                'vm': vm_id,
+                'logs': result.stdout + result.stderr,
+                'lines': int(lines)
+            })
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/vm/<vm_id>/container/<container>/update', methods=['POST'])
+    def api_container_update(vm_id: str, container: str):
+        """Update a container: pull new image and restart (requires GitHub auth)."""
+        user, error = verify_github_auth()
+        if error:
+            return jsonify(error[0]), error[1]
+
+        vm = load_config().get('virtualMachines', {}).get(vm_id)
+        if not vm:
+            return jsonify({'error': f'VM not found: {vm_id}'}), 404
+
+        ip = vm.get('network', {}).get('publicIp')
+        ssh_user = vm.get('ssh', {}).get('user', 'ubuntu')
+        key_path = expand_path(vm.get('ssh', {}).get('keyPath', ''))
+
+        # Get container image
+        try:
+            img_result = subprocess.run(
+                ['ssh', '-i', key_path, '-o', 'ConnectTimeout=10', '-o', 'StrictHostKeyChecking=no',
+                 f'{ssh_user}@{ip}', f'sudo docker inspect --format="{{{{.Config.Image}}}}" {container}'],
+                capture_output=True, text=True, timeout=30
+            )
+            image = img_result.stdout.strip()
+            if not image:
+                return jsonify({'error': 'Could not determine container image'}), 500
+
+            # Pull new image and restart
+            update_cmd = f'sudo docker pull {image} && sudo docker restart {container}'
+            result = subprocess.run(
+                ['ssh', '-i', key_path, '-o', 'ConnectTimeout=10', '-o', 'StrictHostKeyChecking=no',
+                 f'{ssh_user}@{ip}', update_cmd],
+                capture_output=True, text=True, timeout=120
+            )
+            if result.returncode == 0:
+                return jsonify({
+                    'status': 'ok',
+                    'message': f'Container {container} updated',
+                    'image': image,
+                    'initiated_by': user.get('login')
+                })
+            return jsonify({'error': result.stderr or 'Failed to update container'}), 500
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/service/<service_id>/deploy', methods=['POST'])
+    def api_service_deploy(service_id: str):
+        """Deploy/redeploy a service using docker-compose (requires GitHub auth)."""
+        user, error = verify_github_auth()
+        if error:
+            return jsonify(error[0]), error[1]
+
+        config = load_config()
+        service = config.get('services', {}).get(service_id)
+        if not service:
+            return jsonify({'error': f'Service not found: {service_id}'}), 404
+
+        vm_id = service.get('vm')
+        vm = config.get('virtualMachines', {}).get(vm_id)
+        if not vm:
+            return jsonify({'error': f'VM not found for service: {vm_id}'}), 404
+
+        ip = vm.get('network', {}).get('publicIp')
+        ssh_user = vm.get('ssh', {}).get('user', 'ubuntu')
+        key_path = expand_path(vm.get('ssh', {}).get('keyPath', ''))
+
+        # Get deployment path from service config
+        deploy_path = service.get('deployment', {}).get('path', f'/opt/{service_id}')
+
+        try:
+            deploy_cmd = f'cd {deploy_path} && sudo docker-compose pull && sudo docker-compose up -d'
+            result = subprocess.run(
+                ['ssh', '-i', key_path, '-o', 'ConnectTimeout=10', '-o', 'StrictHostKeyChecking=no',
+                 f'{ssh_user}@{ip}', deploy_cmd],
+                capture_output=True, text=True, timeout=180
+            )
+            return jsonify({
+                'status': 'ok' if result.returncode == 0 else 'error',
+                'message': f'Service {service_id} deployment initiated',
+                'output': result.stdout + result.stderr,
+                'initiated_by': user.get('login')
+            })
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/vm/<vm_id>/backup', methods=['POST'])
+    def api_vm_backup(vm_id: str):
+        """Backup databases on a VM (requires GitHub auth)."""
+        user, error = verify_github_auth()
+        if error:
+            return jsonify(error[0]), error[1]
+
+        vm = load_config().get('virtualMachines', {}).get(vm_id)
+        if not vm:
+            return jsonify({'error': f'VM not found: {vm_id}'}), 404
+
+        ip = vm.get('network', {}).get('publicIp')
+        ssh_user = vm.get('ssh', {}).get('user', 'ubuntu')
+        key_path = expand_path(vm.get('ssh', {}).get('keyPath', ''))
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_dir = f'/opt/backups/{timestamp}'
+
+        try:
+            # Create backup directory and dump databases
+            backup_cmd = f'''
+mkdir -p {backup_dir}
+for container in $(sudo docker ps --format "{{{{.Names}}}}" | grep -E "db|mariadb|postgres|mysql"); do
+    echo "Backing up $container..."
+    if sudo docker exec $container which mysqldump >/dev/null 2>&1; then
+        sudo docker exec $container mysqldump --all-databases > {backup_dir}/$container.sql
+    elif sudo docker exec $container which pg_dumpall >/dev/null 2>&1; then
+        sudo docker exec $container pg_dumpall -U postgres > {backup_dir}/$container.sql
+    fi
+done
+ls -la {backup_dir}
+'''
+            result = subprocess.run(
+                ['ssh', '-i', key_path, '-o', 'ConnectTimeout=10', '-o', 'StrictHostKeyChecking=no',
+                 f'{ssh_user}@{ip}', backup_cmd],
+                capture_output=True, text=True, timeout=300
+            )
+            return jsonify({
+                'status': 'ok',
+                'message': f'Backup completed',
+                'backup_dir': backup_dir,
+                'output': result.stdout + result.stderr,
+                'initiated_by': user.get('login')
+            })
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
     # -------------------------------------------------------------------------
     # Root redirect to frontend
@@ -2647,6 +3123,50 @@ def export_html(output_path: str = None) -> str:
     return output_path
 
 
+def export_js(output_path: str = None) -> str:
+    """Export config to JavaScript file for local dashboard use.
+
+    Creates a JS file with LOCAL_DATA constant that the web dashboard
+    can use in 'Local' mode without API calls.
+
+    Args:
+        output_path: Output file path (default: local-data.js in frontend dir)
+
+    Returns:
+        Path to the generated JS file
+    """
+    import json as json_mod
+
+    # Default output to frontend directory
+    if not output_path:
+        frontend_dir = Path("/home/diego/Documents/Git/front-Github_io/cloud/src_vanilla")
+        output_path = frontend_dir / "local-data.js"
+
+    config = load_config()
+    timestamp = datetime.now().isoformat()
+
+    # Build the JS content
+    js_content = f"""// AUTO-GENERATED by cloud_dash.py --export js
+// Generated: {timestamp}
+// DO NOT EDIT - This file is overwritten on each export
+
+const LOCAL_DATA = {json_mod.dumps(config, indent=2)};
+
+// Export timestamp for display
+const LOCAL_DATA_TIMESTAMP = "{timestamp}";
+
+// Export for module usage
+if (typeof module !== 'undefined' && module.exports) {{
+    module.exports = {{ LOCAL_DATA, LOCAL_DATA_TIMESTAMP }};
+}}
+"""
+
+    with open(output_path, 'w') as f:
+        f.write(js_content)
+
+    return str(output_path)
+
+
 def export_html_live(refresh_seconds: int = 30) -> str:
     """Export status to HTML file with exact terminal-style ASCII layout and auto-refresh.
 
@@ -3186,10 +3706,13 @@ def main():
             import json as json_mod
             config = load_config()
             print(json_mod.dumps(config, indent=2))
+        elif export_format == 'js':
+            result = export_js()
+            print(f"{C.GREEN}Exported to: {result}{C.RESET}")
         elif export_format == 'terminal':
             render_dashboard()
         else:
-            print(f"{C.RED}Unknown format: {export_format}. Use 'tui', 'html', 'json', 'csv', 'md', or 'terminal'{C.RESET}")
+            print(f"{C.RED}Unknown format: {export_format}. Use 'tui', 'html', 'json', 'js', 'csv', 'md', or 'terminal'{C.RESET}")
             sys.exit(1)
         return
 
