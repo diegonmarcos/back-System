@@ -1,42 +1,80 @@
-# Mail Server Status
+# Mail App Status
 
-**Status:** PAUSED - Awaiting Google Configuration
-**Date:** 2025-12-05
+**Status:** DEPLOYED
+**Date:** 2025-12-07
 **VM:** oci-f-micro_1 (130.110.251.193)
 
 ---
 
-## What's Done ✅
+## Deployment Status
 
-- [x] Spec files updated (Cloud-spec_Tables.md)
-- [x] Folder structure in correct location (Oracle)
-- [x] docker-compose.yml with Google SMTP relay config
-- [x] IMPLEMENTATION_PLAN.md complete
-- [x] Container deployed on VM (stopped, awaiting config)
-- [x] Docker volumes preserved (admin@diegonmarcos.com account exists)
-- [x] Duplicate folder in vps_gcloud deleted
+| Component | Status | Version |
+|-----------|--------|---------|
+| Stalwart Mail Server | DEPLOYED | latest |
+| Snappymail Webmail | DEPLOYED | latest |
+| Cloudflare Email Routing | CONFIGURED | - |
+| OCI Security List | CONFIGURED | - |
 
-## What's Needed (User Action) ⏳
+## Services Running
 
-1. **Generate Google App Password**
-   - Go to: https://myaccount.google.com/apppasswords
-   - Sign in with `me@diegonmarcos.com`
-   - Create App Password for "Mail" / "mail-server"
-   - Save the 16-character password
+```
+CONTAINER       IMAGE                             STATUS          PORTS
+stalwart-mail   stalwartlabs/mail-server:latest   Up              25,587,993,8080
+snappymail      djmaze/snappymail:latest          Up              8888
+```
 
-2. **Create credentials file:**
-   ```bash
-   mkdir -p ~/Documents/Git/LOCAL_KEYS/local_keys/secrets/
-   cat > ~/Documents/Git/LOCAL_KEYS/local_keys/secrets/mail-relay.env << 'EOF'
-   RELAY_USER=me@diegonmarcos.com
-   RELAY_PASSWORD=xxxx-xxxx-xxxx-xxxx
-   EOF
-   chmod 600 ~/Documents/Git/LOCAL_KEYS/local_keys/secrets/mail-relay.env
-   ```
+## Endpoints
 
-3. **Configure Google Forwarding**
-   - Gmail → Settings → Forwarding → Forward to admin@mail.diegonmarcos.com
+| Service | URL | Status |
+|---------|-----|--------|
+| Stalwart Admin | http://130.110.251.193:8080 | OK |
+| Snappymail | http://130.110.251.193:8888 | OK |
+| IMAP | 130.110.251.193:993 | OK |
+| SMTP | 130.110.251.193:587 | OK |
 
-## To Resume
+---
 
-Once Google config is done, follow IMPLEMENTATION_PLAN.md or ask Claude to continue.
+## What's Done
+
+- [x] Stalwart container deployed
+- [x] Snappymail container deployed
+- [x] Admin account created (diego + 2FA)
+- [x] Email account created (me@diegonmarcos.com)
+- [x] Cloudflare MX records configured
+- [x] Cloudflare Email Routing enabled (Gmail as primary)
+- [x] OCI security list updated (ports 587, 993, 8080, 8888)
+- [x] Thunderbird client configured
+- [x] Docker Compose updated
+- [x] Documentation updated
+
+## Pending
+
+- [x] Let's Encrypt TLS certificates (ACME) - DONE 2025-12-07
+- [ ] Cloudflare Worker for archive forwarding to Stalwart
+- [ ] DKIM configuration
+- [ ] Additional alias addresses
+
+---
+
+## Architecture
+
+```
+Internet → Cloudflare (port 25) → Email Routing → Gmail (PRIMARY)
+                                                → Stalwart (ARCHIVE via Worker - planned)
+```
+
+## Quick Access
+
+```bash
+# SSH to server
+ssh -i ~/.ssh/id_rsa ubuntu@130.110.251.193
+
+# Stalwart Admin
+http://130.110.251.193:8080  (admin / 8HkSfq6mCW)
+
+# Snappymail Webmail
+http://130.110.251.193:8888  (me@diegonmarcos.com / diego123)
+
+# Check services
+sudo docker ps | grep -E 'stalwart|snappymail'
+```

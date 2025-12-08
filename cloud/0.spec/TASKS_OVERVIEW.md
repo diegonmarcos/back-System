@@ -2,7 +2,7 @@
 
 **Project:** Cloud Infrastructure Architecture v2
 **Location:** `/home/diego/Documents/Git/back-System/cloud/0.spec/`
-**Last Updated:** 2025-12-05
+**Last Updated:** 2025-12-07
 
 ---
 
@@ -100,36 +100,141 @@
 
 ---
 
-### Task3 - Mail Server (Google Hybrid) ⏸️ PAUSED
+### Task3 - Mail Server (Stalwart + Cloudflare) 🚧 IN PROGRESS
 **Created:** 2025-12-05
-**Agent:** Sonnet (Claude Code)
-**Status:** Paused - Awaiting user Google configuration
+**Updated:** 2025-12-07
+**Agent:** Opus (Claude Code)
+**Status:** Cloudflare Email Routing configured, DNS propagating
 
-**Objective:** Self-hosted mail server with Google as MX/relay
+**Objective:** Self-hosted mail server with Cloudflare Email Routing
 
-**Architecture:**
-- Google receives mail (MX) → forwards to mail server
-- Mail server stores locally + provides webmail
-- Outgoing mail via Google SMTP relay (for reputation)
-- Multiple aliases: me@, help@, news@, info@, contact@, support@
+**Architecture (Full Design):**
+
+```
+                              ┌─────────────────────────────────────────────────┐
+                              │              INCOMING EMAIL                      │
+                              └─────────────────────────────────────────────────┘
+                                                   │
+                                                   ▼
+                              ┌─────────────────────────────────────────────────┐
+                              │         CLOUDFLARE (MX on port 25)              │
+                              │  route1/2/3.mx.cloudflare.net                   │
+                              └─────────────────────────────────────────────────┘
+                                                   │
+                                                   ▼
+                              ┌─────────────────────────────────────────────────┐
+                              │         CLOUDFLARE EMAIL WORKER                 │
+                              │  (Processes + forwards to both destinations)    │
+                              └─────────────────────────────────────────────────┘
+                                         │                    │
+                          ┌──────────────┘                    └──────────────┐
+                          ▼                                                  ▼
+        ┌─────────────────────────────────┐          ┌─────────────────────────────────┐
+        │      GMAIL (PRIMARY)            │          │      STALWART (ARCHIVE)         │
+        │  me@diegonmarcos.com            │          │      130.110.251.193:587        │
+        │  - Daily use                    │          │      - Self-hosted backup       │
+        │  - Mobile sync                  │          │      - Full control             │
+        │  - Spam filtering               │          │      - IMAP: 993 / JMAP         │
+        │  - 15GB storage                 │          │      - Unlimited storage        │
+        └─────────────────────────────────┘          └─────────────────────────────────┘
+                          │                                                  │
+                          ▼                                                  ▼
+        ┌─────────────────────────────────┐          ┌─────────────────────────────────┐
+        │      OUTGOING via GMAIL         │          │      OUTGOING via STALWART      │
+        │  smtp.gmail.com:587             │          │      (optional - via relay)     │
+        │  - Good reputation              │          │      Gmail SMTP relay for       │
+        │  - DKIM/SPF handled             │          │      deliverability             │
+        └─────────────────────────────────┘          └─────────────────────────────────┘
+
+
+                              ┌─────────────────────────────────────────────────┐
+                              │              ACCESS METHODS                      │
+                              └─────────────────────────────────────────────────┘
+
+        ┌─────────────────────────────────┐          ┌─────────────────────────────────┐
+        │      GMAIL CLIENTS              │          │      STALWART CLIENTS           │
+        │  - Gmail Web                    │          │      - Thunderbird              │
+        │  - Gmail App (iOS/Android)      │          │      - Any IMAP client          │
+        │  - Any IMAP client              │          │      - JMAP clients             │
+        └─────────────────────────────────┘          └─────────────────────────────────┘
+```
+
+**Phase 1 (Current):** Cloudflare → Gmail only
+**Phase 2 (Next):** Cloudflare Worker → Gmail + Stalwart (parallel)
+**Phase 3 (Optional):** Stalwart as primary, Gmail as backup
 
 **What's Done:**
-- [x] Spec files updated (mail on oci-f-micro_1)
-- [x] Folder structure created
-- [x] docker-compose.yml with Google relay config
-- [x] IMPLEMENTATION_PLAN.md complete
-- [x] Container exists on VM (stopped)
-- [x] Docker volumes preserved (admin account exists)
+- [x] Stalwart mail server deployed on oci-f-micro_1
+- [x] Domain `diegonmarcos.com` created in Stalwart
+- [x] Admin credentials saved to LOCAL_KEYS/README.md
+- [x] Spec files updated (Cloud-spec_.md, Cloud-spec_Tables.md)
+- [x] Container running (~120MB RAM)
+- [x] DNS migrated to Cloudflare (nameservers updated)
+- [x] MX records configured (route1/2/3.mx.cloudflare.net)
+- [x] SPF record updated (includes Cloudflare)
+- [x] DKIM record added (cf2024-1._domainkey)
+- [x] Email Routing enabled
+- [x] Routing rule created (me@ → forward)
+- [x] Destination address verified
 
-**User Actions Required:**
-1. Generate Google App Password (https://myaccount.google.com/apppasswords)
-2. Create credentials file (LOCAL_KEYS/local_keys/secrets/mail-relay.env)
-3. Configure Google forwarding in Gmail settings
+**Pending (Phase 1 - Current):**
+- [ ] DNS propagation (~24-48h from nameserver change)
+- [ ] Test Gmail receiving (send test email)
+- [ ] Verify SPF/DKIM/DMARC pass
+
+**Pending (Phase 2 - Gmail + Stalwart):**
+- [ ] Create Stalwart user account (me@diegonmarcos.com)
+- [ ] Create Cloudflare Email Worker (forwards to both Gmail + Stalwart)
+- [ ] Configure Stalwart SMTP relay (via Gmail for outgoing)
+- [ ] Test Stalwart IMAP access
+- [ ] Configure Thunderbird client
+
+**Pending (Phase 3 - Optional):**
+- [ ] Switch primary to Stalwart
+- [ ] Gmail as backup only
+- [ ] Full self-hosted email
+
+**Email Worker Code (Phase 2):**
+```javascript
+// Cloudflare Email Worker - forwards to Gmail + Stalwart
+export default {
+  async email(message, env, ctx) {
+    // Forward to Gmail (primary)
+    await message.forward("me@diegonmarcos.com");
+
+    // Forward to Stalwart (archive) via SMTP on port 587
+    // Note: Requires Cloudflare Email Workers paid plan for custom SMTP
+    // Alternative: Use Gmail auto-forward to Stalwart
+  }
+}
+```
+
+**Alternative (Simpler - Gmail Auto-Forward):**
+1. Gmail Settings → Forwarding → Add forwarding address
+2. Enter: stalwart@diegonmarcos.com (Stalwart user)
+3. Gmail forwards copy to Stalwart automatically
+
+**Cloudflare Configuration:**
+- **Zone ID:** ff4335cc9c7de42e580d0dff9a0d70eb
+- **Account ID:** e5cb0a0c6f448e54f217de484259f0ae
+- **Nameservers:** burt.ns.cloudflare.com, phoenix.ns.cloudflare.com
+- **MX Records:** route1/2/3.mx.cloudflare.net (priorities 22/85/97)
+
+**Stalwart Access:**
+- **Admin URL:** http://130.110.251.193:8080
+- **Username:** admin
+- **Password:** KTrgIHpg2y
+- **Ports:** 587 (SMTP), 993 (IMAPS), 8080 (Admin)
+
+**Why Cloudflare:**
+- Oracle Cloud blocks port 25 inbound
+- Cloudflare Email Routing receives on port 25 (free)
+- Can forward to any port via Email Workers
+- Full DNS control + DNSSEC support
 
 **Files:**
-- `vps_oracle/vm-oci-f-micro_1/2.app/mail-app/STATUS.md` - Current status
-- `vps_oracle/vm-oci-f-micro_1/2.app/mail-app/IMPLEMENTATION_PLAN.md` - Full plan
-- `vps_oracle/vm-oci-f-micro_1/2.app/mail-app/docker-compose.yml` - Container config
+- `vps_oracle/vm-oci-f-micro_1/2.app/mail-app/docker-compose.yml` - Stalwart config
+- `LOCAL_KEYS/README.md` - All credentials (Cloudflare, Stalwart, Gmail SMTP)
 
 **Target VM:** oci-f-micro_1 (130.110.251.193)
 
@@ -213,11 +318,14 @@
 - Cost: $5.50/month
 - Availability: Wake-on-demand
 
-**oci-f-micro_1 (Mail) - FREE TIER**
+**oci-f-micro_1 (Stalwart Mail) - FREE TIER**
 - IP: 130.110.251.193
-- Services: Mail app, Mail DB
+- Services: Stalwart Mail Server (~120MB RAM), RocksDB
+- Admin: http://130.110.251.193:8080 (admin/KTrgIHpg2y)
+- Ports: 587 (SMTP), 993 (IMAPS), 8080 (Admin)
 - Cost: $0/month
 - Availability: 24/7
+- **Note:** Port 25 blocked by Oracle, requires Cloudflare Email Routing
 
 **oci-f-micro_2 (Analytics) - FREE TIER**
 - IP: 129.151.228.66
@@ -287,18 +395,34 @@ oci compute instance action \
 
 ## Next Steps
 
-### Immediate (User Actions)
-1. **Update DNS in Squarespace** ← CRITICAL
-   - n8n.diegonmarcos.com → 34.55.55.234
-   - analytics.diegonmarcos.com → 34.55.55.234
-   - git.diegonmarcos.com → 34.55.55.234
-   - cloud.diegonmarcos.com → 34.55.55.234
+### Immediate - Mail Server (Task3)
+1. ~~**Migrate DNS to Cloudflare**~~ ✅ DONE
+   - ~~Create Cloudflare account (free)~~
+   - ~~Add diegonmarcos.com zone~~
+   - ~~Update nameservers at Squarespace~~
+   - DNS propagation in progress (~24-48h)
 
+2. ~~**Enable Cloudflare Email Routing**~~ ✅ DONE
+   - ~~Enable Email Routing in Cloudflare~~
+   - ~~Configure MX records (route1/2/3.mx.cloudflare.net)~~
+   - ~~Add routing rule for me@diegonmarcos.com~~
+   - ~~Verify destination address~~
+
+3. **Create Stalwart user account** ← NEXT
+   - Login: http://130.110.251.193:8080
+   - Create user: me@diegonmarcos.com
+   - Configure email client (Thunderbird/etc)
+
+4. **Phase 2: Email Worker** (Optional)
+   - Create Cloudflare Worker to forward to Stalwart:587
+   - Full self-hosted email (no Gmail dependency)
+
+### Pending - NPM (Task1_validation)
+1. ~~Update DNS in Squarespace~~ → DNS now on Cloudflare
 2. **Change NPM password** ← HIGH PRIORITY (Security)
    - Login: http://34.55.55.234:81
    - Change from "changeme"
-
-3. **Add SSL certificates** ← After DNS
+3. **Add SSL certificates** ← After DNS propagation
    - Via NPM web UI for each domain
    - Use Let's Encrypt
 
@@ -342,12 +466,16 @@ oci compute instance action \
 2025-12-04: Task2 created (not started yet)
 2025-12-05: NPM configuration completed
 2025-12-05: Task1_validation created
-2025-12-05: Awaiting user DNS/SSL actions
+2025-12-07: Task3 - Stalwart mail server deployed
+2025-12-07: DNS migrated to Cloudflare (nameservers updated)
+2025-12-07: MX/SPF/DKIM records configured via Cloudflare API
+2025-12-07: Email Routing enabled + routing rule created
+2025-12-07: Spec files updated (Cloud-spec_.md, TASKS_OVERVIEW.md)
 ```
 
-**Total Time:** ~2 days (technical work)
-**Agent Sessions:** 3 (Sonnet)
-**User Actions Pending:** 6 items
+**Total Time:** ~4 days (technical work)
+**Agent Sessions:** 5 (Sonnet x3, Opus x2)
+**User Actions Pending:** DNS propagation (~24-48h), SSL certificates
 
 ---
 
@@ -366,12 +494,21 @@ oci compute instance action \
 - ✅ Old NPM cleaned up
 - ✅ All passwords generated
 
+### Email (Task3)
+- ✅ Stalwart mail server deployed
+- ✅ DNS migrated to Cloudflare
+- ✅ MX records configured (Cloudflare)
+- ✅ Email Routing enabled
+- ✅ Routing rule created (me@)
+- ⏳ DNS propagation in progress
+- ⏳ Stalwart user account (pending)
+
 ### Pending
-- ⏳ DNS propagation (40% complete)
-- ⏳ SSL certificates (0% complete)
-- ⏳ Password changes (0% complete)
+- ⏳ DNS propagation (Cloudflare nameservers)
+- ⏳ SSL certificates (after DNS)
+- ⏳ NPM password change
 
 ---
 
-**Last Updated:** 2025-12-05 01:30
-**Status:** Task1 technical work complete, awaiting user validation
+**Last Updated:** 2025-12-07
+**Status:** Task3 (Mail) - Cloudflare Email Routing configured, DNS propagating
