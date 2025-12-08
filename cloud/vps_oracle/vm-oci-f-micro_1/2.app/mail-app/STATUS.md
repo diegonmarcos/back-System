@@ -1,7 +1,7 @@
 # Mail App Status
 
 **Status:** DEPLOYED
-**Date:** 2025-12-07
+**Date:** 2025-12-08
 **VM:** oci-f-micro_1 (130.110.251.193)
 
 ---
@@ -14,6 +14,7 @@
 | Snappymail Webmail | DEPLOYED | latest |
 | Cloudflare Email Routing | CONFIGURED | - |
 | OCI Security List | CONFIGURED | - |
+| **OCI Email Delivery Relay** | **CONFIGURED** | - |
 
 ## Services Running
 
@@ -46,10 +47,11 @@ snappymail      djmaze/snappymail:latest          Up              8888
 - [x] Thunderbird client configured
 - [x] Docker Compose updated
 - [x] Documentation updated
+- [x] Let's Encrypt TLS certificates (ACME) - DONE 2025-12-07
+- [x] **OCI Email Delivery Relay configured** - DONE 2025-12-08
 
 ## Pending
 
-- [x] Let's Encrypt TLS certificates (ACME) - DONE 2025-12-07
 - [ ] Cloudflare Worker for archive forwarding to Stalwart
 - [ ] DKIM configuration
 - [ ] Additional alias addresses
@@ -58,10 +60,21 @@ snappymail      djmaze/snappymail:latest          Up              8888
 
 ## Architecture
 
+### Inbound Mail Flow
 ```
 Internet → Cloudflare (port 25) → Email Routing → Gmail (PRIMARY)
                                                 → Stalwart (ARCHIVE via Worker - planned)
 ```
+
+### Outbound Mail Flow (NEW)
+```
+Thunderbird/Client → Stalwart (port 587/STARTTLS) → OCI Email Delivery Relay → Internet
+                                                    (smtp.email.eu-marseille-1.oci.oraclecloud.com:587)
+```
+
+**Note:** Oracle Cloud blocks outbound port 25, so all outbound mail is routed through OCI Email Delivery service.
+
+See [OCI-RELAY.md](./OCI-RELAY.md) for detailed relay configuration.
 
 ## Quick Access
 
