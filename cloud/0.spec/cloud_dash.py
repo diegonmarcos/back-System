@@ -3153,11 +3153,20 @@ const CONFIG = {json_mod.dumps(config, indent=2)};
     with open(output_path, 'w') as f:
         f.write(js_content)
 
-    # Also copy to frontend directory
-    frontend_dir = SCRIPT_DIR / "front-cloud" / "src_vanilla"
-    if frontend_dir.exists():
-        frontend_path = frontend_dir / "cloud_dash_data.js"
-        with open(frontend_path, 'w') as f:
+    # Also copy to frontend directories (src_vanilla and dist)
+    # Base path for front-Github_io repo
+    frontend_base = Path("/home/diego/Documents/Git/front-Github_io/cloud")
+
+    # Copy to src_vanilla (source)
+    src_dir = frontend_base / "src_vanilla"
+    if src_dir.exists():
+        with open(src_dir / "cloud_dash_data.js", 'w') as f:
+            f.write(js_content)
+
+    # Copy to dist (production - allows updating data without rebuilding HTML)
+    dist_dir = frontend_base / "dist"
+    if dist_dir.exists():
+        with open(dist_dir / "cloud_dash_data.js", 'w') as f:
             f.write(js_content)
 
     return str(output_path)
