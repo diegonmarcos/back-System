@@ -69,11 +69,12 @@ cloud_dash.json
 # Services
 ## Cards
 
-Front
-`3 collumns  User vs Coder vs AI`
+- Front
     User
-    - Sync
+    - Vault
+    - Photos
     - Mail
+    - Sync
     - VPN
 
     Coder
@@ -86,9 +87,7 @@ Front
     - AI CLI
 
 
-
-Back
-    `2 collumns Root vs Infra`
+- Back
     Root
     - Cloud Providers (CLI SSH)
         - OCloud-Management
@@ -109,7 +108,7 @@ Back
         - vpn-app
         - terminal-app
         - git-app
-        - analytics-app
+        - matomo-app
 
     - Data Bases (SSH)
         - sync-index-db
@@ -118,7 +117,7 @@ Back
         - mail-db
         - git-db
         - git-repos
-        - analytics-db
+        - matomo-db
         - cloud-db
         - n8n-ai-db
         - n8n-infra-db
@@ -196,9 +195,9 @@ Back
 |  | ↳ sync-index-db | - | 100-500 MB | - | File metadata index |
 |  | ↳ sync-files-db | - | ~100 GB | - | Synced files storage |
 |  | ↳ sync-obj-db | - | ~5 GB | - | Object/blob storage |
-| dev | **mail** | **520 MB-1 GB** | **5-50 GB** | **1-10 GB/mo** | Email stack |
-|  | ↳ mail-app | 512 MB - 1 GB | 100-500 MB | 1-10 GB/mo | App + config |
-|  | ↳ mail-db | 8-32 MB | 5-50 GB | - | SQLite - Mailboxes + indexes |
+| on | **mail** | **100-230 MB** | **5-50 GB** | **1-10 GB/mo** | Stalwart Email (Cloudflare routing) |
+|  | ↳ mail-app (Stalwart) | 100-200 MB | 100-500 MB | 1-10 GB/mo | Rust mail server |
+|  | ↳ mail-db (RocksDB) | 8-32 MB | 5-50 GB | - | Embedded RocksDB |
 | dev | **vpn** | **64-128 MB** | **50-100 MB** | **5-50 GB/mo** | OpenVPN server |
 |  | ↳ vpn-app | 64-128 MB | 50-100 MB | 5-50 GB/mo | Client configs + certs |
 
@@ -221,8 +220,8 @@ Back
 |  | ↳ photos-db | 50-200 MB | 100-300 MB | - | PostgreSQL metadata (EXIF, location, AI results) |
 |  | ↳ photos-webhook | - | <5 MB | - | Python S3 event processor (triggered only) |
 | on | **analytics** | **512 MB-1 GB** | **3-15 GB** | **500 MB-2 GB/mo** | Matomo Analytics platform |
-|  | ↳ analytics-app | 256-512 MB | 2-5 GB | 500 MB-2 GB/mo | PHP FPM Alpine |
-|  | ↳ analytics-db | 256-512 MB | 1-10 GB | - | MariaDB - grows with data |
+|  | ↳ matomo-app | 256-512 MB | 2-5 GB | 500 MB-2 GB/mo | PHP FPM Alpine |
+|  | ↳ matomo-db | 256-512 MB | 1-10 GB | - | MariaDB - grows with data |
 | dev | **git** | **264-544 MB** | **11-15 GB** | **2-10 GB/mo** | Gitea hosting |
 |  | ↳ git-app | 256-512 MB | 1-5 GB | 2-10 GB/mo | Web + Git server |
 |  | ↳ git-db | 8-32 MB | Variable | - | SQLite embedded |
@@ -252,7 +251,7 @@ Totals
 | Mode | VM | Availability | Services | Total RAM (Est) | Total Storage (Est) | Bandwidth (Est) | Cost |
 |--------|-----|--------------|----------|-----------------|---------------------|-----------------|------|
 | on | oci-f-micro_1 | 24/7 | mail-app, mail-db, npm-gcloud (SINGLE CENTRAL)
-| on | oci-f-micro_2 | 24/7 | analytics-app, analytics-db, npm-gcloud (SINGLE CENTRAL)
+| on | oci-f-micro_2 | 24/7 | matomo-app, matomo-db, npm-gcloud (SINGLE CENTRAL)
 | on | gcp-f-micro_1 | 24/7 | npm-gcloud, authelia, authelia-redis | ~160-320 MB | ~150-600 MB | ~5-20 GB/mo | $0 (Free) |
 | **wake** | **oci-p-flex_1** | **Wake-on-Demand** | n8n-infra-app, sync-app, cloud-app, flask-app, photoview-app, photos-db, photoprism-app*, immich-app*, git-app, vpn-app, terminal-app, cache-app | ~1.5-3.2 GB | ~20-200 GB | ~20-100 GB/mo | **$5.50/mo** |
 | hold | oci-f-arm_1 | Hold | n8n-ai-app, n8n-ai-db, npm-gcloud (on hold)
@@ -273,13 +272,13 @@ Totals
 
 | Service | RAM | Storage | Bandwidth | Status |
 |---------|-----|---------|-----------|--------|
-| mail-app | 512 MB - 1 GB | 100-500 MB | 1-10 GB/mo | dev |
-| mail-db | 8-32 MB | 5-50 GB | - | dev |
+| mail-app (Stalwart) | 100-200 MB | 100-500 MB | 1-10 GB/mo | on |
+| mail-db (RocksDB) | 8-32 MB | 5-50 GB | - | on |
 | npm-gcloud (SINGLE CENTRAL)
-| **TOTAL** | **~650 MB - 1.3 GB** | **~5-51 GB** | **~6-30 GB/mo** | |
-| **Capacity Check** | **65-130%** | **11-108%** | - | **AT LIMIT** |
+| **TOTAL** | **~240-490 MB** | **~5-51 GB** | **~6-30 GB/mo** | |
+| **Capacity Check** | **24-49%** | **11-108%** | - | **OK** |
 
-> **Note:** Mail uses most RAM. When mail is ON, this VM will be at capacity. Consider disabling npm-gcloud (SINGLE CENTRAL)
+> **Note:** Stalwart uses ~100-200MB RAM (vs 512MB-1GB for docker-mailserver). VM has headroom.
 
 ---
 
@@ -288,8 +287,8 @@ Totals
 
 | Service | RAM | Storage | Bandwidth | Status |
 |---------|-----|---------|-----------|--------|
-| analytics-app | 256-512 MB | 2-5 GB | 500 MB-2 GB/mo | on |
-| analytics-db | 256-512 MB | 1-10 GB | - | on |
+| matomo-app | 256-512 MB | 2-5 GB | 500 MB-2 GB/mo | on |
+| matomo-db | 256-512 MB | 1-10 GB | - | on |
 | npm-gcloud (SINGLE CENTRAL)
 | **TOTAL** | **~640 MB - 1.3 GB** | **~3-16 GB** | **~6-22 GB/mo** | |
 | **Capacity Check** | **64-130%** | **6-34%** | - | **AT LIMIT** |
@@ -417,7 +416,7 @@ In the Srcipt:
 | Mode | Service | IP:port | URL | SSH | RAM | Storage | Status |
 |------|---------|---------|-----|-----|-----|---------|--------|
 | on | **sync-app** | 84.235.234.87:8384 | sync.diegonmarcos.com | ssh ubuntu@84.235.234.87 | 128-256 MB | 5-106 GB | on |
-| dev | **mail-app** | 130.110.251.193:25,587,993 | mail.diegonmarcos.com | ssh ubuntu@130.110.251.193 | 520 MB-1 GB | 5-50 GB | dev |
+| on | **mail-app (Stalwart)** | 130.110.251.193:587,993,8080 | mail.diegonmarcos.com | ssh ubuntu@130.110.251.193 | 100-200 MB | 5-50 GB | on (Cloudflare routing) |
 | dev | **vpn-app** | 84.235.234.87:1194 | - | ssh ubuntu@84.235.234.87 | 64-128 MB | 50-100 MB | dev |
 
 ##### Coder Services
@@ -426,7 +425,7 @@ In the Srcipt:
 |------|---------|---------|-----|-----|-----|---------|--------|
 | dev | **terminal-app** | 84.235.234.87:7681 | terminal.diegonmarcos.com | ssh ubuntu@84.235.234.87 | 64-128 MB | 50-100 MB | dev |
 | dev | **git-app** | 84.235.234.87:3000 | git.diegonmarcos.com | ssh ubuntu@84.235.234.87 | 264-544 MB | 11-15 GB | dev |
-| on | **analytics-app** | 129.151.228.66:8080 | analytics.diegonmarcos.com | ssh ubuntu@129.151.228.66 | 512 MB-1 GB | 3-15 GB | on |
+| on | **matomo-app** | 129.151.228.66:8080 | analytics.diegonmarcos.com | ssh ubuntu@129.151.228.66 | 512 MB-1 GB | 3-15 GB | on |
 | on | **cloud-app** | 84.235.234.87:80 | cloud.diegonmarcos.com | ssh ubuntu@84.235.234.87 | - | ~5 MB | on |
 | dev | **photoview-app** | 84.235.234.87:8080 | photos.diegonmarcos.com | ssh ubuntu@84.235.234.87 | 100-150 MB | 100-200 MB | dev |
 
@@ -454,8 +453,8 @@ In the Srcipt:
 
 | Mode | VM | IP | SSH | Services | RAM | Storage | Status |
 |------|----|----|-----|----------|-----|---------|--------|
-| on | oci-f-micro_1 | 130.110.251.193 | ssh ubuntu@130.110.251.193 | mail-app, mail-db, npm-gcloud (SINGLE CENTRAL)
-| on | oci-f-micro_2 | 129.151.228.66 | ssh ubuntu@129.151.228.66 | analytics-app, analytics-db, npm-gcloud (SINGLE CENTRAL)
+| on | oci-f-micro_1 | 130.110.251.193 | ssh ubuntu@130.110.251.193 | mail-app (Stalwart), mail-db, npm | 240-490 MB | 5-51 GB | on |
+| on | oci-f-micro_2 | 129.151.228.66 | ssh ubuntu@129.151.228.66 | matomo-app, matomo-db, npm-gcloud (SINGLE CENTRAL)
 | on | gcp-f-micro_1 | 34.55.55.234 | gcloud compute ssh arch-1 --zone us-central1-a | npm-gcloud, authelia, authelia-redis | 160-320 MB | 150-600 MB | on |
 | wake | oci-p-flex_1 | 84.235.234.87 | ssh ubuntu@84.235.234.87 | n8n-infra-app, sync-app, cloud-app, flask-app, photoview-app, photos-db, git-app, vpn-app, terminal-app, cache-app | 1.2-2.6 GB | 17-130 GB | wake |
 | hold | oci-f-arm_1 | [pending] | ssh ubuntu@[ARM IP] | n8n-ai-app, n8n-ai-db, npm-gcloud (on hold)
@@ -484,23 +483,23 @@ graph TD
         subgraph Oracle["Oracle Cloud"]
             OCI_CLI["oci CLI"]
 
-            subgraph VM_Micro1["VM: oci-f-micro_1 (Mail Server)"]
-                OM1_NPM["npm-gcloud (SINGLE CENTRAL)
+            subgraph VM_Micro1["VM: oci-f-micro_1 (Stalwart Mail)"]
+                OM1_NPM["npm (proxy)"]
                 subgraph OM1_Services["Services"]
-                    OM1_Mail["mail-app"]
+                    OM1_Mail["mail-app (Stalwart)"]
                 end
                 subgraph OM1_Data["Data Stores"]
-                    OM1_MailDB["mail-db"]
+                    OM1_MailDB["mail-db (RocksDB)"]
                 end
             end
 
             subgraph VM_Micro2["VM: oci-f-micro_2 (Analytics)"]
                 OM2_NPM["npm-gcloud (SINGLE CENTRAL)
                 subgraph OM2_Services["Services"]
-                    OM2_Matomo["analytics-app"]
+                    OM2_Matomo["matomo-app"]
                 end
                 subgraph OM2_Data["Data Stores"]
-                    OM2_MatomoDB["analytics-db"]
+                    OM2_MatomoDB["matomo-db"]
                 end
             end
 
@@ -575,19 +574,19 @@ Cloud Infrastructure
 │   ├── Oracle Cloud
 │   │   ├── [CLI] oci
 │   │   │
-│   │   ├── VM: oci-f-micro_1 [on] (Mail Server)
-│   │   │   ├── npm-gcloud (SINGLE CENTRAL)
+│   │   ├── VM: oci-f-micro_1 [on] (Mail Server - Stalwart)
+│   │   │   ├── npm (proxy)
 │   │   │   ├── Services
-│   │   │   │   └── mail-app [dev]
+│   │   │   │   └── mail-app (Stalwart) [on] ← Cloudflare Email Routing
 │   │   │   └── Data
-│   │   │       └── mail-db [dev]
+│   │   │       └── mail-db (RocksDB) [on]
 │   │   │
 │   │   ├── VM: oci-f-micro_2 [on] (Analytics)
 │   │   │   ├── npm-gcloud (SINGLE CENTRAL)
 │   │   │   ├── Services
-│   │   │   │   └── analytics-app [on]
+│   │   │   │   └── matomo-app [on]
 │   │   │   └── Data
-│   │   │       └── analytics-db [on]
+│   │   │       └── matomo-db [on]
 │   │   │
 │   │   ├── VM: oci-p-flex_1 [wake] (Dev Server - Wake-on-Demand)
 │   │   │   ├── Services
@@ -649,11 +648,11 @@ Cloud Infrastructure
 | Service ID | Display Name | Category | VM | Docker Network | Availability | Status |
 |------------|--------------|----------|-----|----------------|--------------|--------|
 | **24/7 Services (FREE TIER)** |
-| mail-app | Mail Server | user | oci-f-micro_1 | mail_network | 24/7 | dev |
-| mail-db | Mail Database | user | oci-f-micro_1 | mail_network | 24/7 | dev |
+| mail-app | Stalwart Mail | user | oci-f-micro_1 | mail_network | 24/7 | on |
+| mail-db | Stalwart DB (RocksDB) | user | oci-f-micro_1 | mail_network | 24/7 | on |
 | npm-gcloud (SINGLE CENTRAL)
-| analytics-app | Matomo Analytics | coder | oci-f-micro_2 | matomo_network | 24/7 | on |
-| analytics-db | Matomo DB | coder | oci-f-micro_2 | matomo_network | 24/7 | on |
+| matomo-app | Matomo Analytics | coder | oci-f-micro_2 | matomo_network | 24/7 | on |
+| matomo-db | Matomo DB | coder | oci-f-micro_2 | matomo_network | 24/7 | on |
 | npm-gcloud (SINGLE CENTRAL)
 | npm-gcloud | NPM (GCloud) | infra-proxy | gcp-f-micro_1 | proxy_network | 24/7 | on |
 | **Wake-on-Demand Services (PAID - oci-p-flex_1)** |
@@ -677,8 +676,8 @@ Cloud Infrastructure
 
 | DB ID | Display Name | Technology | RAM (Independent) | Storage (Typical) | Parent Service | VM | Status |
 |-------|--------------|------------|-------------------|-------------------|----------------|-----|--------|
-| mail-db | Mail DB | SQLite | 8-32 MB | 5-50 GB | mail-app | oci-f-micro_1 | dev |
-| analytics-db | Matomo DB | MariaDB 11.4 | 256-512 MB | 1-10 GB | analytics-app | oci-f-micro_2 | on |
+| mail-db | Stalwart DB | RocksDB | 8-32 MB | 5-50 GB | mail-app | oci-f-micro_1 | on |
+| matomo-db | Matomo DB | MariaDB 11.4 | 256-512 MB | 1-10 GB | matomo-app | oci-f-micro_2 | on |
 | sync-index-db | Sync Index DB | LevelDB (embedded) | Negligible (<5 MB) | 100-500 MB | sync-app | oci-p-flex_1 | on |
 | sync-files-db | Sync Files | File Storage | None (No RAM) | ~100 GB | sync-app | oci-p-flex_1 | on |
 | sync-obj-db | Sync Objects | Blob Storage | None (No RAM) | ~5 GB | sync-app | oci-p-flex_1 | on |
@@ -741,8 +740,8 @@ Cloud Infrastructure
 | Domain | Service | VM | IP | SSL | Availability | Status |
 |--------|---------|-----|-----|-----|--------------|--------|
 | **24/7 Services (FREE)** |
-| analytics.diegonmarcos.com | analytics-app | oci-f-micro_2 | 129.151.228.66 | ✓ | 24/7 | on |
-| mail.diegonmarcos.com | mail-app | oci-f-micro_1 | 130.110.251.193 | ✓ | 24/7 | dev |
+| analytics.diegonmarcos.com | matomo-app | oci-f-micro_2 | 129.151.228.66 | ✓ | 24/7 | on |
+| mail.diegonmarcos.com | mail-app (Stalwart) | oci-f-micro_1 | 130.110.251.193 | ✓ | 24/7 | on (Cloudflare routing) |
 | **Wake-on-Demand Services (PAID)** |
 | sync.diegonmarcos.com | sync-app | oci-p-flex_1 | 84.235.234.87 | ✓ | Wake | on |
 | n8n.diegonmarcos.com | n8n-infra-app | oci-p-flex_1 | 84.235.234.87 | ✓ | Wake | on |
@@ -764,13 +763,13 @@ Cloud Infrastructure
 | sync-app | 8384 | 443 (via NPM) | HTTPS | Sync GUI |
 | sync-app | 22000 | 22000 | TCP | Sync protocol |
 | sync-app | 21027 | 21027 | UDP | Discovery |
-| analytics-app | 8080 | 443 (via NPM) | HTTPS | Analytics UI |
+| matomo-app | 8080 | 443 (via NPM) | HTTPS | Analytics UI |
 | git-app | 3000 | 443 (via NPM) | HTTPS | Git Web UI |
 | git-app | 2222 | 2222 | TCP | Git SSH |
 | vpn-app | 1194 | 1194 | UDP | VPN tunnel |
-| mail-app | 25 | 25 | TCP | SMTP |
-| mail-app | 587 | 587 | TCP | Submission |
+| mail-app | 587 | 587 | TCP | SMTP Submission |
 | mail-app | 993 | 993 | TCP | IMAPS |
+| mail-app | 8080 | 8080 | TCP | Stalwart Admin |
 | cache-app | 6379 | - | TCP | Internal only |
 | flask-app | 5000 | - | TCP | Internal only |
 | photoview-app | 8080 | 443 (via NPM) | HTTPS | Photo gallery with Authelia auth |
@@ -781,13 +780,13 @@ Cloud Infrastructure
 
 | Service | Image | Version |
 |---------|-------|---------|
-| analytics-app | matomo:fpm-alpine | latest |
-| analytics-db | mariadb | 11.4 |
+| matomo-app | matomo:fpm-alpine | latest |
+| matomo-db | mariadb | 11.4 |
 | sync-app | syncthing/syncthing | latest |
 | n8n-infra-app | n8nio/n8n | latest |
 | n8n-ai-app | n8nio/n8n | latest |
 | git-app | gitea/gitea | latest |
-| mail-app | docker-mailserver/docker-mailserver | latest |
+| mail-app | stalwartlabs/stalwart | latest |
 | vpn-app | kylemanna/openvpn | latest |
 | cache-app | redis | alpine |
 | npm-* | jc21/nginx-proxy-manager | latest |
@@ -807,7 +806,7 @@ Cloud Infrastructure
 | Category ID | Name | Description | Services |
 |-------------|------|-------------|----------|
 | user | User Services | End-user productivity | sync-app, mail-app, vpn-app |
-| coder | Coder Services | Developer tools | terminal-app, cloud-app, analytics-app, git-app, photoview-app |
+| coder | Coder Services | Developer tools | terminal-app, cloud-app, matomo-app, git-app, photoview-app |
 | ai | AI Services | AI and automation | n8n-ai-app |
 | photos | Photo Management | Photo gallery and metadata | photoview-app, photos-db |
 | infra-proxy | Proxies | Nginx Proxy Managers | npm-gcloud (SINGLE CENTRAL)
@@ -869,8 +868,208 @@ free -h
 htop
 ```
 
+---
 
+# Storage Overview
 
+## Storage Inventory
+
+| Storage Type | Location | Capacity | Used | Purpose | Cost |
+|--------------|----------|----------|------|---------|------|
+| **VM Boot Disk** | oci-f-micro_1 | 47 GB | ~13 GB | OS, Docker, Mail | $0 (Free) |
+| **VM Boot Disk** | oci-f-micro_2 | 47 GB | ~12 GB | OS, Docker, Matomo | $0 (Free) |
+| **VM Boot Disk** | gcp-f-micro_1 | 30 GB | ~8 GB | OS, NPM, Authelia | $0 (Free) |
+| **VM Boot Disk** | oci-p-flex_1 | 100 GB | ~13 GB | OS, Docker, Services | $5.50/mo |
+| **Object Storage** | oracle_s3:my-photos | Unlimited | ~204 GB | Google Photos Takeout | ~$5/mo |
+| **Object Storage** | oracle_s3:archlinux-images | Unlimited | ~2 GB | Arch Linux images | ~$0.05/mo |
+| **Block Volume** | oci-f-arm_1 (future) | 200 GB | - | AI workloads | $0 (Free) |
+
+## Oracle Object Storage Buckets
+
+| Bucket | Contents | Size | Access Command |
+|--------|----------|------|----------------|
+| `my-photos` | Google Takeout zips, extracted photos | ~204 GB | `rclone ls oracle_s3:my-photos/` |
+| `archlinux-images` | Arch Linux VM images | ~2 GB | `rclone ls oracle_s3:archlinux-images/` |
+
+**my-photos bucket structure:**
+```
+oracle_s3:my-photos/
+├── takeout/                    # Google Takeout zip files (~204 GB)
+│   ├── takeout-*-3-001.zip    # ~50 GB
+│   ├── takeout-*-3-002.zip    # ~50 GB
+│   ├── takeout-*-3-003.zip    # ~50 GB
+│   ├── takeout-*-3-004.zip    # ~50 GB
+│   └── takeout-*-3-005.zip    # ~4 GB
+├── real-photos/                # Extracted photos (pending)
+├── demo-photos/                # Test photos
+└── test-photos/                # Test photos
+```
+
+## Rclone Remotes (oci-p-flex_1)
+
+| Remote | Type | Purpose |
+|--------|------|---------|
+| `gdrive:` | Google Drive | Access Google Drive files |
+| `gdrive_photos:` | Google Photos | Sync Google Photos directly |
+| `oracle_s3:` | Oracle Object Storage | S3-compatible bucket storage |
+
+---
+
+# Monitoring: Performance
+
+## Performance Metrics
+
+| Metric | Per VM | Per Service | Per DB | Unit | Source |
+|--------|:------:|:-----------:|:------:|------|--------|
+| **Memory Usage** | ✓ | ✓ | ✓ | MB/GB | SSH `free` / Docker stats |
+| **Storage Usage** | ✓ | ✓ | ✓ | GB | SSH `df` / Docker stats |
+| **VRAM Usage** | ✓ | - | - | MB/GB | SSH `nvidia-smi` (if GPU) |
+| **CPU Usage** | ✓ | ✓ | ✓ | % | SSH `top` / Docker stats |
+| **Bandwidth** | ✓ | ✓ | - | MB/s | SSH `vnstat` |
+
+## Pay-Per-Use Hours
+
+| Service | Provider | Cost Model | Rate | Notes |
+|---------|----------|------------|------|-------|
+| AI Claude | Anthropic | Per token | $3-15/1M tokens | See cloud_dash.json costs.ai |
+| GCP VM | Google | Free Tier | $0 | 1 f1-micro |
+| OCI VMs | Oracle | Always Free | $0 | 2x Micro + 1x Flex |
+
+---
+
+# Monitoring: Security
+
+## Security Services Inventory
+
+| Service | Type | Description | Location | Status |
+|---------|------|-------------|----------|--------|
+| **MyVault** | Password Manager | Bitwarden EU - Secure credential storage | vault.bitwarden.eu (SaaS) | ON |
+| **Authelia** | 2FA Gateway | TOTP authentication for protected services (SMTP: Gmail) | GCP Micro 1 | ON |
+| **OAuth2 Proxy** | Admin Auth | GitHub OAuth2 authentication proxy | GCP Micro 1 | ON |
+| **NPM + SSL** | TLS Termination | Let's Encrypt certificates with auto-renewal | GCP Micro 1 | ON |
+| **Docker Networks** | Network Isolation | Segmented: public_net, private_net, db_bridge | OCI Flex 1 | ON |
+| **SSH Keys** | Access Control | Key-based auth for all VMs - no passwords | All VMs | ON |
+| **Cloud Firewalls** | Network Security | OCI Security Lists + GCP Firewall Rules | OCI + GCP | ON |
+| **Gmail SMTP Relay** | Email Notifications | App Password auth for Authelia notifications | Gmail (SaaS) | ON |
+
+## Security Layers
+
+| Layer | Components | Purpose |
+|-------|------------|---------|
+| **1. Network Edge** | Cloud Firewalls, UFW, Fail2Ban | Block unauthorized access |
+| **2. Traffic Routing** | NPM, TLS/SSL, Rate Limiting | Secure transport |
+| **3. Authentication** | Authelia 2FA, OAuth 2.0 | Verify identity |
+| **4. Application** | Docker Networks, Container Isolation | Limit blast radius |
+| **5. Data** | Encrypted volumes, Separate DBs | Protect data at rest |
+
+## Authelia 2FA Request Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            REQUEST FLOW                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Browser: https://photos.diegonmarcos.com
+         │
+         ▼
+┌─────────────────┐
+│   CLOUDFLARE    │  DNS resolves to GCP IP (34.55.55.234)
+│   (DNS + CDN)   │  Proxies request to origin
+└────────┬────────┘
+         │ Port 443 (HTTPS)
+         ▼
+┌─────────────────┐
+│   GCP VM        │  34.55.55.234
+│   (NPM Proxy)   │  Nginx Proxy Manager
+└────────┬────────┘
+         │
+         │  auth_request /authelia ──────────────┐
+         │                                       │
+         │                                       ▼
+         │                            ┌─────────────────┐
+         │                            │    AUTHELIA     │
+         │                            │   (localhost)   │
+         │                            │   Port 9091     │
+         │                            └────────┬────────┘
+         │                                     │
+         │  ◄─── 401 Unauthorized ─────────────┘
+         │       (no valid session)
+         │
+         ▼
+┌─────────────────┐
+│  REDIRECT 302   │  → https://auth.diegonmarcos.com/?rd=https://photos...
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   USER LOGS IN  │  Username + Password + TOTP
+│   (Authelia UI) │
+└────────┬────────┘
+         │
+         │  Sets cookie: authelia_session (domain: diegonmarcos.com)
+         │
+         ▼
+┌─────────────────┐
+│  REDIRECT 302   │  → https://photos.diegonmarcos.com (original URL)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   GCP VM        │  NPM checks auth_request again
+│   (NPM Proxy)   │
+└────────┬────────┘
+         │
+         │  auth_request /authelia ──────────────┐
+         │  (with cookie this time)              │
+         │                                       ▼
+         │                            ┌─────────────────┐
+         │                            │    AUTHELIA     │
+         │                            │  Validates      │
+         │                            │  session cookie │
+         │                            └────────┬────────┘
+         │                                     │
+         │  ◄─── 200 OK ───────────────────────┘
+         │       (session valid, 2FA passed)
+         │
+         │  WireGuard Tunnel (10.0.0.1 → 10.0.0.2)
+         ▼
+┌─────────────────┐
+│  ORACLE DEV VM  │  10.0.0.2:8080
+│   (PhotoView)   │  Only accessible via WireGuard
+└─────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│  PhotoView UI   │  Auto-login via Lua module
+│  (with 2FA)     │  (credentials injected after Authelia pass)
+└─────────────────┘
+```
+
+## SSO Across Subdomains
+
+```
+                    Cookie: authelia_session
+                    Domain: diegonmarcos.com
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+        ▼                  ▼                  ▼
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│   photos.    │  │   drive.     │  │   n8n.       │
+│diegonmarcos  │  │diegonmarcos  │  │diegonmarcos  │
+│    .com      │  │    .com      │  │    .com      │
+└──────────────┘  └──────────────┘  └──────────────┘
+        │                  │                  │
+        └──────────────────┴──────────────────┘
+                           │
+                    Same Authelia
+                    Same 2FA session
+```
+
+**User Experience**:
+1. Go to photos.diegonmarcos.com → 2FA login required
+2. Go to drive.diegonmarcos.com → Already logged in (same cookie)
+3. Go to n8n.diegonmarcos.com → Already logged in
 
 ---
 

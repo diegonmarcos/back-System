@@ -34,7 +34,7 @@
 | Service ID | Display Name | URL | Status |
 |------------|--------------|-----|--------|
 | photoview-app | Photo Gallery (with 2FA) | https://photos.diegonmarcos.com | on |
-| analytics-app | Matomo Analytics | https://analytics.diegonmarcos.com | on |
+| matomo-app | Matomo Analytics | https://analytics.diegonmarcos.com | on |
 | sync-app | Syncthing | https://sync.diegonmarcos.com | on |
 | n8n-infra-app | n8n (Infra) | https://n8n.diegonmarcos.com | on |
 | cloud-app | Cloud Dashboard | https://cloud.diegonmarcos.com | on |
@@ -206,12 +206,12 @@ ssh ubuntu@129.151.228.66
 | | **n8n-ai** | ML | | | | AI Agentic workflows |
 | hold | ↳ n8n-ai-app | | 1-4 GB | 2-10 GB | 5-20 GB/mo | LLM context + workflows |
 | hold | ↳ n8n-ai-db | | 256-512 MB | 1-10 GB | - | PostgreSQL - varies by usage |
-| | **mail** | Productivity | | | | Email stack |
-| dev | ↳ mail-app | | 512 MB - 1 GB | 5-50 GB | 1-10 GB/mo | Mailboxes + indexes |
-| dev | ↳ mail-db | | 8-32 MB | Variable | - | SQLite embedded |
+| | **mail** | Productivity | | | | Stalwart Email (Cloudflare routing) |
+| on | ↳ mail-app (Stalwart) | | 100-200 MB | 5-50 GB | 1-10 GB/mo | Rust mail server, Cloudflare Email Routing |
+| on | ↳ mail-db (RocksDB) | | 8-32 MB | Variable | - | Embedded RocksDB |
 | | **analytics** | Web | | | | Matomo Analytics platform |
-| on | ↳ analytics-app | | 256-512 MB | 2-5 GB | 500 MB-2 GB/mo | PHP FPM Alpine |
-| on | ↳ analytics-db | | 256-512 MB | 1-10 GB | - | MariaDB - grows with data |
+| on | ↳ matomo-app | | 256-512 MB | 2-5 GB | 500 MB-2 GB/mo | PHP FPM Alpine |
+| on | ↳ matomo-db | | 256-512 MB | 1-10 GB | - | MariaDB - grows with data |
 | | **git** | Productivity | | | | Gitea hosting |
 | dev | ↳ git-app | | 256-512 MB | 1-5 GB | 2-10 GB/mo | Web + Git server |
 | dev | ↳ git-db | | 8-32 MB | Variable | - | SQLite embedded |
@@ -248,9 +248,9 @@ ssh ubuntu@129.151.228.66
 | Status | VM | Services | Total RAM (Est) | Total Storage (Est) | Bandwidth (Est) |
 |--------|-----|----------|-----------------|---------------------|-----------------|
 | on | Oracle Web Server 1 | n8n-infra-app, sync-app, cloud-app, flask-app, npm-gcloud (SINGLE CENTRAL PROXY)
-| on | Oracle Services Server 1 | analytics-app, analytics-db, cloud-db, npm-gcloud (SINGLE CENTRAL PROXY)
+| on | Oracle Services Server 1 | matomo-app, matomo-db, cloud-db, npm-gcloud (SINGLE CENTRAL PROXY)
 | hold | Oracle ARM Server | n8n-ai-app, n8n-ai-db, npm-gcloud (on hold - ARM not deployed)
-| dev | GCloud Arch 1 | mail-app, mail-db, terminal-app, npm-gcloud | ~800 MB - 1.5 GB | ~10-50 GB | ~5-15 GB/mo |
+| hold | OCI Free Micro 1 | mail-app, mail-db | ~520 MB - 1 GB | ~5-50 GB | ~1-10 GB/mo |
 | | **Total ON** | | **~1.4-2.7 GB** | **~10-30 GB** | **~25-100 GB/mo** |
 | | **Total DEV** | | **~2.3-6.5 GB** | **~15-70 GB** | **~15-55 GB/mo** |
 | | **TOTAL** | | **~3.7-9.2 GB** | **~25-100 GB** | **~40-155 GB/mo** |
@@ -322,14 +322,22 @@ ssh ubuntu@129.151.228.66
 | **Container** | syncthing |
 | **Status** | Active |
 
-#### Mail Server
+#### Mail Server (Stalwart)
 | Property | Value |
 |----------|-------|
-| **VM** | Oracle ARM Server (planned) |
+| **VM** | oci-f-micro_1 (130.110.251.193) |
 | **Domain** | mail.diegonmarcos.com |
-| **Technology** | docker-mailserver |
-| **Features** | DKIM, SPF, DMARC, Fail2Ban |
-| **Status** | Development |
+| **Technology** | Stalwart Mail Server (Rust) |
+| **Admin URL** | http://130.110.251.193:8080 |
+| **Ports** | 587 (SMTP Submission), 993 (IMAPS), 8080 (Admin) |
+| **Features** | JMAP, IMAP, SMTP, CalDAV, CardDAV |
+| **Email Routing** | Cloudflare Email Routing → Stalwart:587 |
+| **Status** | On (pending Cloudflare DNS migration) |
+
+**Note:** Oracle Cloud blocks Port 25 inbound. Email delivery uses Cloudflare Email Routing:
+```
+Internet → Cloudflare (port 25) → Email Worker → Stalwart (port 587)
+```
 
 #### OS Terminal Web
 | Property | Value |
@@ -337,6 +345,34 @@ ssh ubuntu@129.151.228.66
 | **VM** | Oracle ARM Server (planned) |
 | **Technology** | wetty or ttyd |
 | **Status** | Development |
+
+#### Calendar & Contacts (Radicale)
+| Property | Value |
+|----------|-------|
+| **VM** | oci-p-flex_1 (wake-on-demand) |
+| **Domain** | cal.diegonmarcos.com |
+| **Internal Port** | 5232 |
+| **Technology** | Radicale (Python) |
+| **Container** | tomsquest/docker-radicale |
+| **Features** | CalDAV, CardDAV |
+| **RAM** | ~30-50 MB |
+| **Status** | Development |
+
+**Clients:** Thunderbird, iOS Calendar, Android DAVx5
+
+#### Office Suite (CryptPad)
+| Property | Value |
+|----------|-------|
+| **VM** | oci-p-flex_1 (wake-on-demand) |
+| **Domain** | pad.diegonmarcos.com |
+| **Internal Port** | 3000 |
+| **Technology** | CryptPad (Node.js) |
+| **Container** | cryptpad/cryptpad:latest |
+| **Features** | E2E Encrypted Docs, Sheets, Presentations, Kanban |
+| **RAM** | ~500 MB - 1 GB |
+| **Status** | Development |
+
+**Key Benefits:** Zero-knowledge encryption, no account required, real-time collaboration
 
 ---
 
@@ -577,9 +613,419 @@ services:
           memory: 256M
 ```
 
+### 7.7 Security Services Inventory
+
+| Service | Type | Description | Location | Status |
+|---------|------|-------------|----------|--------|
+| **MyVault** | Password Manager | Bitwarden EU - Secure credential storage | vault.bitwarden.eu (SaaS) | ON |
+| **Authelia** | 2FA Gateway | TOTP authentication for protected services (SMTP: Gmail) | GCP Micro 1 | ON |
+| **OAuth2 Proxy** | Admin Auth | GitHub OAuth2 authentication proxy | GCP Micro 1 | ON |
+| **NPM + SSL** | TLS Termination | Let's Encrypt certificates with auto-renewal | GCP Micro 1 | ON |
+| **Docker Networks** | Network Isolation | Segmented: public_net, private_net, db_bridge | OCI Flex 1 | ON |
+| **SSH Keys** | Access Control | Key-based auth for all VMs - no passwords | All VMs | ON |
+| **Cloud Firewalls** | Network Security | OCI Security Lists + GCP Firewall Rules | OCI + GCP | ON |
+| **Gmail SMTP Relay** | Email Notifications | App Password auth for Authelia notifications | Gmail (SaaS) | ON |
+
+### 7.8 Security Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                              INTERNET                                     │
+│                                                                           │
+│   ┌─────────────┐                              ┌─────────────────────┐   │
+│   │    User     │──────────HTTPS──────────────▶│  Bitwarden EU       │   │
+│   │   Browser   │                              │  (MyVault)          │   │
+│   └──────┬──────┘                              └─────────────────────┘   │
+│          │                                                                │
+│          │ HTTPS (443)                                                    │
+│          ▼                                                                │
+│   ┌─────────────────────────────────────────┐                            │
+│   │        GCP Free Micro 1 (34.55.55.234)  │                            │
+│   │  ┌─────────────┐    ┌─────────────────┐ │                            │
+│   │  │     NPM     │───▶│    Authelia     │ │                            │
+│   │  │  SSL Proxy  │    │   2FA + TOTP    │ │                            │
+│   │  └─────────────┘    └────────┬────────┘ │                            │
+│   └──────────────────────────────┼──────────┘                            │
+│                                  │ Authenticated                          │
+│          ┌───────────────────────┼───────────────────────┐               │
+│          ▼                       ▼                       ▼               │
+│   ┌─────────────┐         ┌─────────────┐         ┌─────────────┐       │
+│   │ OCI Flex 1  │         │ OCI Micro 2 │         │ Other       │       │
+│   │ (84.235...) │         │ (129.151..) │         │ Services    │       │
+│   │             │         │             │         │             │       │
+│   │ ┌─────────┐ │         │ ┌─────────┐ │         │             │       │
+│   │ │public_  │ │         │ │ Matomo  │ │         │             │       │
+│   │ │net      │ │         │ └─────────┘ │         │             │       │
+│   │ ├─────────┤ │         └─────────────┘         └─────────────┘       │
+│   │ │private_ │ │                                                        │
+│   │ │net      │ │                                                        │
+│   │ ├─────────┤ │                                                        │
+│   │ │db_bridge│ │                                                        │
+│   │ └─────────┘ │                                                        │
+│   └─────────────┘                                                        │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.9 Docker UFW Bypass Prevention
+
+**The Problem**: By default, Docker modifies iptables directly, bypassing UFW rules. A container exposed with `-p 8080:80` becomes accessible from the internet even if UFW blocks port 8080.
+
+**Solution 1: Bind to localhost only**
+```yaml
+# docker-compose.yml
+services:
+  photoview:
+    ports:
+      - "127.0.0.1:8080:80"  # Only accessible from localhost
+    # NOT: "8080:80"  # This exposes to internet!
+```
+
+**Solution 2: Disable Docker's iptables manipulation**
+```json
+// /etc/docker/daemon.json
+{
+  "iptables": false
+}
+```
+> **Warning**: This requires manual network configuration for containers.
+
+**Solution 3: Use Docker internal networks (Recommended)**
+```yaml
+# docker-compose.yml
+networks:
+  internal:
+    internal: true  # No external access
+
+services:
+  app:
+    networks:
+      - internal
+  db:
+    networks:
+      - internal
+```
+
+### 7.10 WireGuard VPN Tunnel (Cross-VM Security)
+
+When services span multiple VMs (e.g., NPM on GCP, PhotoView on Oracle), direct IP access bypasses proxy authentication. WireGuard creates a secure private tunnel.
+
+**Architecture**:
+```
+WITHOUT WireGuard (INSECURE):
+──────────────────────────────
+User → photos.diegonmarcos.com → GCP:443 → NPM → Authelia 2FA ✓
+User → 84.235.234.87:8080 → PhotoView directly (BYPASSES 2FA!) ✗
+
+WITH WireGuard (SECURE):
+────────────────────────
+GCP VM (34.55.55.234)              Oracle VM (84.235.234.87)
+┌─────────────────────┐            ┌─────────────────────┐
+│ Public: 34.x.x.x    │            │ Public: 84.x.x.x    │
+│                     │  Encrypted │                     │
+│ WireGuard:          │◄══════════►│ WireGuard:          │
+│ 10.0.0.1            │   Tunnel   │ 10.0.0.2            │
+└─────────────────────┘            └─────────────────────┘
+         │                                   │
+      NPM ───────► 10.0.0.2:8080 ───────► PhotoView
+                  (private IP only)      (not on public IP!)
+```
+
+**Setup**:
+```bash
+# On GCP VM (Server)
+wg genkey | tee /etc/wireguard/privatekey | wg pubkey > /etc/wireguard/publickey
+
+# /etc/wireguard/wg0.conf
+[Interface]
+Address = 10.0.0.1/24
+PrivateKey = <GCP_PRIVATE_KEY>
+ListenPort = 51820
+
+[Peer]
+PublicKey = <ORACLE_PUBLIC_KEY>
+AllowedIPs = 10.0.0.2/32
+
+# On Oracle VM (Client)
+[Interface]
+Address = 10.0.0.2/24
+PrivateKey = <ORACLE_PRIVATE_KEY>
+
+[Peer]
+PublicKey = <GCP_PUBLIC_KEY>
+Endpoint = 34.55.55.234:51820
+AllowedIPs = 10.0.0.1/32
+PersistentKeepalive = 25
+```
+
+**PhotoView Docker Compose (bind to WireGuard only)**:
+```yaml
+services:
+  photoview:
+    ports:
+      - "10.0.0.2:8080:80"  # Only accessible via WireGuard!
+```
+
+### 7.11 Authelia 2FA Integration
+
+Authelia provides TOTP-based 2FA for services that don't have native authentication or need an additional security layer.
+
+**Request Flow Diagram**:
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            REQUEST FLOW                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Browser: https://photos.diegonmarcos.com
+         │
+         ▼
+┌─────────────────┐
+│   CLOUDFLARE    │  DNS resolves to GCP IP (34.55.55.234)
+│   (DNS + CDN)   │  Proxies request to origin
+└────────┬────────┘
+         │ Port 443 (HTTPS)
+         ▼
+┌─────────────────┐
+│   GCP VM        │  34.55.55.234
+│   (NPM Proxy)   │  Nginx Proxy Manager
+└────────┬────────┘
+         │
+         │  auth_request /authelia ──────────────┐
+         │                                       │
+         │                                       ▼
+         │                            ┌─────────────────┐
+         │                            │    AUTHELIA     │
+         │                            │   (localhost)   │
+         │                            │   Port 9091     │
+         │                            └────────┬────────┘
+         │                                     │
+         │  ◄─── 401 Unauthorized ─────────────┘
+         │       (no valid session)
+         │
+         ▼
+┌─────────────────┐
+│  REDIRECT 302   │  → https://auth.diegonmarcos.com/?rd=https://photos...
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   USER LOGS IN  │  Username + Password + TOTP
+│   (Authelia UI) │
+└────────┬────────┘
+         │
+         │  Sets cookie: authelia_session (domain: diegonmarcos.com)
+         │
+         ▼
+┌─────────────────┐
+│  REDIRECT 302   │  → https://photos.diegonmarcos.com (original URL)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   GCP VM        │  NPM checks auth_request again
+│   (NPM Proxy)   │
+└────────┬────────┘
+         │
+         │  auth_request /authelia ──────────────┐
+         │  (with cookie this time)              │
+         │                                       ▼
+         │                            ┌─────────────────┐
+         │                            │    AUTHELIA     │
+         │                            │  Validates      │
+         │                            │  session cookie │
+         │                            └────────┬────────┘
+         │                                     │
+         │  ◄─── 200 OK ───────────────────────┘
+         │       (session valid, 2FA passed)
+         │
+         │  WireGuard Tunnel (10.0.0.1 → 10.0.0.2)
+         ▼
+┌─────────────────┐
+│  ORACLE DEV VM  │  10.0.0.2:8080
+│   (PhotoView)   │  Only accessible via WireGuard
+└─────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│  PhotoView UI   │  Auto-login via Lua module
+│  (with 2FA)     │  (credentials injected after Authelia pass)
+└─────────────────┘
+```
+
+**Security Layers**:
+1. **Cloudflare** - DDoS protection, SSL termination
+2. **NPM + Authelia** - 2FA gate (password + TOTP)
+3. **WireGuard** - PhotoView only accessible on private network (10.0.0.2)
+4. **PhotoView** - Internal auth (bypassed via Lua auto-login after 2FA)
+
+**SSO Across Subdomains**:
+```
+                    Cookie: authelia_session
+                    Domain: diegonmarcos.com
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+        ▼                  ▼                  ▼
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│   photos.    │  │   drive.     │  │   n8n.       │
+│diegonmarcos  │  │diegonmarcos  │  │diegonmarcos  │
+│    .com      │  │    .com      │  │    .com      │
+└──────────────┘  └──────────────┘  └──────────────┘
+        │                  │                  │
+        └──────────────────┴──────────────────┘
+                           │
+                    Same Authelia
+                    Same 2FA session
+```
+
+**Flow Summary**:
+```
+1. User → photos.diegonmarcos.com
+2. NPM → auth_request to Authelia
+3. Authelia returns 401 (not authenticated)
+4. NPM redirects → auth.diegonmarcos.com
+5. User logs in (username + password + TOTP)
+6. Authelia sets session cookie
+7. Redirect back → photos.diegonmarcos.com
+8. NPM → auth_request to Authelia → 200 OK
+9. NPM proxies to PhotoView via WireGuard
+```
+
+**NPM Advanced Config (per proxy host)**:
+```nginx
+# Forward authentication to Authelia
+set $upstream_authelia http://authelia:9091/api/verify;
+
+location /authelia {
+    internal;
+    proxy_pass $upstream_authelia;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    proxy_set_header X-Original-URL https://$http_host$request_uri;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Forwarded-Host $http_host;
+}
+
+auth_request /authelia;
+error_page 401 =302 https://auth.diegonmarcos.com/?rd=https://$http_host$request_uri;
+```
+
+**Authelia Configuration**:
+```yaml
+# /config/authelia_config.yml
+access_control:
+  default_policy: one_factor
+  rules:
+    - domain: photos.diegonmarcos.com
+      policy: two_factor  # Requires TOTP
+
+authentication_backend:
+  file:
+    path: /config/users_database.yml
+
+totp:
+  issuer: diegonmarcos.com
+  period: 30
+  digits: 6
+```
+
+### 7.12 Network Isolation Strategy
+
+**Rule: Services on different VMs MUST use one of:**
+
+| Scenario | Solution | Security Level |
+|----------|----------|----------------|
+| Same VM, same compose | Docker internal network | High |
+| Same VM, different compose | Shared Docker network | Medium-High |
+| Different VMs, same provider | VPC/VCN private subnet | Medium |
+| Different VMs, different providers | WireGuard tunnel | High |
+| Any public exposure | Authelia 2FA + IP whitelist | High |
+
+**Docker Compose Best Practices**:
+```yaml
+# CORRECT: Internal network for databases
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    internal: true  # No internet access
+
+services:
+  app:
+    networks:
+      - frontend
+      - backend
+  db:
+    networks:
+      - backend  # Database NEVER on frontend network
+```
+
+**Firewall + Docker Integration**:
+```bash
+# Block direct access to service port, allow only from NPM proxy
+sudo iptables -I INPUT 1 -p tcp --dport 8080 -s 34.55.55.234 -j ACCEPT
+sudo iptables -I INPUT 2 -p tcp --dport 8080 -j DROP
+
+# Persist rules
+sudo iptables-save > /etc/iptables/rules.v4
+```
+
+### 7.13 Security Checklist
+
+| Item | Status | Notes |
+|------|--------|-------|
+| All containers bind to 127.0.0.1 or internal network | ✓ | Prevents Docker UFW bypass |
+| WireGuard tunnel for cross-VM communication | ✓ | GCP ↔ Oracle |
+| Authelia 2FA on sensitive services | ✓ | PhotoView, admin panels |
+| UFW enabled with default deny | ✓ | All VMs |
+| SSH key-only authentication | ✓ | No passwords |
+| Let's Encrypt SSL on all domains | ✓ | Auto-renewal via NPM |
+| Database ports never exposed publicly | ✓ | Internal networks only |
+| Firewall rules persist after reboot | ✓ | iptables-persistent |
+| Public DNS (Google/Cloudflare) on all VMs | ✓ | Prevents ISP DNS filtering/poisoning |
+
+**DNS Configuration (Required on all VMs):**
+
+```bash
+# /etc/systemd/resolved.conf.d/dns.conf
+[Resolve]
+DNS=8.8.8.8 1.1.1.1
+FallbackDNS=8.8.4.4 1.0.0.1
+
+# Apply with: sudo systemctl restart systemd-resolved
+```
+
+**Rationale:** Local/ISP DNS may filter or fail to resolve custom domains. Public DNS ensures reliable resolution.
+
 ---
 
 ## 8. Volume & Storage Strategy
+
+### 8.0 Storage Overview
+
+| Storage Type | Location | Capacity | Used | Purpose | Cost |
+|--------------|----------|----------|------|---------|------|
+| **VM Boot Disk** | oci-f-micro_1 | 47 GB | ~13 GB | OS, Docker, Mail | $0 (Free) |
+| **VM Boot Disk** | oci-f-micro_2 | 47 GB | ~12 GB | OS, Docker, Matomo | $0 (Free) |
+| **VM Boot Disk** | gcp-f-micro_1 | 30 GB | ~8 GB | OS, NPM, Authelia | $0 (Free) |
+| **VM Boot Disk** | oci-p-flex_1 | 100 GB | ~13 GB | OS, Docker, Services | $5.50/mo |
+| **Object Storage** | oracle_s3:my-photos | Unlimited | ~204 GB | Google Photos Takeout | ~$5/mo |
+| **Object Storage** | oracle_s3:archlinux-images | Unlimited | ~2 GB | Arch Linux images | ~$0.05/mo |
+| **Block Volume** | oci-f-arm_1 (future) | 200 GB | - | AI workloads | $0 (Free) |
+
+**Oracle Object Storage Buckets:**
+
+| Bucket | Contents | Size | Access |
+|--------|----------|------|--------|
+| `my-photos` | Google Takeout zips, extracted photos | ~204 GB | `rclone oracle_s3:my-photos/` |
+| `archlinux-images` | Arch Linux VM images | ~2 GB | `rclone oracle_s3:archlinux-images/` |
+
+**Rclone Remotes Configured (oci-p-flex_1):**
+
+| Remote | Type | Purpose |
+|--------|------|---------|
+| `gdrive:` | Google Drive | Access Google Drive files |
+| `gdrive_photos:` | Google Photos | Sync Google Photos |
+| `oracle_s3:` | Oracle Object Storage | S3-compatible bucket storage |
 
 ### 8.1 Storage Partitions (ARM Server - Future)
 
@@ -661,15 +1107,32 @@ private_crypt /dev/sdb1 /root/.luks-keyfile luks
 ### 10.1 SSH Access
 
 ```bash
-# Oracle Web Server 1 (Matomo, Syncthing)
-ssh ubuntu@130.110.251.193
+# === OCI (Oracle Cloud) - Use SSH key ===
+# Oracle Flex 1 - Main Services (Flask, Photos, n8n, Gitea)
+ssh -i ~/Documents/Git/LOCAL_KEYS/00_terminal/ssh/id_rsa ubuntu@84.235.234.87
 
-# Oracle Services Server 1 (n8n)
-ssh ubuntu@129.151.228.66
+# Oracle Micro 1 - Web Server (Matomo, Syncthing)
+ssh -i ~/Documents/Git/LOCAL_KEYS/00_terminal/ssh/id_rsa ubuntu@130.110.251.193
 
-# Google Cloud (when active)
-gcloud compute ssh arch-1 --zone us-central1-a
+# Oracle Micro 2 - Services (n8n)
+ssh -i ~/Documents/Git/LOCAL_KEYS/00_terminal/ssh/id_rsa ubuntu@129.151.228.66
+
+# === GCP (Google Cloud) - Use gcloud CLI ===
+# GCP Micro 1 (arch-1) - NPM, Authelia, OAuth2 Proxy
+gcloud compute ssh arch-1 --zone=us-central1-a
+
+# GCP with command execution
+gcloud compute ssh arch-1 --zone=us-central1-a --command="sudo docker ps"
+
+# GCP copy file from container
+gcloud compute ssh arch-1 --zone=us-central1-a --command="sudo docker cp npm:/data/database.sqlite /tmp/npm.db && sqlite3 /tmp/npm.db 'SELECT * FROM user;'"
 ```
+
+### 10.1.1 GCP SSH Notes
+- **DO NOT use `ssh user@IP` for GCP** - use `gcloud compute ssh` instead
+- gcloud handles key exchange automatically via OS Login
+- Instance name: `arch-1`, Zone: `us-central1-a`
+- External IP: `34.55.55.234` (use gcloud, not direct SSH)
 
 ### 10.2 Docker Commands (after SSH)
 
@@ -829,8 +1292,8 @@ All services follow a consistent naming pattern:
 
 | Pattern | Example | Description |
 |---------|---------|-------------|
-| `{service}-app` | `analytics-app`, `sync-app` | Application/service container |
-| `{service}-db` | `analytics-db`, `git-db` | Database container |
+| `{service}-app` | `matomo-app`, `sync-app` | Application/service container |
+| `{service}-db` | `matomo-db`, `git-db` | Database container |
 | `npm-{provider}-{vm}` | `npm-gcloud (SINGLE CENTRAL PROXY)
 | `n8n-{type}-app` | `n8n-infra-app`, `n8n-ai-app` | n8n workflow variants |
 
@@ -1508,8 +1971,8 @@ GitHub App settings:
 │   │
 │   ├── vm-oci-f-micro_2/                   ← 24/7 FREE E2.Micro (Analytics)
 │   │   ├── 1.os/oci-f-micro_2.md
-│   │   ├── 2.app/analytics-app/, npm-app/
-│   │   └── 3.db/analytics-db/
+│   │   ├── 2.app/matomo-app/, npm-app/
+│   │   └── 3.db/matomo-db/
 │   │
 │   ├── vm-oci-f-arm_1/                     ← HOLD FREE A1.Flex ARM (AI)
 │   │   ├── 1.os/oci-f-arm_1.md
@@ -1725,7 +2188,7 @@ index.html (Navigation Hub)
 |------|-------|-----|
 | sync-app | terminal-app | n8n-ai-app |
 | mail-app | git-app | ai-webchat (future) |
-| vpn-app | analytics-app | ai-cli (future) |
+| vpn-app | matomo-app | ai-cli (future) |
 
 **Card Component:**
 ```
@@ -1747,7 +2210,7 @@ index.html (Navigation Hub)
 | **Cloud Providers** | **User Services** |
 | - Oracle Cloud Console | - sync-app, mail-app, vpn-app |
 | - Google Cloud Console | **Databases** |
-| **VMs (SSH Access)** | - analytics-db, git-db, etc. |
+| **VMs (SSH Access)** | - matomo-db, git-db, etc. |
 | - oracle-web-server-1 | **Infra Services** |
 | - oracle-services-server-1 | - n8n-infra-app, flask-app, cache-app |
 | - oracle-arm-server | **Proxies** |

@@ -1,236 +1,259 @@
-# Mail Server
+# Mail Server - Stalwart + Cloudflare Email Routing
 
-Self-hosted email server for personal/professional use.
-
----
-
-## 📋 Status
-
-- **Status**: ⏳ Planned
-- **Purpose**: Self-hosted email for @diegonmarcos.com domain
-- **Target**: Personal and professional email
+Self-hosted email server for @diegonmarcos.com domain.
 
 ---
 
-## 🎯 Planned Features
+## Status
 
-### Core Services
-
-- **SMTP** (Send): Postfix
-- **IMAP/POP3** (Receive): Dovecot
-- **Webmail**: Roundcube or Rainloop
-- **Spam Filter**: SpamAssassin or rspamd
-- **Antivirus**: ClamAV
-- **DKIM/SPF/DMARC**: Email authentication
-
-### Domains
-
-- `diego@diegonmarcos.com`
-- `me@diegonmarcos.com`
-- Catch-all: `*@diegonmarcos.com`
+| Component | Status | Notes |
+|-----------|--------|-------|
+| Stalwart Mail Server | DEPLOYED | IMAP/SMTP working |
+| Snappymail Webmail | DEPLOYED | Port 8888 |
+| Cloudflare Email Routing | CONFIGURED | Gmail as primary |
+| Thunderbird | CONFIGURED | Desktop client |
 
 ---
 
-## 🛠️ Technology Stack (Proposed)
+## Architecture
 
-### Option 1: Docker Mailserver
-
-**Image**: `docker-mailserver/docker-mailserver`
-
-**Pros**:
-- All-in-one container
-- Well-maintained
-- Good documentation
-- Easy setup
-
-**Cons**:
-- Single container (less modular)
-- Higher resource usage
-
-### Option 2: Mailcow
-
-**Image**: `mailcow/mailcow-dockerized`
-
-**Pros**:
-- Full-featured
-- Modern UI
-- Calendar/contacts (SOGo)
-- Docker Compose based
-
-**Cons**:
-- Heavier (~1GB RAM)
-- More complex
-
-### Option 3: Manual Setup
-
-**Components**: Postfix + Dovecot + Roundcube
-
-**Pros**:
-- Maximum control
-- Lightweight
-- Modular
-
-**Cons**:
-- Time-consuming setup
-- More maintenance
-
----
-
-## 📊 Resource Requirements (Estimated)
-
-| Solution | RAM | CPU | Disk |
-|----------|-----|-----|------|
-| **Docker Mailserver** | ~400 MB | 0.2 vCPU | ~500 MB |
-| **Mailcow** | ~1 GB | 0.4 vCPU | ~2 GB |
-| **Manual** | ~300 MB | 0.2 vCPU | ~300 MB |
-
-**⚠️ Note**: Current VPS has 1GB RAM. Mail server may require instance upgrade or external mail relay.
-
----
-
-## 🔐 Security Requirements
-
-### DNS Records Needed
-
-```dns
-# MX Record
-@ MX 10 mail.diegonmarcos.com
-
-# A Record for mail server
-mail A 130.110.251.193
-
-# SPF Record
-@ TXT "v=spf1 mx ~all"
-
-# DKIM Record (generated during setup)
-mail._domainkey TXT "v=DKIM1; k=rsa; p=PUBLIC_KEY"
-
-# DMARC Record
-_dmarc TXT "v=DMARC1; p=quarantine; rua=mailto:dmarc@diegonmarcos.com"
+```
+                    Internet
+                       │
+                       ▼
+              ┌────────────────┐
+              │   Cloudflare   │
+              │  Email Routing │
+              │   (port 25)    │
+              └───────┬────────┘
+                      │
+         ┌────────────┴────────────┐
+         │                         │
+         ▼                         ▼
+┌─────────────────┐      ┌─────────────────┐
+│     Gmail       │      │    Stalwart     │
+│   (PRIMARY)     │      │   (ARCHIVE)     │
+│  Receives all   │      │  via Worker     │
+│    emails       │      │   (planned)     │
+└─────────────────┘      └─────────────────┘
+                                │
+                    ┌───────────┴───────────┐
+                    │                       │
+                    ▼                       ▼
+             ┌───────────┐          ┌───────────┐
+             │ Snappymail│          │Thunderbird│
+             │  Webmail  │          │  Desktop  │
+             │  :8888    │          │   IMAP    │
+             └───────────┘          └───────────┘
 ```
 
-### SSL/TLS
+---
 
-- Let's Encrypt certificates via Nginx Proxy Manager
-- TLS 1.2+ only
-- Valid certificate for mail.diegonmarcos.com
+## Services
 
-### Authentication
+### Stalwart Mail Server
 
-- Strong passwords (min 16 chars)
-- Two-factor authentication (recommended)
-- Rate limiting
-- Fail2ban for brute-force protection
+| Setting | Value |
+|---------|-------|
+| **Host** | 130.110.251.193 |
+| **Admin Panel** | http://130.110.251.193:8080 |
+| **IMAP** | Port 993 (SSL/TLS) |
+| **SMTP** | Port 587 (STARTTLS) |
+| **API** | Port 8080 |
+| **Container** | stalwart-mail |
+
+### Snappymail Webmail
+
+| Setting | Value |
+|---------|-------|
+| **URL** | http://130.110.251.193:8888 |
+| **Container** | snappymail |
+| **Image** | djmaze/snappymail:latest |
 
 ---
 
-## 📝 Implementation Plan
+## User Accounts
 
-### Phase 1: Research & Planning
-- [ ] Choose mail server solution
-- [ ] Test on local environment
-- [ ] Plan resource allocation
-- [ ] Estimate migration downtime
+### Admin Account
 
-### Phase 2: DNS & Domain Setup
-- [ ] Configure MX records
-- [ ] Set up SPF/DKIM/DMARC
-- [ ] Verify DNS propagation
-- [ ] Test email deliverability
+| Field | Value |
+|-------|-------|
+| **Username** | admin |
+| **Password** | 8HkSfq6mCW |
+| **Role** | Superuser |
+| **2FA** | Disabled |
 
-### Phase 3: Server Installation
-- [ ] Deploy mail server containers
-- [ ] Configure SSL certificates
-- [ ] Set up user accounts
-- [ ] Configure spam filtering
+### Email Account
 
-### Phase 4: Testing
-- [ ] Send/receive test emails
-- [ ] Test spam filtering
-- [ ] Verify DKIM signatures
-- [ ] Check blacklist status
-
-### Phase 5: Production
-- [ ] Migrate existing emails
-- [ ] Configure email clients
-- [ ] Enable monitoring
-- [ ] Document procedures
+| Field | Value |
+|-------|-------|
+| **Email** | me@diegonmarcos.com |
+| **Username** | me |
+| **Password** | diego123 |
+| **IMAP Server** | 130.110.251.193:993 (SSL) |
+| **SMTP Server** | 130.110.251.193:587 (STARTTLS) |
 
 ---
 
-## 🌐 Planned Endpoints
+## Client Configuration
 
-| Service | URL | Port |
-|---------|-----|------|
-| **SMTP (TLS)** | mail.diegonmarcos.com | 587 |
-| **SMTP (SSL)** | mail.diegonmarcos.com | 465 |
-| **IMAP (SSL)** | mail.diegonmarcos.com | 993 |
-| **POP3 (SSL)** | mail.diegonmarcos.com | 995 |
-| **Webmail** | https://mail.diegonmarcos.com | 443 |
+### Thunderbird
 
----
+1. Add Account: `me@diegonmarcos.com`
+2. Configure manually:
+   - **IMAP**: mail.diegonmarcos.com, port 993, SSL/TLS
+   - **SMTP**: mail.diegonmarcos.com, port 587, STARTTLS
+   - **Username**: me
+   - **Password**: diego123
 
-## ⚠️ Important Considerations
+### Mobile (K-9 Mail / FairEmail)
 
-### Deliverability Challenges
-
-**Email hosting is complex**. Consider these challenges:
-
-1. **IP Reputation**: New VPS IPs may be blacklisted
-   - Check: https://mxtoolbox.com/blacklists.aspx
-   - May need "warm-up" period
-
-2. **Port 25 Blocking**: Some ISPs block outbound port 25
-   - Oracle Cloud: Check if port 25 is open
-   - Alternative: Use SMTP relay service
-
-3. **Spam Filters**: Gmail/Outlook are strict
-   - Requires proper SPF/DKIM/DMARC
-   - Reverse DNS must match
-   - Monitor deliverability closely
-
-4. **Maintenance**: Email servers need constant monitoring
-   - Security updates
-   - Spam filter tuning
-   - Backup verification
-
-### Alternative: Hybrid Approach
-
-**Option**: Use external SMTP relay for outbound, self-host for inbound:
-
-- **Outbound**: SendGrid, Mailgun, or AWS SES
-- **Inbound**: Self-hosted (Dovecot + webmail)
-
-**Benefits**:
-- Better deliverability
-- Lower maintenance
-- Still control incoming mail
+Same settings as Thunderbird above.
 
 ---
 
-## 📚 Related Documentation
+## Docker Compose
 
-- **Main VPS Spec**: [`../README.md`](../README.md)
-- **Docker Mailserver**: https://docker-mailserver.github.io/
-- **Mailcow**: https://mailcow.email/
-- **Email Security Best Practices**: https://www.rfc-editor.org/rfc/rfc8314
+```yaml
+version: "3.8"
+
+services:
+  stalwart:
+    image: stalwartlabs/mail-server:latest
+    container_name: stalwart-mail
+    restart: unless-stopped
+    ports:
+      - "25:25"      # SMTP (blocked by Oracle)
+      - "587:587"    # SMTP Submission
+      - "993:993"    # IMAPS
+      - "8080:8080"  # Admin/API
+    volumes:
+      - stalwart_data:/opt/stalwart-mail
+
+  snappymail:
+    image: djmaze/snappymail:latest
+    container_name: snappymail
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    environment:
+      - SECURE_COOKIES=false
+
+volumes:
+  stalwart_data:
+```
 
 ---
 
-## 🔍 Pre-requisites Checklist
+## DNS Configuration (Cloudflare)
 
-Before deploying:
+| Type | Name | Value | Proxy |
+|------|------|-------|-------|
+| MX | @ | route1.mx.cloudflare.net | - |
+| MX | @ | route2.mx.cloudflare.net | - |
+| MX | @ | route3.mx.cloudflare.net | - |
+| A | mail | 130.110.251.193 | OFF |
+| TXT | @ | v=spf1 include:_spf.mx.cloudflare.net ~all | - |
 
-- [ ] VPS has sufficient RAM (may need upgrade)
-- [ ] Port 25, 587, 465, 993, 995 available
-- [ ] Domain DNS controlled
-- [ ] Reverse DNS configured
-- [ ] IP not blacklisted
-- [ ] Backup strategy planned
+### Email Routing Rule
+
+- **From**: *
+- **To**: me@diegonmarcos.com
+- **Action**: Forward to me@diegonmarcos.com (Gmail)
 
 ---
 
-**Status**: ⏳ Planning Stage
-**Priority**: Medium (after sync service)
-**Recommended**: Consider managed email (ProtonMail, Fastmail) for reliability
-**Last Updated**: 2025-11-25
+## OCI Security List
+
+Ports opened for mail-app:
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| 587 | TCP | SMTP Submission |
+| 993 | TCP | IMAPS |
+| 8080 | TCP | Stalwart Admin |
+| 8888 | TCP | Snappymail Webmail |
+
+---
+
+## Maintenance
+
+### Check Container Status
+
+```bash
+ssh ubuntu@130.110.251.193 "sudo docker ps | grep -E 'stalwart|snappymail'"
+```
+
+### View Stalwart Logs
+
+```bash
+ssh ubuntu@130.110.251.193 "sudo docker logs stalwart-mail --tail 50"
+```
+
+### Restart Services
+
+```bash
+ssh ubuntu@130.110.251.193 "sudo docker restart stalwart-mail snappymail"
+```
+
+---
+
+## TLS Certificates
+
+**Current Status**: Let's Encrypt (ACME HTTP-01)
+
+| Field | Value |
+|-------|-------|
+| **Domain** | mail.diegonmarcos.com |
+| **Issuer** | Let's Encrypt E7 |
+| **Valid Until** | Mar 7, 2026 |
+| **Auto-Renew** | 30 days before expiry |
+
+---
+
+## Known Limitations
+
+1. **Port 25 Blocked**: Oracle Cloud blocks outbound port 25
+   - Use Cloudflare Email Routing for receiving
+   - Use Gmail SMTP for sending
+
+2. **No Direct Inbound**: Cloudflare Email Routing intercepts all MX traffic
+   - Direct Stalwart receive requires alternative setup
+
+---
+
+## Future Improvements
+
+- [x] Configure Let's Encrypt ACME for TLS
+- [ ] Set up Cloudflare Worker to forward to Stalwart
+- [ ] Configure DKIM signing for outbound
+- [ ] Add alias addresses
+- [ ] Enable calendar/contacts (CardDAV/CalDAV)
+
+---
+
+## Quick Reference
+
+```bash
+# SSH to server
+ssh -i ~/.ssh/id_rsa ubuntu@130.110.251.193
+
+# Stalwart Admin
+http://130.110.251.193:8080  (admin / 8HkSfq6mCW)
+
+# Snappymail
+http://130.110.251.193:8888  (me@diegonmarcos.com / diego123)
+
+# Check mail ports
+nc -zv mail.diegonmarcos.com 993  # IMAP
+nc -zv mail.diegonmarcos.com 587  # SMTP
+
+# Verify TLS certificate
+openssl s_client -connect mail.diegonmarcos.com:993 -servername mail.diegonmarcos.com 2>/dev/null | openssl x509 -noout -subject -issuer
+```
+
+---
+
+**Last Updated**: 2025-12-07
+**VM**: oci-f-micro_1 (130.110.251.193)
+**Status**: DEPLOYED
