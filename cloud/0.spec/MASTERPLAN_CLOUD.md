@@ -7,7 +7,7 @@
 
 ---
 
-## Executive Summary
+# Executive Summary
 
 This master plan defines Diego's cloud infrastructure through a hierarchical system:
 
@@ -34,53 +34,9 @@ Jinja2 templating
 
 ---
 
-## Infrastructure Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        CLOUD INFRASTRUCTURE                              │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  ┌─────────────────┐        ┌─────────────────────────────────────────┐│
-│  │   CLOUDFLARE    │───────▶│          GCP VM (gcp-f-micro_1)         ││
-│  │  (DNS + CDN)    │        │              34.55.55.234               ││
-│  └─────────────────┘        │  ┌───────────────────────────────────┐  ││
-│                             │  │      NPM (Reverse Proxy)           │  ││
-│                             │  │      Authelia (2FA Gateway)        │  ││
-│                             │  └───────────────────────────────────┘  ││
-│                             └──────────────────┬──────────────────────┘│
-│                                                │                        │
-│                    ┌───────────────────────────┼───────────────────┐   │
-│                    │                           │                   │   │
-│                    ▼                           ▼                   ▼   │
-│  ┌─────────────────────────┐  ┌─────────────────────────┐  ┌─────────┐│
-│  │  OCI oci-f-micro_1      │  │  OCI oci-f-micro_2      │  │  OCI    ││
-│  │    130.110.251.193      │  │    129.151.228.66       │  │  p-flex ││
-│  │                         │  │                         │  │  84.235.││
-│  │  • Stalwart Mail        │  │  • Matomo Analytics     │  │  234.87 ││
-│  │                         │  │                         │  │         ││
-│  │  FREE TIER 24/7         │  │  FREE TIER 24/7         │  │ • n8n   ││
-│  └─────────────────────────┘  └─────────────────────────┘  │ • Gitea ││
-│                                                            │ • Sync  ││
-│                                                            │ • Vault ││
-│                                                            │ • Photos││
-│                                                            │         ││
-│                                                            │ PAID    ││
-│                                                            │ WAKE-ON ││
-│                                                            └─────────┘│
-└─────────────────────────────────────────────────────────────────────────┘
-```
 
----
-
-## A) Services - Stack & Features Definition
-
-```
-Pattern: SERVICE → front (our GUI) + app (forked/custom) + db(s)
-
-Container          | Purpose                         | Stack
-───────────────────┼─────────────────────────────────┼──────────────────────────
-```
+# A) Services - Stack & Features Definition
 
 ### FRIDGE
 #### Terminals
@@ -122,6 +78,11 @@ mail               | Email Suite                     | -
   ↳ mail-smtp      | SMTP server                     | Postfix
   ↳ mail-webmail   | Webmail client                  | Roundcube
   ↳ mail-db0       | Mailboxes storage               | Maildir
+
+calendar           | Calendar & Contacts (CalDAV/CardDAV) | -
+  ↳ calendar-front | (uses Radicale web UI)               | Radicale (built-in)
+  ↳ calendar-app   | CalDAV/CardDAV server                | Radicale
+  ↳ calendar-db0   | Calendar/contact files               | Filesystem
 
 sync               | File Synchronization Hub        | -
   ↳ sync-front     | File tree viewer (collapsible)  | SvelteKit 5 + SCSS
@@ -225,12 +186,98 @@ cache              | In-Memory Cache                 | -
 
 
 
-### Service URLs (Proxied)
-
-
+### Resources and Service Allocation and URLs (Proxied)
 
 ### Plan
-#### by service
+
+#### by Resources
+```
+Service              | RAM      | Storage   | GPU    | Bandwidth/mo | VM
+─────────────────────┼──────────┼───────────┼────────┼──────────────┼────────────────
+
+## FRIDGE
+
+Terminals
+↳ terminal-app       | 64 MB    | 100 MB    | -      | 5 GB         | oci-p-flex_1
+↳ jupyter-app        | 512 MB   | 2 GB      | -      | 10 GB        | oci-p-flex_1
+↳ ide-app            | 512 MB   | 2 GB      | -      | 10 GB        | oci-p-flex_1
+↳ ai-app             | 512 MB   | 2 GB      | -      | 30 GB        | oci-p-flex_1
+
+User Productivity
+↳ mail-* (suite)     | 512 MB   | 10 GB     | -      | 5 GB         | oci-f-micro_1
+↳ calendar-app       | 64 MB    | 500 MB    | -      | 1 GB         | oci-p-flex_1
+↳ sync-front         | 64 MB    | 100 MB    | -      | 5 GB         | oci-p-flex_1
+  ↳ drive (Rclone)   | 128 MB   | 2 GB      | -      | 200 GB       | oci-p-flex_1
+  ↳ git (Gitea)      | 256 MB   | 5 GB      | -      | 10 GB        | oci-p-flex_1
+↳ photo-app          | 256 MB   | 20 GB     | -      | 50 GB        | oci-p-flex_1
+
+User Security
+↳ vault-app          | 128 MB   | 500 MB    | -      | 1 GB         | oci-p-flex_1
+↳ vpn-app            | 64 MB    | 50 MB     | -      | 100 GB       | oci-p-flex_1
+
+─────────────────────┼──────────┼───────────┼────────┼──────────────┼────────────────
+FRIDGE TOTALS        | 3 GB     | 44 GB     | -      | 427 GB       |
+
+## KITCHEN
+
+Devs Cloud Dashboard
+↳ analytics-app      | 256 MB   | 5 GB      | -      | 100 GB       | oci-f-micro_2
+↳ cloud-app          | 128 MB   | 500 MB    | -      | 5 GB         | oci-p-flex_1
+↳ temporal-app       | 512 MB   | 2 GB      | -      | 20 GB        | oci-p-flex_1
+↳ langgraph-app      | 512 MB   | 2 GB      | -      | 30 GB        | oci-p-flex_1
+
+Devs Security
+↳ proxy-app          | 256 MB   | 1 GB      | -      | 50 GB        | gcp-f-micro_1
+↳ authelia-app       | 128 MB   | 100 MB    | -      | 10 GB        | gcp-f-micro_1
+↳ oauth2-app         | 64 MB    | 50 MB     | -      | 5 GB         | gcp-f-micro_1
+
+Devs Infrastructure
+↳ api-app            | 128 MB   | 1 GB      | -      | 20 GB        | gcp-f-micro_1
+↳ cache-app          | 256 MB   | 1 GB      | -      | -            | oci-p-flex_1
+
+─────────────────────┼──────────┼───────────┼────────┼──────────────┼────────────────
+KITCHEN TOTALS       | 2.2 GB   | 12.6 GB   | -      | 240 GB       |
+
+═════════════════════╪══════════╪═══════════╪════════╪══════════════╪════════════════
+GRAND TOTALS         | 5.2 GB   | 56.6 GB   | -      | 667 GB       |
+```
+
+#### by VM (Capacity vs Allocated)
+```
+Host       | VM             | RAM    | Alloc  | HD     | Alloc  | Headroom | Services Running
+───────────┼────────────────┼────────┼────────┼────────┼────────┼──────────┼─────────────────────────────────────────
+GCloud     | gcp-f-micro_1  | 1 GB   | 576 MB | 30 GB  | 2.2 GB | 42% RAM  | proxy, authelia, oauth2, api, flask
+Oracle     | oci-f-micro_1  | 1 GB   | 512 MB | 47 GB  | 10 GB  | 49% RAM  | mail-* (8 containers)
+Oracle     | oci-f-micro_2  | 1 GB   | 256 MB | 47 GB  | 5 GB   | 74% RAM  | analytics
+Oracle     | oci-p-flex_1   | 8 GB   | 3.9 GB | 100 GB | 40 GB  | 51% RAM  | sync, drive, git, photos, vault, vpn, cal, cloud, temporal, langgraph, cache
+Oracle     | oci-f-arm_1    | 24 GB  | (rsv)  | 200 GB | (rsv)  | -        | (AI Brain - reserved)
+TensorDock | tensordock-gpu | 16 GB  | -      | 70 GB  | -      | -        | (on-demand AI inference)
+───────────┼────────────────┼────────┼────────┼────────┼────────┼──────────┼─────────────────────────────────────────
+TOTALS     |                | 51 GB  | 5.2 GB | 494 GB | 57 GB  | 90% RAM  |
+```
+
+#### Cost Estimation
+```
+Item                   | Provider   | Monthly Cost  | Notes
+───────────────────────┼────────────┼───────────────┼─────────────────────────────
+gcp-f-micro_1          | GCloud     | $0            | Free Tier (e2-micro)
+oci-f-micro_1          | Oracle     | $0            | Free Tier (Always Free)
+oci-f-micro_2          | Oracle     | $0            | Free Tier (Always Free)
+oci-p-flex_1           | Oracle     | ~$5.50        | Flex (wake-on-demand)
+oci-f-arm_1            | Oracle     | $0            | Free Tier (ARM 24GB)
+Cloudflare             | Cloudflare | $0            | Free Plan (DNS + CDN)
+Domain (annual/12)     | Cloudflare | ~$1           | ~$10/year
+───────────────────────┼────────────┼───────────────┼─────────────────────────────
+TOTAL                  |            | ~$6.50/mo     | Cloud infrastructure only
+```
+
+
+
+
+#### by Proxy/IP:Port
+
+Services
+
 ```
 Service           | Public URL                      | VM             | Container       | IP:Port
 ──────────────────┼─────────────────────────────────┼────────────────┼─────────────────┼────────────────────────
@@ -245,6 +292,7 @@ Terminals
 
 User Productivity
 ↳ Mail            | mail.diegonmarcos.com           | oci-f-micro_1  | mail-front      |
+↳ Calendar        | cal.diegonmarcos.com            | oci-p-flex_1   | calendar-app    |
 ↳ Sync            | sync.diegonmarcos.com           | oci-p-flex_1   | sync-app        |
 ↳ Drive           | drive.diegonmarcos.com          | oci-p-flex_1   | drive-app       |
 ↳ Git             | git.diegonmarcos.com            | oci-p-flex_1   | git-app         |
@@ -272,17 +320,65 @@ Devs Infrastructure
 ↳ Cache           | (internal)                      | oci-p-flex_1   | cache-app       |
 ```
 
-#### by VM
+VM
 ```
-Host   | VM             | RAM   | VRAM | Storage | IP              | Services Running                          | Notes
-───────┼────────────────┼───────┼──────┼─────────┼─────────────────┼───────────────────────────────────────────┼─────────────────
-GCloud | gcp-f-micro_1  | 1 GB  | -    | 30 GB   |                 | npm, authelia, redis                      | 24/7 FREE
-Oracle | oci-f-micro_1  | 1 GB  | -    | 47 GB   |                 | mailu-* (8 containers)                    | 24/7 FREE
-Oracle | oci-f-micro_2  | 1 GB  | -    | 47 GB   |                 | matomo-app, matomo-db                     | 24/7 FREE
-Oracle | oci-p-flex_1   | 8 GB  | -    | 100 GB  |                 | sync, photos, n8n, git, cal, terminal...  | WAKE $5.5/mo
-Oracle | oci-f-arm_1    | 24 GB | -    | 200 GB  |                 |                                           | 24/7 Free
+Host       | VM Name        | IP              | Host SSH                                      | VM SSH
+───────────┼────────────────┼─────────────────┼───────────────────────────────────────────────┼──────────────────────────────
+GCloud     | gcp-f-micro_1  | 34.55.55.234    | gcloud compute ssh arch-1 --zone=us-central1-a | -
+Oracle     | oci-f-micro_1  | 130.110.251.193 | -                                             | ssh ubuntu@130.110.251.193
+Oracle     | oci-f-micro_2  | 129.151.228.66  | -                                             | ssh ubuntu@129.151.228.66
+Oracle     | oci-p-flex_1   | 84.235.234.87   | -                                             | ssh ubuntu@84.235.234.87
+Oracle     | oci-f-arm_1    | (pending)       | -                                             | ssh ubuntu@<ip>
+TensorDock | tensordock-gpu | (on-demand)     | -                                             | ssh root@<ip>
 ```
 
+
+
+
+## Infrastructure Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        CLOUD INFRASTRUCTURE                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌─────────────────┐        ┌─────────────────────────────────────────┐│
+│  │   CLOUDFLARE    │───────▶│          GCP VM (gcp-f-micro_1)         ││
+│  │  (DNS + CDN)    │        │              34.55.55.234               ││
+│  └─────────────────┘        │  ┌───────────────────────────────────┐  ││
+│                             │  │      NPM (Reverse Proxy)           │  ││
+│                             │  │      Authelia (2FA Gateway)        │  ││
+│                             │  └───────────────────────────────────┘  ││
+│                             └──────────────────┬──────────────────────┘│
+│                                                │                        │
+│                    ┌───────────────────────────┼───────────────────┐   │
+│                    │                           │                   │   │
+│                    ▼                           ▼                   ▼   │
+│  ┌─────────────────────────┐  ┌─────────────────────────┐  ┌─────────┐│
+│  │  OCI oci-f-micro_1      │  │  OCI oci-f-micro_2      │  │  OCI    ││
+│  │    130.110.251.193      │  │    129.151.228.66       │  │  p-flex ││
+│  │                         │  │                         │  │  84.235.││
+│  │  • Stalwart Mail        │  │  • Matomo Analytics     │  │  234.87 ││
+│  │                         │  │                         │  │         ││
+│  │  FREE TIER 24/7         │  │  FREE TIER 24/7         │  │ • n8n   ││
+│  └─────────────────────────┘  └─────────────────────────┘  │ • Gitea ││
+│                                                            │ • Sync  ││
+│                                                            │ • Vault ││
+│                                                            │ • Photos││
+│                                                            │         ││
+│                                                            │ PAID    ││
+│                                                            │ WAKE-ON ││
+│                                                            └─────────┘│
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+
+
+---
+
+---
+
+---
 
 
 ### Today (Actual Running)
@@ -334,19 +430,6 @@ Oracle | oci-f-micro_1  | 1 GB  | -    | 47 GB   | 130.110.251.193 | mailu-* (8 
 Oracle | oci-f-micro_2  | 1 GB  | -    | 47 GB   | 129.151.228.66  | matomo-app, matomo-db                     | 24/7 FREE
 Oracle | oci-p-flex_1   | 8 GB  | -    | 100 GB  | 84.235.234.87   | sync, photos, n8n, git, cal, cache...     | WAKE $5.5/mo
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
