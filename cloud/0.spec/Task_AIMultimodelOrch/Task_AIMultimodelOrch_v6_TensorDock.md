@@ -29,6 +29,41 @@
 └─────────────────────────────┘  └─────────────────────────────┘
 ```
 
+## Service Tree
+
+```
+ai-multimodel        | AI Orchestration System          | -
+  ↳ tensordock-gpu   | DeepSeek 14B Inference          | TensorDock
+    ↳ ollama-app     | LLM API Server                  | Ollama
+    ↳ deepseek-model | Code LLM (14B Q4)               | DeepSeek-Coder-v2
+  ↳ oracle-brain     | ML Brain Knowledge System       | Oracle Free
+    ↳ brain-api      | Knowledge API Server            | Flask/Python
+    ↳ brain-db       | Knowledge Database              | SQLite
+    ↳ embeddings     | Vector Embeddings               | OpenAI API
+  ↳ local-collect    | Data Collection (runs locally)  | -
+    ↳ claude-collector | Claude Code logs              | Python
+    ↳ browser-collector| Browser history              | Python
+    ↳ files-collector  | Local code files             | Python
+
+───────────────────────────────────────────────────────────────────
+INFRASTRUCTURE
+───────────────────────────────────────────────────────────────────
+tensordock-vm        | GPU VM (Pay-per-use)            | -
+  ↳ gpu              | RTX 4090 24GB VRAM              | NVIDIA
+  ↳ cpu              | 4 vCPU                          | x86_64
+  ↳ ram              | 16 GB                           | DDR4
+  ↳ storage          | 70 GB SSD                       | NVMe
+  ↳ location         | EU (DE/FR/NL)                   | TensorDock
+  ↳ cost             | $0.35/hr                        | Pay-per-use
+
+oracle-free-vm       | ARM VM (Always Free)            | -
+  ↳ cpu              | 4 OCPU ARM64                    | Ampere
+  ↳ ram              | 24 GB                           | DDR4
+  ↳ storage          | 100 GB                          | Block
+  ↳ location         | eu-frankfurt-1                  | Oracle
+  ↳ cost             | $0/mo                           | Free Tier
+```
+
 ## Cost Summary
 
 | Component | Cost |
