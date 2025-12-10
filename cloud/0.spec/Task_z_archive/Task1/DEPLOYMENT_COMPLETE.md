@@ -303,8 +303,8 @@ oci compute instance get \
 ### Phase 4: Wake-on-Demand
 - [ ] Test wake API endpoint
 - [ ] Verify wake button in dashboard
-- [ ] Configure idle monitoring script
-- [ ] Test auto-stop after 30min idle
+- [x] Configure idle monitoring script (2025-12-08: /opt/scripts/idle-shutdown.sh)
+- [x] Test auto-stop after 30min idle (2025-12-08: systemd timer running every 5min)
 
 ### Phase 5: Cleanup & Migration
 - [ ] Remove NPM from Oracle Web Server 1

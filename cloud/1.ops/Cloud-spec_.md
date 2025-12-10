@@ -2,7 +2,7 @@
 
 > **Single Source of Truth**: `cloud-infrastructure.json`
 > **Dashboard**: `cloud-dashboard.py` (TUI + Flask API)
-> **Version**: 3.2.0 | **Updated**: 2025-12-04
+> **Version**: 3.3.0 | **Updated**: 2025-12-10
 
 ---
 
@@ -33,11 +33,13 @@
 ### Active Services
 | Service ID | Display Name | URL | Status |
 |------------|--------------|-----|--------|
-| photoview-app | Photo Gallery (with 2FA) | https://photos.diegonmarcos.com | on |
+| photoprism-app | Photo Gallery (with 2FA) | https://photosapp.diegonmarcos.com | on |
 | matomo-app | Matomo Analytics | https://analytics.diegonmarcos.com | on |
 | sync-app | Syncthing | https://sync.diegonmarcos.com | on |
 | n8n-infra-app | n8n (Infra) | https://n8n.diegonmarcos.com | on |
 | cloud-app | Cloud Dashboard | https://cloud.diegonmarcos.com | on |
+| api | Cloud API | https://api.diegonmarcos.com | on |
+| mailu | Mail Server | https://mailapp.diegonmarcos.com | on |
 
 ### Proxy Admin Panel (SINGLE NPM)
 | Server | URL |
@@ -107,9 +109,16 @@ ssh ubuntu@129.151.228.66
 |  |                                                                    |  |
 |  |  +-------------------------+                                       |  |
 |  |  |  GCloud Arch Linux 1    |    (e2-micro)                         |  |
-|  |  |  IP: pending            |    0.25-2 vCPU | 1GB RAM              |  |
+|  |  |  34.55.55.234           |    0.25-2 vCPU | 1GB RAM              |  |
+|  |  |  WireGuard: 10.0.0.1    |                                       |  |
 |  |  |                         |                                       |  |
-|  |  |  Status: PENDING        |                                       |  |
+|  |  |  Services:              |                                       |  |
+|  |  |  - NPM (Central Proxy)  |                                       |  |
+|  |  |  - Authelia (2FA)       |                                       |  |
+|  |  |  - OAuth2 Proxy         |                                       |  |
+|  |  |  - Cloud API (Flask)    |                                       |  |
+|  |  |                         |                                       |  |
+|  |  |  Status: ACTIVE         |                                       |  |
 |  |  +-------------------------+                                       |  |
 |  +-------------------------------------------------------------------+  |
 |                                                                          |
@@ -160,11 +169,14 @@ ssh ubuntu@129.151.228.66
 |----------|-------|
 | **ID** | gcloud-arch-1 |
 | **Provider** | Google Cloud |
-| **IP** | pending |
+| **IP** | 34.55.55.234 |
+| **WireGuard IP** | 10.0.0.1 |
 | **Type** | e2-micro |
 | **Specs** | 0.25-2 vCPU, 1GB RAM, 30GB |
 | **OS** | Arch Linux (rolling) |
-| **Status** | Pending |
+| **Services** | NPM (Central Proxy), Authelia, OAuth2 Proxy, API |
+| **Ports** | 22, 80, 443, 81, 5000, 9091, 51820 |
+| **Status** | Active |
 
 ### 3.3 Machine Learning VMs
 
@@ -206,8 +218,8 @@ ssh ubuntu@129.151.228.66
 | | **n8n-ai** | ML | | | | AI Agentic workflows |
 | hold | ↳ n8n-ai-app | | 1-4 GB | 2-10 GB | 5-20 GB/mo | LLM context + workflows |
 | hold | ↳ n8n-ai-db | | 256-512 MB | 1-10 GB | - | PostgreSQL - varies by usage |
-| | **mail** | Productivity | | | | Stalwart Email (Cloudflare routing) |
-| on | ↳ mail-app (Stalwart) | | 100-200 MB | 5-50 GB | 1-10 GB/mo | Rust mail server, Cloudflare Email Routing |
+| | **mail** | Productivity | | | | Mailu Email Suite (Cloudflare routing) |
+| on | ↳ mailu (8 containers) | | 300-500 MB | 5-50 GB | 1-10 GB/mo | Full mail suite, Cloudflare Email Routing |
 | on | ↳ mail-db (RocksDB) | | 8-32 MB | Variable | - | Embedded RocksDB |
 | | **analytics** | Web | | | | Matomo Analytics platform |
 | on | ↳ matomo-app | | 256-512 MB | 2-5 GB | 500 MB-2 GB/mo | PHP FPM Alpine |
@@ -276,11 +288,25 @@ ssh ubuntu@129.151.228.66
 | **Technology** | jc21/nginx-proxy-manager |
 | **Status** | Active |
 
-#### Cloud
+#### Cloud Dashboard
 | Property | Value |
 |----------|-------|
 | **Domain** | cloud.diegonmarcos.com |
 | **Technology** | GitHub Pages (static) |
+| **Status** | Active |
+
+#### Cloud API
+| Property | Value |
+|----------|-------|
+| **VM** | GCloud Arch Linux 1 (34.55.55.234) |
+| **Domain** | api.diegonmarcos.com |
+| **Internal Port** | 5000 |
+| **Technology** | Python Flask (Docker container: `api`) |
+| **Container** | api |
+| **Image** | api:latest (python:3.11-slim + flask) |
+| **Features** | VM/Service health checks, Wake-on-Demand API, Dashboard data |
+| **Endpoints** | `/api/health`, `/api/vms`, `/api/services`, `/api/wake/*` |
+| **Restart Policy** | unless-stopped |
 | **Status** | Active |
 
 ### 4.4 Web Services
@@ -322,21 +348,24 @@ ssh ubuntu@129.151.228.66
 | **Container** | syncthing |
 | **Status** | Active |
 
-#### Mail Server (Stalwart)
+#### Mail Server (Mailu)
 | Property | Value |
 |----------|-------|
 | **VM** | oci-f-micro_1 (130.110.251.193) |
-| **Domain** | mail.diegonmarcos.com |
-| **Technology** | Stalwart Mail Server (Rust) |
-| **Admin URL** | http://130.110.251.193:8080 |
-| **Ports** | 587 (SMTP Submission), 993 (IMAPS), 8080 (Admin) |
-| **Features** | JMAP, IMAP, SMTP, CalDAV, CardDAV |
-| **Email Routing** | Cloudflare Email Routing → Stalwart:587 |
-| **Status** | On (pending Cloudflare DNS migration) |
+| **Webmail Domain** | mailapp.diegonmarcos.com |
+| **IMAP Domain** | imap.diegonmarcos.com |
+| **SMTP Domain** | smtp.diegonmarcos.com |
+| **Technology** | Mailu (8 containers: front, admin, imap, smtp, webmail, antispam, fetchmail, resolver) |
+| **Admin URL** | https://mailapp.diegonmarcos.com/admin |
+| **Webmail URL** | https://mailapp.diegonmarcos.com/webmail |
+| **Ports** | 25 (SMTP), 587 (Submission), 993 (IMAPS), 443 (HTTPS) |
+| **Features** | IMAP, SMTP, Webmail (Roundcube), Antispam (Rspamd), CalDAV, CardDAV |
+| **Email Routing** | Cloudflare Email Routing → Mailu:587 |
+| **Status** | On |
 
 **Note:** Oracle Cloud blocks Port 25 inbound. Email delivery uses Cloudflare Email Routing:
 ```
-Internet → Cloudflare (port 25) → Email Worker → Stalwart (port 587)
+Internet → Cloudflare (port 25) → Email Worker → Mailu (port 587)
 ```
 
 #### OS Terminal Web
@@ -674,10 +703,10 @@ services:
 ```yaml
 # docker-compose.yml
 services:
-  photoview:
+  photoprism:
     ports:
-      - "127.0.0.1:8080:80"  # Only accessible from localhost
-    # NOT: "8080:80"  # This exposes to internet!
+      - "127.0.0.1:2342:2342"  # Only accessible from localhost
+    # NOT: "2342:2342"  # This exposes to internet!
 ```
 
 **Solution 2: Disable Docker's iptables manipulation**
@@ -707,14 +736,14 @@ services:
 
 ### 7.10 WireGuard VPN Tunnel (Cross-VM Security)
 
-When services span multiple VMs (e.g., NPM on GCP, PhotoView on Oracle), direct IP access bypasses proxy authentication. WireGuard creates a secure private tunnel.
+When services span multiple VMs (e.g., NPM on GCP, Photoprism on Oracle), direct IP access bypasses proxy authentication. WireGuard creates a secure private tunnel.
 
 **Architecture**:
 ```
 WITHOUT WireGuard (INSECURE):
 ──────────────────────────────
-User → photos.diegonmarcos.com → GCP:443 → NPM → Authelia 2FA ✓
-User → 84.235.234.87:8080 → PhotoView directly (BYPASSES 2FA!) ✗
+User → photosapp.diegonmarcos.com → GCP:443 → NPM → Authelia 2FA ✓
+User → 84.235.234.87:2342 → Photoprism directly (BYPASSES 2FA!) ✗
 
 WITH WireGuard (SECURE):
 ────────────────────────
@@ -726,7 +755,7 @@ GCP VM (34.55.55.234)              Oracle VM (84.235.234.87)
 │ 10.0.0.1            │   Tunnel   │ 10.0.0.2            │
 └─────────────────────┘            └─────────────────────┘
          │                                   │
-      NPM ───────► 10.0.0.2:8080 ───────► PhotoView
+      NPM ───────► 10.0.0.2:2342 ───────► Photoprism
                   (private IP only)      (not on public IP!)
 ```
 
@@ -757,12 +786,12 @@ AllowedIPs = 10.0.0.1/32
 PersistentKeepalive = 25
 ```
 
-**PhotoView Docker Compose (bind to WireGuard only)**:
+**Photoprism Docker Compose (bind to WireGuard only)**:
 ```yaml
 services:
-  photoview:
+  photoprism:
     ports:
-      - "10.0.0.2:8080:80"  # Only accessible via WireGuard!
+      - "10.0.0.2:2342:2342"  # Only accessible via WireGuard!
 ```
 
 ### 7.11 Authelia 2FA Integration
@@ -775,7 +804,7 @@ Authelia provides TOTP-based 2FA for services that don't have native authenticat
 │                            REQUEST FLOW                                      │
 └─────────────────────────────────────────────────────────────────────────────┘
 
-Browser: https://photos.diegonmarcos.com
+Browser: https://photosapp.diegonmarcos.com
          │
          ▼
 ┌─────────────────┐
@@ -816,7 +845,7 @@ Browser: https://photos.diegonmarcos.com
          │
          ▼
 ┌─────────────────┐
-│  REDIRECT 302   │  → https://photos.diegonmarcos.com (original URL)
+│  REDIRECT 302   │  → https://photosapp.diegonmarcos.com (original URL)
 └────────┬────────┘
          │
          ▼
@@ -840,13 +869,13 @@ Browser: https://photos.diegonmarcos.com
          │  WireGuard Tunnel (10.0.0.1 → 10.0.0.2)
          ▼
 ┌─────────────────┐
-│  ORACLE DEV VM  │  10.0.0.2:8080
-│   (PhotoView)   │  Only accessible via WireGuard
+│  ORACLE DEV VM  │  10.0.0.2:2342
+│  (Photoprism)   │  Only accessible via WireGuard
 └─────────────────┘
          │
          ▼
 ┌─────────────────┐
-│  PhotoView UI   │  Auto-login via Lua module
+│  Photoprism UI  │  Auto-login via Lua module
 │  (with 2FA)     │  (credentials injected after Authelia pass)
 └─────────────────┘
 ```
@@ -854,8 +883,8 @@ Browser: https://photos.diegonmarcos.com
 **Security Layers**:
 1. **Cloudflare** - DDoS protection, SSL termination
 2. **NPM + Authelia** - 2FA gate (password + TOTP)
-3. **WireGuard** - PhotoView only accessible on private network (10.0.0.2)
-4. **PhotoView** - Internal auth (bypassed via Lua auto-login after 2FA)
+3. **WireGuard** - Photoprism only accessible on private network (10.0.0.2)
+4. **Photoprism** - Internal auth (bypassed via Lua auto-login after 2FA)
 
 **SSO Across Subdomains**:
 ```
@@ -879,15 +908,15 @@ Browser: https://photos.diegonmarcos.com
 
 **Flow Summary**:
 ```
-1. User → photos.diegonmarcos.com
+1. User → photosapp.diegonmarcos.com
 2. NPM → auth_request to Authelia
 3. Authelia returns 401 (not authenticated)
 4. NPM redirects → auth.diegonmarcos.com
 5. User logs in (username + password + TOTP)
 6. Authelia sets session cookie
-7. Redirect back → photos.diegonmarcos.com
+7. Redirect back → photosapp.diegonmarcos.com
 8. NPM → auth_request to Authelia → 200 OK
-9. NPM proxies to PhotoView via WireGuard
+9. NPM proxies to Photoprism via WireGuard
 ```
 
 **NPM Advanced Config (per proxy host)**:
@@ -915,7 +944,7 @@ error_page 401 =302 https://auth.diegonmarcos.com/?rd=https://$http_host$request
 access_control:
   default_policy: one_factor
   rules:
-    - domain: photos.diegonmarcos.com
+    - domain: photosapp.diegonmarcos.com
       policy: two_factor  # Requires TOTP
 
 authentication_backend:
@@ -975,7 +1004,7 @@ sudo iptables-save > /etc/iptables/rules.v4
 |------|--------|-------|
 | All containers bind to 127.0.0.1 or internal network | ✓ | Prevents Docker UFW bypass |
 | WireGuard tunnel for cross-VM communication | ✓ | GCP ↔ Oracle |
-| Authelia 2FA on sensitive services | ✓ | PhotoView, admin panels |
+| Authelia 2FA on sensitive services | ✓ | Photoprism, admin panels |
 | UFW enabled with default deny | ✓ | All VMs |
 | SSH key-only authentication | ✓ | No passwords |
 | Let's Encrypt SSL on all domains | ✓ | Auto-renewal via NPM |
@@ -995,6 +1024,87 @@ FallbackDNS=8.8.4.4 1.0.0.1
 ```
 
 **Rationale:** Local/ISP DNS may filter or fail to resolve custom domains. Public DNS ensures reliable resolution.
+
+### 7.14 Wake-on-Demand (Dormant VMs)
+
+Some VMs (e.g., `oci-p-flex_1` running Photoprism) are configured to auto-stop after 30 minutes of idle time to reduce costs. The Cloud API provides wake-on-demand functionality.
+
+**Architecture**:
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        WAKE-ON-DEMAND FLOW                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+User visits photosapp.diegonmarcos.com
+         │
+         ▼
+┌─────────────────┐
+│  MyPhotos Page  │  (GitHub Pages)
+│  index.html     │
+└────────┬────────┘
+         │ checkServerStatus()
+         ▼
+┌─────────────────┐     ┌─────────────────┐
+│   Cloud API     │────▶│   OCI API       │
+│  api.diegon...  │     │  (Instance      │
+│  /api/wake/*    │     │   actions)      │
+└────────┬────────┘     └────────┬────────┘
+         │                       │
+         │ GET /api/wake/status  │ oci compute instance get
+         │                       │
+         ▼                       ▼
+┌─────────────────┐     ┌─────────────────┐
+│  Server Status  │     │  STOPPED → Wake │
+│  RUNNING/STOPPED│     │  via OCI API    │
+└────────┬────────┘     └─────────────────┘
+         │
+         │ If STOPPED: Show "Wake Server" button
+         │ If RUNNING: Hide button, proceed to login
+         ▼
+┌─────────────────┐
+│  POST /api/wake │  (User clicks wake button)
+│     /trigger    │
+└────────┬────────┘
+         │ oci compute instance action --action START
+         │ Poll until RUNNING + WireGuard handshake
+         ▼
+┌─────────────────┐
+│  Photoprism     │  (10.0.0.2:2342 via WireGuard)
+│  now accessible │
+└─────────────────┘
+```
+
+**API Endpoints**:
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/wake/status` | GET | Returns VM state (RUNNING, STOPPED, STARTING) |
+| `/api/wake/trigger` | POST | Starts the dormant VM via OCI API |
+
+**Frontend Integration** (myphotos/src/index.html):
+```javascript
+const CLOUD_API = 'https://api.diegonmarcos.com';
+
+// Check if server is up
+async function checkServerStatus() {
+    const response = await fetch(`${CLOUD_API}/api/wake/status`);
+    const data = await response.json();
+    // Show/hide wake button based on state
+}
+
+// Wake dormant server
+async function wakeServer() {
+    await fetch(`${CLOUD_API}/api/wake/trigger`, { method: 'POST' });
+    // Poll until server is ready
+}
+```
+
+**Dormant VMs**:
+| VM | Services | Idle Timeout | Wake Time |
+|----|----------|--------------|-----------|
+| oci-p-flex_1 (84.235.234.87) | Photoprism, n8n, Gitea | 30 min | ~60-90s |
+
+**WireGuard Reconnection**:
+After wake, the WireGuard peer (10.0.0.2) takes ~30s to re-establish handshake with GCP (10.0.0.1). The API polls the WireGuard status before reporting the VM as fully ready.
 
 ---
 

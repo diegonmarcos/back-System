@@ -81,7 +81,7 @@
       "status": "active",
       "availability": "24/7",
       "cost": {"monthly": 0, "currency": "USD"},
-      "notes": "Stalwart Mail Server - 24/7 FREE"
+      "notes": "Mailu Mail Suite (8 containers) - 24/7 FREE"
     },
     "oci-f-micro_2": {
       "id": "oci-f-micro_2",
@@ -146,7 +146,7 @@
         "keyPath": "/home/diego/Documents/Git/LOCAL_KEYS/00_terminal/ssh/google_compute_engine",
         "command": "gcloud compute ssh arch-1 --zone us-central1-a"
       },
-      "services": ["npm-gcloud", "authelia", "authelia-redis"],
+      "services": ["npm-gcloud", "authelia", "authelia-redis", "flask-app"],
       "ports": {
         "external": [22, 80, 443, 81],
         "internal": [9091, 6379]
@@ -191,7 +191,6 @@
         "sync-files-db",
         "sync-obj-db",
         "cloud-app",
-        "flask-app",
         "git-app",
         "git-db",
         "git-repos",
@@ -402,16 +401,17 @@
     "mail": {
       "id": "mail",
       "name": "mail",
-      "displayName": "Stalwart Mail",
+      "displayName": "Mailu Mail Suite",
       "category": "user-productivity",
       "vmId": "oci-f-micro_1",
-      "childServices": ["mail-app", "mail-db"],
+      "childServices": ["mailu-front", "mailu-admin", "mailu-imap", "mailu-smtp", "mailu-webmail", "mailu-antispam"],
       "network": {
         "domain": "mail.diegonmarcos.com",
         "directAccess": true
       },
       "urls": {
-        "admin": "http://130.110.251.193:8080",
+        "admin": "https://mail.diegonmarcos.com/admin",
+        "webmail": "https://mail.diegonmarcos.com/webmail",
         "imap": "mail.diegonmarcos.com:993",
         "smtp": "mail.diegonmarcos.com:587"
       },
@@ -422,27 +422,56 @@
         "bandwidth": {"min": "1 GB/mo", "max": "10 GB/mo"}
       }
     },
-    "mail-app": {
-      "id": "mail-app",
-      "name": "mail-app",
-      "displayName": "Stalwart Server",
+    "mailu-front": {
+      "id": "mailu-front",
+      "name": "mailu-front",
+      "displayName": "Mailu Nginx",
       "parentService": "mail",
       "category": "user",
       "vmId": "oci-f-micro_1",
-      "network": {
-        "ports": {"smtp": 587, "imaps": 993, "admin": 8080}
-      },
-      "technology": {"image": "stalwartlabs/stalwart", "version": "latest"},
+      "technology": {"image": "ghcr.io/mailu/nginx", "version": "2024.06"},
       "status": "on"
     },
-    "mail-db": {
-      "id": "mail-db",
-      "name": "mail-db",
-      "displayName": "Stalwart DB",
+    "mailu-admin": {
+      "id": "mailu-admin",
+      "name": "mailu-admin",
+      "displayName": "Mailu Admin",
       "parentService": "mail",
-      "category": "infra-db",
+      "category": "user",
       "vmId": "oci-f-micro_1",
-      "technology": {"type": "RocksDB", "embedded": true},
+      "technology": {"image": "ghcr.io/mailu/admin", "version": "2024.06"},
+      "status": "on"
+    },
+    "mailu-imap": {
+      "id": "mailu-imap",
+      "name": "mailu-imap",
+      "displayName": "Mailu IMAP (Dovecot)",
+      "parentService": "mail",
+      "category": "user",
+      "vmId": "oci-f-micro_1",
+      "network": {"ports": {"imaps": 993}},
+      "technology": {"image": "ghcr.io/mailu/dovecot", "version": "2024.06"},
+      "status": "on"
+    },
+    "mailu-smtp": {
+      "id": "mailu-smtp",
+      "name": "mailu-smtp",
+      "displayName": "Mailu SMTP (Postfix)",
+      "parentService": "mail",
+      "category": "user",
+      "vmId": "oci-f-micro_1",
+      "network": {"ports": {"smtp": 25, "submission": 587}},
+      "technology": {"image": "ghcr.io/mailu/postfix", "version": "2024.06"},
+      "status": "on"
+    },
+    "mailu-webmail": {
+      "id": "mailu-webmail",
+      "name": "mailu-webmail",
+      "displayName": "Mailu Webmail (Roundcube)",
+      "parentService": "mail",
+      "category": "user",
+      "vmId": "oci-f-micro_1",
+      "technology": {"image": "ghcr.io/mailu/webmail", "version": "2024.06"},
       "status": "on"
     },
     "vpn": {
@@ -672,10 +701,10 @@
       "displayName": "Flask API Server",
       "parentService": "cloud",
       "category": "infra-services",
-      "vmId": "oci-p-flex_1",
+      "vmId": "gcp-f-micro_1",
       "network": {"internalPort": 5000},
       "technology": {"type": "Flask/Python"},
-      "status": "dev"
+      "status": "on"
     },
     "git": {
       "id": "git",
@@ -838,7 +867,7 @@
       "category": "infra-services",
       "vmId": "oci-p-flex_1",
       "childServices": ["cache-app"],
-      "status": "dev",
+      "status": "on",
       "resources": {
         "ram": {"min": "64 MB", "max": "256 MB"},
         "storage": {"min": "100 MB", "max": "1 GB"}
@@ -853,7 +882,7 @@
       "vmId": "oci-p-flex_1",
       "network": {"internalPort": 6379},
       "technology": {"image": "redis", "version": "alpine"},
-      "status": "dev"
+      "status": "on"
     },
     "n8n-ai": {
       "id": "n8n-ai",
@@ -1025,7 +1054,7 @@
       "vmId": "oci-f-micro_1",
       "driver": "bridge",
       "subnet": "172.20.0.0/24",
-      "purpose": "Mail services (Stalwart)"
+      "purpose": "Mail services (Mailu)"
     },
     "matomo_network": {
       "vmId": "oci-f-micro_2",
@@ -1057,7 +1086,7 @@
       {"port": 22, "protocol": "TCP", "service": "SSH", "direction": "ingress"},
       {"port": 587, "protocol": "TCP", "service": "SMTP Submission", "direction": "ingress"},
       {"port": 993, "protocol": "TCP", "service": "IMAPS", "direction": "ingress"},
-      {"port": 8080, "protocol": "TCP", "service": "Stalwart Admin", "direction": "ingress"}
+      {"port": 443, "protocol": "TCP", "service": "Mailu (HTTPS)", "direction": "ingress"}
     ],
     "oci-f-micro_2": [
       {"port": 22, "protocol": "TCP", "service": "SSH", "direction": "ingress"},
@@ -1086,7 +1115,7 @@
       {"port": 5000, "protocol": "TCP", "service": "Flask API", "direction": "internal"},
       {"port": 7681, "protocol": "TCP", "service": "Web Terminal", "direction": "internal"},
       {"port": 6379, "protocol": "TCP", "service": "Redis", "direction": "internal"},
-      {"port": 8080, "protocol": "TCP", "service": "PhotoView", "direction": "internal"}
+      {"port": 2342, "protocol": "TCP", "service": "Photoprism", "direction": "internal"}
     ]
   },
   "quickCommands": {

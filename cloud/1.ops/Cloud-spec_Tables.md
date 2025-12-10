@@ -67,27 +67,37 @@ cloud_dash.json
 
 
 # Services
-## Cards
+## Cards (Users view vs Devs View)
 
-- Front
-    User
-    - Vault
-    - Photos
-    - Mail
-    - Sync
-    - VPN
+- Users
+    - AI
+        - AI CLI app
+        - AI Web Chat
 
-    Coder
-    - Web IDE (OS_Shell|Flask)
-    - Gitlab
-    - Analytics
+    - User
+        - Productivity
+            - Photos
+            - Mail
+            - Drive
+            - Dashboard
+        - Security
+            - Vault
+            - VPN+DNS (Encrypted)
+            -
 
-    AI
-    - AI WebChat
-    - AI CLI
+    - Coder
+        - SSH
+            - SSH App (application with TUI and with list of all SSH addesess and important commands)
+            - SSH Web (Terminal (SSH App in Web)
+        - WEB
+            - VNC GUI (GUI for the VMS that have a GUI)
+            - VScode with VPN to the servers
+        - Dash
+            - Cloud Dashboard Web (Services, Architeture Plan, Monitoring... works trogh API)
+            - Cloud Dash App (the html+phyton that generates the json.js files and have the teh full json with it)
 
 
-- Back
+- Devs
     Root
     - Cloud Providers (CLI SSH)
         - OCloud-Management
@@ -129,10 +139,10 @@ cloud_dash.json
         - cache-app
 
     - Proxies (Web and SSH)
-        - npm-gcloud (SINGLE CENTRAL)
-        - npm-gcloud (SINGLE CENTRAL)
-        - npm-gcloud (on hold)
-        - npm-gcloud
+        - npm-gcloud-app
+        - O2auth-app
+        - Authelia-app
+
 
 
 
@@ -195,9 +205,12 @@ cloud_dash.json
 |  | ↳ sync-index-db | - | 100-500 MB | - | File metadata index |
 |  | ↳ sync-files-db | - | ~100 GB | - | Synced files storage |
 |  | ↳ sync-obj-db | - | ~5 GB | - | Object/blob storage |
-| on | **mail** | **100-230 MB** | **5-50 GB** | **1-10 GB/mo** | Stalwart Email (Cloudflare routing) |
-|  | ↳ mail-app (Stalwart) | 100-200 MB | 100-500 MB | 1-10 GB/mo | Rust mail server |
-|  | ↳ mail-db (RocksDB) | 8-32 MB | 5-50 GB | - | Embedded RocksDB |
+| on | **mail** | **300-500 MB** | **5-50 GB** | **1-10 GB/mo** | Mailu Email Suite (Cloudflare routing) |
+|  | ↳ mailu-front | 50-100 MB | 50 MB | 1-10 GB/mo | Nginx reverse proxy |
+|  | ↳ mailu-admin | 100-150 MB | 100 MB | - | Admin interface |
+|  | ↳ mailu-imap | 50-100 MB | 5-50 GB | - | Dovecot IMAP |
+|  | ↳ mailu-smtp | 50-100 MB | 100 MB | - | Postfix SMTP |
+|  | ↳ mailu-webmail | 50-100 MB | 50 MB | - | Roundcube webmail |
 | dev | **vpn** | **64-128 MB** | **50-100 MB** | **5-50 GB/mo** | OpenVPN server |
 |  | ↳ vpn-app | 64-128 MB | 50-100 MB | 5-50 GB/mo | Client configs + certs |
 
@@ -213,12 +226,9 @@ cloud_dash.json
 | on | **cloud** | **64-128 MB** | **55-105 MB** | **150-700 MB/mo** | Cloud Dashboard |
 |  | ↳ cloud-app | - | ~5 MB | 50-200 MB/mo | Static HTML/CSS/JS |
 |  | ↳ flask-app | 64-128 MB | 50-100 MB | 100-500 MB/mo | Flask Web Server |
-| dev | **photos** | **150-350 MB** | **200-500 MB** | **100-500 MB/mo** | Photo library management |
-|  | ↳ photoview-app | 100-150 MB | 100-200 MB | 50-300 MB/mo | Lightweight photo viewer (Phase 1) |
-|  | ↳ photoprism-app | - | - | - | Full-featured viewer (Phase 2) |
-|  | ↳ immich-app | - | - | - | Feature-rich viewer no ML (Phase 2) |
+| on | **photos** | **200-400 MB** | **200-500 MB** | **100-500 MB/mo** | Photo library management |
+|  | ↳ photoprism-app | 150-300 MB | 100-300 MB | 50-300 MB/mo | Photo viewer (Photoprism) |
 |  | ↳ photos-db | 50-200 MB | 100-300 MB | - | PostgreSQL metadata (EXIF, location, AI results) |
-|  | ↳ photos-webhook | - | <5 MB | - | Python S3 event processor (triggered only) |
 | on | **analytics** | **512 MB-1 GB** | **3-15 GB** | **500 MB-2 GB/mo** | Matomo Analytics platform |
 |  | ↳ matomo-app | 256-512 MB | 2-5 GB | 500 MB-2 GB/mo | PHP FPM Alpine |
 |  | ↳ matomo-db | 256-512 MB | 1-10 GB | - | MariaDB - grows with data |
@@ -253,7 +263,7 @@ Totals
 | on | oci-f-micro_1 | 24/7 | mail-app, mail-db, npm-gcloud (SINGLE CENTRAL)
 | on | oci-f-micro_2 | 24/7 | matomo-app, matomo-db, npm-gcloud (SINGLE CENTRAL)
 | on | gcp-f-micro_1 | 24/7 | npm-gcloud, authelia, authelia-redis | ~160-320 MB | ~150-600 MB | ~5-20 GB/mo | $0 (Free) |
-| **wake** | **oci-p-flex_1** | **Wake-on-Demand** | n8n-infra-app, sync-app, cloud-app, flask-app, photoview-app, photos-db, photoprism-app*, immich-app*, git-app, vpn-app, terminal-app, cache-app | ~1.5-3.2 GB | ~20-200 GB | ~20-100 GB/mo | **$5.50/mo** |
+| **wake** | **oci-p-flex_1** | **Wake-on-Demand** | n8n-infra-app, sync-app, cloud-app, flask-app, photoprism-app, git-app, vpn-app, terminal-app, cache-app | ~1.5-3.2 GB | ~20-200 GB | ~20-100 GB/mo | **$5.50/mo** |
 | hold | oci-f-arm_1 | Hold | n8n-ai-app, n8n-ai-db, npm-gcloud (on hold)
 | tbd | generic-vps | TBD | Variable services | ~1-4 GB | ~20-100 GB | ~10-50 GB/mo | TBD |
 |--------|---------|--------------|----------|-----------|---------------|-----------------|------|
@@ -272,13 +282,12 @@ Totals
 
 | Service | RAM | Storage | Bandwidth | Status |
 |---------|-----|---------|-----------|--------|
-| mail-app (Stalwart) | 100-200 MB | 100-500 MB | 1-10 GB/mo | on |
-| mail-db (RocksDB) | 8-32 MB | 5-50 GB | - | on |
+| mailu (all containers) | 300-500 MB | 5-50 GB | 1-10 GB/mo | on |
 | npm-gcloud (SINGLE CENTRAL)
 | **TOTAL** | **~240-490 MB** | **~5-51 GB** | **~6-30 GB/mo** | |
 | **Capacity Check** | **24-49%** | **11-108%** | - | **OK** |
 
-> **Note:** Stalwart uses ~100-200MB RAM (vs 512MB-1GB for docker-mailserver). VM has headroom.
+> **Note:** Mailu uses ~300-500MB RAM across all containers. VM is near capacity.
 
 ---
 
@@ -328,8 +337,7 @@ Totals
 | vpn-app | 64-128 MB | 50-100 MB | 5-50 GB/mo | dev |
 | terminal-app | 64-128 MB | 50-100 MB | 500 MB-2 GB/mo | dev |
 | cache-app | 64-256 MB | 100 MB-1 GB | - | dev |
-| photoview-app | 100-150 MB | 100-200 MB | 50-300 MB/mo | dev |
-| photos-db | 50-200 MB | 100-300 MB | - | dev |
+| photoprism-app | 256-512 MB | 200-500 MB | 100-500 MB/mo | on |
 | **TOTAL** | **~1.2-2.6 GB** | **~117-125 GB** | **~19-118 GB/mo** | |
 | **Capacity Check** | **11-25%** | **117-125%** | - | **STORAGE LIMIT** |
 
@@ -416,7 +424,7 @@ In the Srcipt:
 | Mode | Service | IP:port | URL | SSH | RAM | Storage | Status |
 |------|---------|---------|-----|-----|-----|---------|--------|
 | on | **sync-app** | 84.235.234.87:8384 | sync.diegonmarcos.com | ssh ubuntu@84.235.234.87 | 128-256 MB | 5-106 GB | on |
-| on | **mail-app (Stalwart)** | 130.110.251.193:587,993,8080 | mail.diegonmarcos.com | ssh ubuntu@130.110.251.193 | 100-200 MB | 5-50 GB | on (Cloudflare routing) |
+| on | **mailu (mail suite)** | 130.110.251.193:25,587,993,443 | mail.diegonmarcos.com | ssh ubuntu@130.110.251.193 | 300-500 MB | 5-50 GB | on (Cloudflare routing) |
 | dev | **vpn-app** | 84.235.234.87:1194 | - | ssh ubuntu@84.235.234.87 | 64-128 MB | 50-100 MB | dev |
 
 ##### Coder Services
@@ -427,7 +435,7 @@ In the Srcipt:
 | dev | **git-app** | 84.235.234.87:3000 | git.diegonmarcos.com | ssh ubuntu@84.235.234.87 | 264-544 MB | 11-15 GB | dev |
 | on | **matomo-app** | 129.151.228.66:8080 | analytics.diegonmarcos.com | ssh ubuntu@129.151.228.66 | 512 MB-1 GB | 3-15 GB | on |
 | on | **cloud-app** | 84.235.234.87:80 | cloud.diegonmarcos.com | ssh ubuntu@84.235.234.87 | - | ~5 MB | on |
-| dev | **photoview-app** | 84.235.234.87:8080 | photos.diegonmarcos.com | ssh ubuntu@84.235.234.87 | 100-150 MB | 100-200 MB | dev |
+| on | **photoprism-app** | 84.235.234.87:2342 | photos.diegonmarcos.com | ssh ubuntu@84.235.234.87 | 256-512 MB | 200-500 MB | on |
 
 ##### Infra Services
 
@@ -453,10 +461,10 @@ In the Srcipt:
 
 | Mode | VM | IP | SSH | Services | RAM | Storage | Status |
 |------|----|----|-----|----------|-----|---------|--------|
-| on | oci-f-micro_1 | 130.110.251.193 | ssh ubuntu@130.110.251.193 | mail-app (Stalwart), mail-db, npm | 240-490 MB | 5-51 GB | on |
+| on | oci-f-micro_1 | 130.110.251.193 | ssh ubuntu@130.110.251.193 | mailu (8 containers) | 300-500 MB | 5-51 GB | on |
 | on | oci-f-micro_2 | 129.151.228.66 | ssh ubuntu@129.151.228.66 | matomo-app, matomo-db, npm-gcloud (SINGLE CENTRAL)
 | on | gcp-f-micro_1 | 34.55.55.234 | gcloud compute ssh arch-1 --zone us-central1-a | npm-gcloud, authelia, authelia-redis | 160-320 MB | 150-600 MB | on |
-| wake | oci-p-flex_1 | 84.235.234.87 | ssh ubuntu@84.235.234.87 | n8n-infra-app, sync-app, cloud-app, flask-app, photoview-app, photos-db, git-app, vpn-app, terminal-app, cache-app | 1.2-2.6 GB | 17-130 GB | wake |
+| wake | oci-p-flex_1 | 84.235.234.87 | ssh ubuntu@84.235.234.87 | n8n-infra-app, sync-app, cloud-app, flask-app, photoprism-app, git-app, vpn-app, terminal-app, cache-app | 1.2-2.6 GB | 17-130 GB | wake |
 | hold | oci-f-arm_1 | [pending] | ssh ubuntu@[ARM IP] | n8n-ai-app, n8n-ai-db, npm-gcloud (on hold)
 | tbd | generic-vps-infra | [pending] | - | TBD | 1-4 GB | 20-100 GB | tbd |
 | tbd | generic-vps-ai | [pending] | - | TBD | 8-32 GB | 50-200 GB | tbd |
@@ -483,13 +491,13 @@ graph TD
         subgraph Oracle["Oracle Cloud"]
             OCI_CLI["oci CLI"]
 
-            subgraph VM_Micro1["VM: oci-f-micro_1 (Stalwart Mail)"]
-                OM1_NPM["npm (proxy)"]
+            subgraph VM_Micro1["VM: oci-f-micro_1 (Mailu Mail)"]
                 subgraph OM1_Services["Services"]
-                    OM1_Mail["mail-app (Stalwart)"]
-                end
-                subgraph OM1_Data["Data Stores"]
-                    OM1_MailDB["mail-db (RocksDB)"]
+                    OM1_Front["mailu-front (nginx)"]
+                    OM1_Admin["mailu-admin"]
+                    OM1_IMAP["mailu-imap (dovecot)"]
+                    OM1_SMTP["mailu-smtp (postfix)"]
+                    OM1_Webmail["mailu-webmail (roundcube)"]
                 end
             end
 
@@ -574,12 +582,16 @@ Cloud Infrastructure
 │   ├── Oracle Cloud
 │   │   ├── [CLI] oci
 │   │   │
-│   │   ├── VM: oci-f-micro_1 [on] (Mail Server - Stalwart)
-│   │   │   ├── npm (proxy)
-│   │   │   ├── Services
-│   │   │   │   └── mail-app (Stalwart) [on] ← Cloudflare Email Routing
-│   │   │   └── Data
-│   │   │       └── mail-db (RocksDB) [on]
+│   │   ├── VM: oci-f-micro_1 [on] (Mail Server - Mailu)
+│   │   │   └── Services (8 Mailu containers)
+│   │   │       ├── mailu-front [on] (nginx)
+│   │   │       ├── mailu-admin [on]
+│   │   │       ├── mailu-imap [on] (dovecot)
+│   │   │       ├── mailu-smtp [on] (postfix)
+│   │   │       ├── mailu-webmail [on] (roundcube)
+│   │   │       ├── mailu-antispam [on] (rspamd)
+│   │   │       ├── mailu-fetchmail [on]
+│   │   │       └── mailu-resolver [on]
 │   │   │
 │   │   ├── VM: oci-f-micro_2 [on] (Analytics)
 │   │   │   ├── npm-gcloud (SINGLE CENTRAL)
@@ -648,8 +660,11 @@ Cloud Infrastructure
 | Service ID | Display Name | Category | VM | Docker Network | Availability | Status |
 |------------|--------------|----------|-----|----------------|--------------|--------|
 | **24/7 Services (FREE TIER)** |
-| mail-app | Stalwart Mail | user | oci-f-micro_1 | mail_network | 24/7 | on |
-| mail-db | Stalwart DB (RocksDB) | user | oci-f-micro_1 | mail_network | 24/7 | on |
+| mailu-front | Mailu Nginx Proxy | user | oci-f-micro_1 | mail_network | 24/7 | on |
+| mailu-admin | Mailu Admin | user | oci-f-micro_1 | mail_network | 24/7 | on |
+| mailu-imap | Mailu IMAP (Dovecot) | user | oci-f-micro_1 | mail_network | 24/7 | on |
+| mailu-smtp | Mailu SMTP (Postfix) | user | oci-f-micro_1 | mail_network | 24/7 | on |
+| mailu-webmail | Mailu Webmail (Roundcube) | user | oci-f-micro_1 | mail_network | 24/7 | on |
 | npm-gcloud (SINGLE CENTRAL)
 | matomo-app | Matomo Analytics | coder | oci-f-micro_2 | matomo_network | 24/7 | on |
 | matomo-db | Matomo DB | coder | oci-f-micro_2 | matomo_network | 24/7 | on |
@@ -664,8 +679,7 @@ Cloud Infrastructure
 | vpn-app | OpenVPN | user | oci-p-flex_1 | dev_network | Wake | dev |
 | terminal-app | Web Terminal | coder | oci-p-flex_1 | dev_network | Wake | dev |
 | cache-app | Redis Cache | infra-services | oci-p-flex_1 | dev_network | Wake | dev |
-| photoview-app | PhotoView (Photo Gallery) | coder | oci-p-flex_1 | dev_network | Wake | dev |
-| photos-db | Photos Metadata DB | infra-db | oci-p-flex_1 | dev_network | Wake | dev |
+| photoprism-app | Photoprism (Photo Gallery) | coder | oci-p-flex_1 | dev_network | Wake | on |
 | **Hold Services (ARM - future)** |
 | n8n-ai-app | n8n (AI) | ai | oci-f-arm_1 | ai_network | Hold | hold |
 | npm-gcloud (on hold)
@@ -676,7 +690,7 @@ Cloud Infrastructure
 
 | DB ID | Display Name | Technology | RAM (Independent) | Storage (Typical) | Parent Service | VM | Status |
 |-------|--------------|------------|-------------------|-------------------|----------------|-----|--------|
-| mail-db | Stalwart DB | RocksDB | 8-32 MB | 5-50 GB | mail-app | oci-f-micro_1 | on |
+| mailu-db | Mailu SQLite | SQLite | 8-32 MB | 100-500 MB | mailu | oci-f-micro_1 | on |
 | matomo-db | Matomo DB | MariaDB 11.4 | 256-512 MB | 1-10 GB | matomo-app | oci-f-micro_2 | on |
 | sync-index-db | Sync Index DB | LevelDB (embedded) | Negligible (<5 MB) | 100-500 MB | sync-app | oci-p-flex_1 | on |
 | sync-files-db | Sync Files | File Storage | None (No RAM) | ~100 GB | sync-app | oci-p-flex_1 | on |
@@ -686,7 +700,7 @@ Cloud Infrastructure
 | n8n-infra-db | n8n Infra DB | SQLite | 64-128 MB | 500 MB - 2 GB | n8n-infra-app | oci-p-flex_1 | on |
 | n8n-ai-db | n8n AI DB | PostgreSQL | 256-512 MB | 1-10 GB | n8n-ai-app | oci-f-arm_1 | hold |
 | cloud-db | Cloud Dashboard DB | SQLite/PostgreSQL | 8-32 MB | 50-200 MB | cloud-app | oci-p-flex_1 | dev |
-| photos-db | Photos Metadata DB | PostgreSQL | 50-200 MB | 100-300 MB | photoview-app | oci-p-flex_1 | dev |
+| photoprism-db | Photoprism DB | PostgreSQL | 256-512 MB | 1-10 GB | photoprism-app | oci-p-flex_1 | on |
 | cache-app | Redis Cache | Redis (In-Memory) | 64-256 MB | 100 MB - 1 GB | System-wide | oci-p-flex_1 | dev |
 
 ## VM Specifications
@@ -741,13 +755,14 @@ Cloud Infrastructure
 |--------|---------|-----|-----|-----|--------------|--------|
 | **24/7 Services (FREE)** |
 | analytics.diegonmarcos.com | matomo-app | oci-f-micro_2 | 129.151.228.66 | ✓ | 24/7 | on |
-| mail.diegonmarcos.com | mail-app (Stalwart) | oci-f-micro_1 | 130.110.251.193 | ✓ | 24/7 | on (Cloudflare routing) |
+| mail.diegonmarcos.com | Mailu (mail suite) | oci-f-micro_1 | 130.110.251.193 | ✓ | 24/7 | on (Cloudflare routing) |
 | **Wake-on-Demand Services (PAID)** |
 | sync.diegonmarcos.com | sync-app | oci-p-flex_1 | 84.235.234.87 | ✓ | Wake | on |
 | n8n.diegonmarcos.com | n8n-infra-app | oci-p-flex_1 | 84.235.234.87 | ✓ | Wake | on |
 | cloud.diegonmarcos.com | cloud-app | oci-p-flex_1 | 84.235.234.87 | ✓ | Wake | on |
 | git.diegonmarcos.com | git-app | oci-p-flex_1 | 84.235.234.87 | ✓ | Wake | dev |
-| photos.diegonmarcos.com | photoview-app + Authelia 2FA | oci-p-flex_1 | 84.235.234.87 | ✓ | Wake | dev |
+| photos.diegonmarcos.com | Login page (GitHub Pages) | - | diegonmarcos.github.io | ✓ | 24/7 | on |
+| app.gallery.diegonmarcos.com | Photoprism + Authelia 2FA | oci-p-flex_1 | 10.0.0.2:2342 (via WireGuard) | ✓ | Wake | on |
 | **Hold Services** |
 | ai.diegonmarcos.com | n8n-ai-app | oci-f-arm_1 | [pending] | ✓ | Hold | hold |
 
@@ -769,10 +784,10 @@ Cloud Infrastructure
 | vpn-app | 1194 | 1194 | UDP | VPN tunnel |
 | mail-app | 587 | 587 | TCP | SMTP Submission |
 | mail-app | 993 | 993 | TCP | IMAPS |
-| mail-app | 8080 | 8080 | TCP | Stalwart Admin |
+| mailu-admin | 8080 | 443 (via mailu-front) | TCP | Mailu Admin Panel |
 | cache-app | 6379 | - | TCP | Internal only |
 | flask-app | 5000 | - | TCP | Internal only |
-| photoview-app | 8080 | 443 (via NPM) | HTTPS | Photo gallery with Authelia auth |
+| photoprism-app | 2342 | 443 (via NPM+WireGuard) | HTTPS | Photo gallery at app.gallery.diegonmarcos.com with Authelia 2FA |
 | authelia | 9091 | 127.0.0.1:9091 | HTTP | 2FA auth server (internal only) |
 | authelia-redis | 6379 | 127.0.0.1:6379 | TCP | Session store (internal only) |
 
@@ -786,11 +801,11 @@ Cloud Infrastructure
 | n8n-infra-app | n8nio/n8n | latest |
 | n8n-ai-app | n8nio/n8n | latest |
 | git-app | gitea/gitea | latest |
-| mail-app | stalwartlabs/stalwart | latest |
+| mailu-* | ghcr.io/mailu/* | 2024.06 |
 | vpn-app | kylemanna/openvpn | latest |
 | cache-app | redis | alpine |
 | npm-* | jc21/nginx-proxy-manager | latest |
-| photoview-app | photoview/photoview | latest |
+| photoprism-app | photoprism/photoprism | latest |
 | authelia | authelia/authelia | latest |
 | authelia-redis | redis | alpine |
 
@@ -806,9 +821,9 @@ Cloud Infrastructure
 | Category ID | Name | Description | Services |
 |-------------|------|-------------|----------|
 | user | User Services | End-user productivity | sync-app, mail-app, vpn-app |
-| coder | Coder Services | Developer tools | terminal-app, cloud-app, matomo-app, git-app, photoview-app |
+| coder | Coder Services | Developer tools | terminal-app, cloud-app, matomo-app, git-app, photoprism-app |
 | ai | AI Services | AI and automation | n8n-ai-app |
-| photos | Photo Management | Photo gallery and metadata | photoview-app, photos-db |
+| photos | Photo Management | Photo gallery and metadata | photoprism-app, photoprism-db |
 | infra-proxy | Proxies | Nginx Proxy Managers | npm-gcloud (SINGLE CENTRAL)
 | infra-auth | Authentication | 2FA and auth services | authelia, authelia-redis |
 | infra-db | Databases | Database services | All *-db services |
@@ -1034,13 +1049,13 @@ Browser: https://photos.diegonmarcos.com
          │  WireGuard Tunnel (10.0.0.1 → 10.0.0.2)
          ▼
 ┌─────────────────┐
-│  ORACLE DEV VM  │  10.0.0.2:8080
-│   (PhotoView)   │  Only accessible via WireGuard
+│  ORACLE DEV VM  │  10.0.0.2:2342
+│  (Photoprism)   │  Only accessible via WireGuard
 └─────────────────┘
          │
          ▼
 ┌─────────────────┐
-│  PhotoView UI   │  Auto-login via Lua module
+│  Photoprism UI  │  Auto-login via Lua module
 │  (with 2FA)     │  (credentials injected after Authelia pass)
 └─────────────────┘
 ```

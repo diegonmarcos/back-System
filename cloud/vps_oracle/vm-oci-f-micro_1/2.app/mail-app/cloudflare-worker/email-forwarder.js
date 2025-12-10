@@ -1,68 +1,52 @@
-// Cloudflare Email Worker - Stalwart Primary via HTTP Proxy, Gmail Backup
-// Flow: Internet -> Cloudflare -> Try Stalwart (via SMTP proxy) -> If fail, forward to Gmail
+// Cloudflare Email Worker - Forward to Mailu (Primary) with Google Workspace backup
+// Inbound flow: Internet -> Cloudflare (port 25) -> Worker -> Mailu SMTP Proxy -> Mailu
+// Backup: If Mailu fails, forward to Google Workspace
 
 export default {
   async email(message, env, ctx) {
     const from = message.from;
     const to = message.to;
     console.log(`Email received: ${from} -> ${to}`);
-    console.log(`SMTP_PROXY_URL: ${env.SMTP_PROXY_URL}`);
 
-    let stalwartSuccess = false;
-    let stalwartError = "";
+    // Get raw email content
+    const rawEmail = await new Response(message.raw).text();
 
-    // 1. Try Stalwart FIRST (Primary) via HTTP-to-SMTP proxy
+    // Primary: Forward to Mailu via SMTP proxy
     try {
-      const rawEmail = await new Response(message.raw).text();
-      console.log(`Raw email size: ${rawEmail.length} bytes`);
-
-      // Send to SMTP proxy (runs on VPS behind Cloudflare Tunnel)
-      const proxyResponse = await fetch(env.SMTP_PROXY_URL, {
-        method: "POST",
+      const response = await fetch(env.SMTP_PROXY_URL, {
+        method: 'POST',
         headers: {
-          "X-API-Key": env.SMTP_PROXY_KEY,
-          "Content-Type": "message/rfc822"
+          'Content-Type': 'application/json',
+          'X-Proxy-Key': env.SMTP_PROXY_KEY,
         },
-        body: rawEmail
+        body: JSON.stringify({
+          from: from,
+          to: to,
+          raw: rawEmail,
+        }),
       });
 
-      const responseText = await proxyResponse.text();
-      console.log(`Proxy response: ${proxyResponse.status} - ${responseText}`);
-
-      if (proxyResponse.ok) {
-        try {
-          const result = JSON.parse(responseText);
-          if (result.status === "delivered") {
-            stalwartSuccess = true;
-            console.log(`Stalwart: SUCCESS - Email delivered`);
-          } else {
-            stalwartError = result.error || "Unknown proxy error";
-            console.error(`Stalwart proxy error: ${stalwartError}`);
-          }
-        } catch (parseErr) {
-          stalwartError = `JSON parse error: ${responseText}`;
-          console.error(stalwartError);
-        }
+      if (response.ok) {
+        console.log(`Email delivered to Mailu via SMTP proxy`);
+        return; // Success - don't need backup
       } else {
-        stalwartError = `HTTP ${proxyResponse.status}: ${responseText}`;
-        console.error(`Stalwart proxy HTTP error: ${stalwartError}`);
+        console.error(`SMTP proxy error: ${response.status} ${await response.text()}`);
       }
     } catch (e) {
-      stalwartError = e.message;
-      console.error(`Stalwart fetch error: ${e.message}`);
+      console.error(`SMTP proxy failed: ${e.message}`);
     }
 
-    // 2. If Stalwart failed, forward to Gmail (Backup)
-    if (!stalwartSuccess) {
-      console.log(`Stalwart failed, trying Gmail backup: ${env.GMAIL_BACKUP}`);
+    // Backup: Forward to Google Workspace (only if primary fails)
+    if (env.BACKUP_EMAIL) {
       try {
-        await message.forward(env.GMAIL_BACKUP);
-        console.log(`Gmail BACKUP: Email forwarded successfully`);
+        await message.forward(env.BACKUP_EMAIL);
+        console.log(`Email forwarded to backup: ${env.BACKUP_EMAIL}`);
       } catch (e) {
-        console.error(`Gmail backup failed: ${e.message}`);
-        // Last resort: reject so sender knows delivery failed
-        message.setReject(`Delivery failed: ${stalwartError || e.message}`);
+        console.error(`Backup forward failed: ${e.message}`);
+        message.setReject(`Delivery failed: ${e.message}`);
       }
+    } else {
+      message.setReject(`Primary delivery failed and no backup configured`);
     }
   }
 };

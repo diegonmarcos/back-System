@@ -95,7 +95,7 @@ const CONFIG = {
         "monthly": 0,
         "currency": "USD"
       },
-      "notes": "Stalwart Mail Server - 24/7 FREE"
+      "notes": "Mailu Mail Suite (8 containers) - 24/7 FREE"
     },
     "oci-f-micro_2": {
       "id": "oci-f-micro_2",
@@ -516,7 +516,7 @@ const CONFIG = {
     "mail": {
       "id": "mail",
       "name": "mail",
-      "displayName": "Stalwart Mail",
+      "displayName": "Mailu Mail Suite",
       "category": "user-productivity",
       "vmId": "oci-f-micro_1",
       "childServices": [
@@ -551,7 +551,7 @@ const CONFIG = {
     "mail-app": {
       "id": "mail-app",
       "name": "mail-app",
-      "displayName": "Stalwart Server",
+      "displayName": "Mailu SMTP (Postfix)",
       "parentService": "mail",
       "category": "user",
       "vmId": "oci-f-micro_1",
@@ -563,7 +563,7 @@ const CONFIG = {
         }
       },
       "technology": {
-        "image": "stalwartlabs/stalwart",
+        "image": "ghcr.io/mailu/postfix",
         "version": "latest"
       },
       "status": "on"
@@ -571,7 +571,7 @@ const CONFIG = {
     "mail-db": {
       "id": "mail-db",
       "name": "mail-db",
-      "displayName": "Stalwart DB",
+      "displayName": "Mailu Data",
       "parentService": "mail",
       "category": "infra-db",
       "vmId": "oci-f-micro_1",
@@ -1433,7 +1433,7 @@ const CONFIG = {
       "vmId": "oci-f-micro_1",
       "driver": "bridge",
       "subnet": "172.20.0.0/24",
-      "purpose": "Mail services (Stalwart)"
+      "purpose": "Mail services (Mailu)"
     },
     "matomo_network": {
       "vmId": "oci-f-micro_2",
@@ -1483,7 +1483,7 @@ const CONFIG = {
       {
         "port": 8080,
         "protocol": "TCP",
-        "service": "Stalwart Admin",
+        "service": "Mailu HTTPS",
         "direction": "ingress"
       }
     ],
@@ -1625,9 +1625,9 @@ const CONFIG = {
         "direction": "internal"
       },
       {
-        "port": 8080,
+        "port": 2342,
         "protocol": "TCP",
-        "service": "PhotoView",
+        "service": "Photoprism",
         "direction": "internal"
       }
     ]
