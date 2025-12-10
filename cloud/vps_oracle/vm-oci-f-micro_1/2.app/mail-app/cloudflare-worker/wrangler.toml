@@ -9,10 +9,9 @@ account_id = "e5cb0a0c6f448e54f217de484259f0ae"
 
 # Environment variables
 [vars]
-# SMTP Proxy URL - subdomain pointing to VPS on port 8443 (Cloudflare-supported HTTPS port)
-# Create DNS record: smtp.diegonmarcos.com -> 130.110.251.193 (proxied, orange cloud)
-SMTP_PROXY_URL = "https://smtp-proxy.diegonmarcos.com/"
+# SMTP Proxy URL - direct connection to mail server SMTP proxy on port 8088
+SMTP_PROXY_URL = "http://mailserver.diegonmarcos.com:8088/"
 SMTP_PROXY_KEY = "stalwart-proxy-key-2025"
-# Gmail backup - use diegonmarcos@gmail.com to avoid Worker loop
-# me@diegonmarcos.com would trigger the same Worker again
-GMAIL_BACKUP = "diegonmarcos@gmail.com"
+# Backup email (Google Workspace) - only used if primary Mailu delivery fails
+# Note: Cannot use me@diegonmarcos.com as backup - would trigger Worker loop
+BACKUP_EMAIL = ""
