@@ -33,7 +33,7 @@
 ### Active Services
 | Service ID | Display Name | URL | Status |
 |------------|--------------|-----|--------|
-| photoprism-app | Photo Gallery (with 2FA) | https://photos.diegonmarcos.com | on |
+| photoprism-app | Photo Gallery (with 2FA) | https://photos.diegonmarcos.com/photoprism | on |
 | matomo-app | Matomo Analytics | https://analytics.diegonmarcos.com | on |
 | sync-app | Syncthing | https://sync.diegonmarcos.com | on |
 | n8n-infra-app | n8n (Infra) | https://n8n.diegonmarcos.com | on |
@@ -887,7 +887,7 @@ Browser: https://photos.diegonmarcos.com
          │
          ▼
 ┌─────────────────┐
-│  REDIRECT 302   │  → https://auth.diegonmarcos.com/?rd=https://photos.diegonmarcos.com
+│  REDIRECT 302   │  → https://auth.diegonmarcos.com/authelia/?rd=https://photos.diegonmarcos.com
 └────────┬────────┘
          │
          ▼
@@ -900,7 +900,7 @@ Browser: https://photos.diegonmarcos.com
          │
          ▼
 ┌─────────────────┐
-│  REDIRECT 302   │  → https://photos.diegonmarcos.com (original URL)
+│  REDIRECT 302   │  → https://photos.diegonmarcos.com/photoprism (original URL)
 └────────┬────────┘
          │
          ▼
@@ -992,7 +992,7 @@ location = /authelia-verify {
 
 location /photoprism {
     auth_request /authelia-verify;
-    error_page 401 =302 https://auth.diegonmarcos.com/?rd=$scheme://$http_host$request_uri;
+    error_page 401 =302 https://auth.diegonmarcos.com/authelia/?rd=$scheme://$http_host$request_uri;
 
     # Rewrite /photoprism to / for backend
     rewrite ^/photoprism(/.*)$ $1 break;
