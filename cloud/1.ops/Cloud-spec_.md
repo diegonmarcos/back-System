@@ -33,7 +33,7 @@
 ### Active Services
 | Service ID | Display Name | URL | Status |
 |------------|--------------|-----|--------|
-| photoprism-app | Photo Gallery (with 2FA) | https://photos.diegonmarcos.com/photoprism | on |
+| photoprism-app | Photo Gallery (with 2FA) | https://photos.diegonmarcos.com | on |
 | matomo-app | Matomo Analytics | https://analytics.diegonmarcos.com | on |
 | sync-app | Syncthing | https://sync.diegonmarcos.com | on |
 | n8n-infra-app | n8n (Infra) | https://n8n.diegonmarcos.com | on |
@@ -797,7 +797,7 @@ When services span multiple VMs (e.g., NPM on GCP, Photoprism on Oracle), direct
 ```
 WITHOUT WireGuard (INSECURE):
 ──────────────────────────────
-User → photos.diegonmarcos.com/photoprism → GCP:443 → NPM → Authelia 2FA ✓
+User → photos.diegonmarcos.com → GCP:443 → NPM → Authelia 2FA ✓
 User → 84.235.234.87:2342 → Photoprism directly (BYPASSES 2FA!) ✗
 
 WITH WireGuard (SECURE):
@@ -859,7 +859,7 @@ Authelia provides TOTP-based 2FA for services that don't have native authenticat
 │                            REQUEST FLOW                                      │
 └─────────────────────────────────────────────────────────────────────────────┘
 
-Browser: https://photos.diegonmarcos.com/photoprism
+Browser: https://photos.diegonmarcos.com
          │
          ▼
 ┌─────────────────┐
@@ -887,7 +887,7 @@ Browser: https://photos.diegonmarcos.com/photoprism
          │
          ▼
 ┌─────────────────┐
-│  REDIRECT 302   │  → https://auth.diegonmarcos.com/?rd=https://photos.diegonmarcos.com/photoprism
+│  REDIRECT 302   │  → https://auth.diegonmarcos.com/?rd=https://photos.diegonmarcos.com
 └────────┬────────┘
          │
          ▼
@@ -900,7 +900,7 @@ Browser: https://photos.diegonmarcos.com/photoprism
          │
          ▼
 ┌─────────────────┐
-│  REDIRECT 302   │  → https://photos.diegonmarcos.com/photoprism (original URL)
+│  REDIRECT 302   │  → https://photos.diegonmarcos.com (original URL)
 └────────┬────────┘
          │
          ▼
@@ -963,13 +963,13 @@ Browser: https://photos.diegonmarcos.com/photoprism
 
 **Flow Summary**:
 ```
-1. User → photos.diegonmarcos.com/photoprism
+1. User → photos.diegonmarcos.com
 2. NPM → auth_request /authelia-verify
 3. Authelia returns 401 (not authenticated)
 4. NPM redirects → auth.diegonmarcos.com
 5. User logs in (username + password + TOTP)
 6. Authelia sets session cookie (path: /, domain: diegonmarcos.com)
-7. Redirect back → photos.diegonmarcos.com/photoprism
+7. Redirect back → photos.diegonmarcos.com
 8. NPM → auth_request /authelia-verify → 200 OK
 9. NPM proxies to Photoprism via WireGuard (with path rewrite)
 ```
@@ -1116,7 +1116,7 @@ Some VMs (e.g., `oci-p-flex_1` running Photoprism) are configured to auto-stop a
 │                        WAKE-ON-DEMAND FLOW                                   │
 └─────────────────────────────────────────────────────────────────────────────┘
 
-User visits photos.diegonmarcos.com/photoprism
+User visits photos.diegonmarcos.com
          │
          ▼
 ┌─────────────────┐
