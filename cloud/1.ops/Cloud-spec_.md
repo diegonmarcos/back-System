@@ -33,7 +33,7 @@
 ### Active Services
 | Service ID | Display Name | URL | Status |
 |------------|--------------|-----|--------|
-| photoprism-app | Photo Gallery (with 2FA) | https://photosapp.diegonmarcos.com | on |
+| photoprism-app | Photo Gallery (with 2FA) | https://photos.diegonmarcos.com/photoprism | on |
 | matomo-app | Matomo Analytics | https://analytics.diegonmarcos.com | on |
 | sync-app | Syncthing | https://sync.diegonmarcos.com | on |
 | n8n-infra-app | n8n (Infra) | https://n8n.diegonmarcos.com | on |
@@ -363,9 +363,64 @@ ssh ubuntu@129.151.228.66
 | **Email Routing** | Cloudflare Email Routing → Mailu:587 |
 | **Status** | On |
 
-**Note:** Oracle Cloud blocks Port 25 inbound. Email delivery uses Cloudflare Email Routing:
+**Mail Flow Architecture:**
+
+Oracle Cloud blocks SMTP port 25 both inbound and outbound (anti-spam policy). The workaround uses relay services:
+
 ```
-Internet → Cloudflare (port 25) → Email Worker → Mailu (port 587)
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           INBOUND EMAIL                                  │
+│                                                                          │
+│   sender@gmail.com → me@diegonmarcos.com                                │
+│                                                                          │
+│   ┌──────────────┐      ┌──────────────────┐      ┌──────────────────┐  │
+│   │   Internet   │ ──▶  │   Cloudflare MX  │ ──▶  │   Mailu:587      │  │
+│   │   Port 25    │      │   (Email Worker) │      │   (Submission)   │  │
+│   └──────────────┘      │   route1/2/3.mx  │      │   130.110.251.193│  │
+│                         │   .cloudflare.net│      └──────────────────┘  │
+│                         └──────────────────┘                             │
+│                                                                          │
+│   Cloudflare receives mail on port 25, forwards to Mailu on port 587    │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          OUTBOUND EMAIL                                  │
+│                                                                          │
+│   me@diegonmarcos.com → recipient@gmail.com                             │
+│                                                                          │
+│   ┌──────────────────┐      ┌──────────────────┐      ┌──────────────┐  │
+│   │   Mailu:25       │ ──▶  │   Oracle Email   │ ──▶  │   Internet   │  │
+│   │   (Postfix SMTP) │      │   Delivery (OCI) │      │   Recipient  │  │
+│   │   130.110.251.193│      │   (SMTP Relay)   │      │              │  │
+│   └──────────────────┘      └──────────────────┘      └──────────────┘  │
+│                                                                          │
+│   Mailu relays through Oracle Email Delivery (authenticated relay)      │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Port Usage:**
+
+| Direction | Port | Flow | Purpose |
+|-----------|------|------|---------|
+| **Inbound** | 25→587 | Internet → Cloudflare MX → Mailu | Receiving external mail |
+| **Outbound** | 25→relay | Mailu → Oracle Email Delivery → Internet | Sending external mail |
+| **IMAP** | 993 | Client ↔ Mailu (direct) | Reading mail (TLS) |
+| **Submission** | 587 | Client → Mailu → relay | Sending from mail client |
+| **Webmail** | 443 | Browser → NPM → Mailu Roundcube | Web interface |
+
+**DNS Records:**
+
+```
+MX Records (Inbound):
+  22  route1.mx.cloudflare.net  (primary)
+  85  route2.mx.cloudflare.net  (backup)
+  97  route3.mx.cloudflare.net  (backup)
+
+SPF Record (Outbound authorization):
+  v=spf1 include:_spf.mx.cloudflare.net include:rp.oracleemaildelivery.com ~all
+         ↑ Cloudflare inbound           ↑ Oracle relay outbound
+
+DKIM: mail._domainkey.diegonmarcos.com (RSA 2048-bit)
 ```
 
 #### OS Terminal Web
@@ -742,7 +797,7 @@ When services span multiple VMs (e.g., NPM on GCP, Photoprism on Oracle), direct
 ```
 WITHOUT WireGuard (INSECURE):
 ──────────────────────────────
-User → photosapp.diegonmarcos.com → GCP:443 → NPM → Authelia 2FA ✓
+User → photos.diegonmarcos.com/photoprism → GCP:443 → NPM → Authelia 2FA ✓
 User → 84.235.234.87:2342 → Photoprism directly (BYPASSES 2FA!) ✗
 
 WITH WireGuard (SECURE):
@@ -804,7 +859,7 @@ Authelia provides TOTP-based 2FA for services that don't have native authenticat
 │                            REQUEST FLOW                                      │
 └─────────────────────────────────────────────────────────────────────────────┘
 
-Browser: https://photosapp.diegonmarcos.com
+Browser: https://photos.diegonmarcos.com/photoprism
          │
          ▼
 ┌─────────────────┐
@@ -818,7 +873,7 @@ Browser: https://photosapp.diegonmarcos.com
 │   (NPM Proxy)   │  Nginx Proxy Manager
 └────────┬────────┘
          │
-         │  auth_request /authelia ──────────────┐
+         │  auth_request /authelia-verify ──────────────┐
          │                                       │
          │                                       ▼
          │                            ┌─────────────────┐
@@ -832,7 +887,7 @@ Browser: https://photosapp.diegonmarcos.com
          │
          ▼
 ┌─────────────────┐
-│  REDIRECT 302   │  → https://auth.diegonmarcos.com/?rd=https://photos...
+│  REDIRECT 302   │  → https://auth.diegonmarcos.com/?rd=https://photos.diegonmarcos.com/photoprism
 └────────┬────────┘
          │
          ▼
@@ -841,11 +896,11 @@ Browser: https://photosapp.diegonmarcos.com
 │   (Authelia UI) │
 └────────┬────────┘
          │
-         │  Sets cookie: authelia_session (domain: diegonmarcos.com)
+         │  Sets cookie: authelia_session (domain: diegonmarcos.com, path: /)
          │
          ▼
 ┌─────────────────┐
-│  REDIRECT 302   │  → https://photosapp.diegonmarcos.com (original URL)
+│  REDIRECT 302   │  → https://photos.diegonmarcos.com/photoprism (original URL)
 └────────┬────────┘
          │
          ▼
@@ -854,7 +909,7 @@ Browser: https://photosapp.diegonmarcos.com
 │   (NPM Proxy)   │
 └────────┬────────┘
          │
-         │  auth_request /authelia ──────────────┐
+         │  auth_request /authelia-verify ──────────────┐
          │  (with cookie this time)              │
          │                                       ▼
          │                            ┌─────────────────┐
@@ -908,44 +963,70 @@ Browser: https://photosapp.diegonmarcos.com
 
 **Flow Summary**:
 ```
-1. User → photosapp.diegonmarcos.com
-2. NPM → auth_request to Authelia
+1. User → photos.diegonmarcos.com/photoprism
+2. NPM → auth_request /authelia-verify
 3. Authelia returns 401 (not authenticated)
 4. NPM redirects → auth.diegonmarcos.com
 5. User logs in (username + password + TOTP)
-6. Authelia sets session cookie
-7. Redirect back → photosapp.diegonmarcos.com
-8. NPM → auth_request to Authelia → 200 OK
-9. NPM proxies to Photoprism via WireGuard
+6. Authelia sets session cookie (path: /, domain: diegonmarcos.com)
+7. Redirect back → photos.diegonmarcos.com/photoprism
+8. NPM → auth_request /authelia-verify → 200 OK
+9. NPM proxies to Photoprism via WireGuard (with path rewrite)
 ```
 
 **NPM Advanced Config (per proxy host)**:
 ```nginx
 # Forward authentication to Authelia
-set $upstream_authelia http://authelia:9091/api/verify;
-
-location /authelia {
+location = /authelia-verify {
     internal;
-    proxy_pass $upstream_authelia;
+    proxy_pass http://authelia:9091/api/verify;
     proxy_pass_request_body off;
     proxy_set_header Content-Length "";
-    proxy_set_header X-Original-URL https://$http_host$request_uri;
-    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
+    proxy_set_header X-Forwarded-Proto $scheme;
     proxy_set_header X-Forwarded-Host $http_host;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
 }
 
-auth_request /authelia;
-error_page 401 =302 https://auth.diegonmarcos.com/?rd=https://$http_host$request_uri;
+location /photoprism {
+    auth_request /authelia-verify;
+    error_page 401 =302 https://auth.diegonmarcos.com/?rd=$scheme://$http_host$request_uri;
+
+    # Rewrite /photoprism to / for backend
+    rewrite ^/photoprism(/.*)$ $1 break;
+    rewrite ^/photoprism$ / break;
+
+    proxy_pass http://10.0.0.2:2342;
+    # ... other proxy headers
+}
 ```
 
 **Authelia Configuration**:
 ```yaml
 # /config/authelia_config.yml
+server:
+  address: tcp://0.0.0.0:9091  # No base path
+
+session:
+  name: authelia_session
+  secret: authelia-secret-change-me-in-production
+  cookies:
+    - name: authelia_session
+      domain: diegonmarcos.com
+      authelia_url: https://auth.diegonmarcos.com  # No /authelia base path
+      inactivity: 5m
+      expiration: 1h
+      remember_me: 30d
+
 access_control:
-  default_policy: one_factor
+  default_policy: two_factor
   rules:
-    - domain: photosapp.diegonmarcos.com
-      policy: two_factor  # Requires TOTP
+    - domain: auth.diegonmarcos.com
+      policy: bypass
+    - domain: '*.diegonmarcos.com'
+      policy: two_factor
 
 authentication_backend:
   file:
@@ -954,7 +1035,7 @@ authentication_backend:
 totp:
   issuer: diegonmarcos.com
   period: 30
-  digits: 6
+  skew: 1
 ```
 
 ### 7.12 Network Isolation Strategy
@@ -1035,7 +1116,7 @@ Some VMs (e.g., `oci-p-flex_1` running Photoprism) are configured to auto-stop a
 │                        WAKE-ON-DEMAND FLOW                                   │
 └─────────────────────────────────────────────────────────────────────────────┘
 
-User visits photosapp.diegonmarcos.com
+User visits photos.diegonmarcos.com/photoprism
          │
          ▼
 ┌─────────────────┐
