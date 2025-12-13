@@ -72,14 +72,16 @@ This is a **sub-document** of MASTERPLAN_CLOUD.md, defining the AI-specific infr
 >   - [[#D22) Quick Commands]]
 
 > [!note] X) APPENDIX - Reference Material
-> - **[[#X1) Tech Research]]** - Framework comparisons, model benchmarks
->   - [[#X10) LLM Models]]
->   - [[#X11) GPU Providers]]
->   - [[#X12) Vector DBs]]
->   - [[#X13) Embeddings]]
-> - **[[#X2) Current State]]** - Today's running state
->   - [[#X20) Status]]
->   - [[#X21) Quick Ref]]
+> - **[[#X0) Code Practices]]** - TypeScript, Svelte 5, Vue 3, SCSS standards
+> - **[[#X1) System OS Practices]]** - Poetry, Flatpak, Nix, dotfiles
+> - **[[#X2) Tech Research]]** - Framework comparisons, model benchmarks
+>   - [[#X20) LLM Models]]
+>   - [[#X21) GPU Providers]]
+>   - [[#X22) Vector DBs]]
+>   - [[#X23) Embeddings]]
+> - **[[#X3) Current State]]** - Today's running state
+>   - [[#X30) Status]]
+>   - [[#X31) Quick Ref]]
 
 **Connection to MASTERPLAN_CLOUD:**
 ```
@@ -560,11 +562,237 @@ flowchart TB
 
 
 
-## X1) Tech Research
+## X0) Code Practices
+
+> **Source:** `/front-Github_io/1.ops/30_Code_Practise.md`
+
+### X00) Tech Stack & Environment
+
+- **Framework:** SvelteKit (Svelte 5 Runes Mode) / Vue 3 (Composition API)
+- **Language:** TypeScript (Strict Mode)
+- **Styling:** SCSS (Sass) with "Golden Mixins"
+- **Analytics:** Matomo (Self-Hosted) via custom component
+- **Rendering:** Hybrid (SSR + SPA Client-Side Navigation)
+
+### X01) Svelte 5 & TypeScript Rules
+
+**CRITICAL:** Do NOT use Svelte 4 syntax.
+
+```
+Props     → let { propName }: { propName: Type } = $props();   // NEVER use export let
+State     → let count = $state(0);                              // NEVER use let var = val
+Computed  → let doubled = $derived(count * 2);                  // NEVER use $: var = val
+Effects   → $effect(() => { ... });                             // NEVER use onMount for reactive
+Events    → onclick, oninput                                    // NEVER use on:click
+```
+
+**Typing:**
+- Always import `PageData` and `PageServerLoad` from `./$types`
+- Use `HTMLInputElement`, `HTMLButtonElement`, etc., for DOM refs
+
+### X02) Vue 3 Rules
+
+**Always use Composition API with `<script setup lang="ts">`**
+
+```typescript
+// Props - use generic type syntax
+defineProps<{ id: number; name: string }>()
+
+// Refs - explicit types for nullable
+const user = ref<User | null>(null)
+
+// Emits - typed
+defineEmits<{ (e: 'update', id: number): void }>()
+```
+
+### X03) HTML & Accessibility
+
+**Goal:** Semantic, accessible, and clean HTML.
+
+- **No Div Soup:**
+  - ❌ `div class="nav"` → ✅ `<nav>`
+  - ❌ `div class="card"` → ✅ `<article class="card">`
+  - ❌ `div class="footer"` → ✅ `<footer>`
+- **Buttons vs Links:**
+  - Use `<a href="...">` ONLY for navigation (changing URLs)
+  - Use `<button type="button">` for actions (toggles, modals, API calls)
+- **Forms:** Every `<input>` must have a linked `<label>` (via `for` attribute or wrapping)
+- **Images:** All `<img>` tags MUST have an `alt` attribute
+
+### X04) SCSS & Styling Rules (Golden Mixins)
+
+**Goal:** Consistent, mobile-first responsive design.
+
+**Global Logic:**
+- Use **Flexbox** or **Grid** for all layouts
+- **FORBIDDEN:** `float`, `clear`, or `position: absolute` (unless for UI overlays)
+- Use `rem` for spacing/fonts, `%` for widths
+
+**The Golden Mixins:**
+```scss
+// Breakpoints (Mobile-first)
+$breakpoints: ('sm': 480px, 'md': 768px, 'lg': 1024px, 'xl': 1280px);
+@mixin mq($size) {
+  @media (min-width: map-get($breakpoints, $size)) { @content; }
+}
+
+// Flexbox
+@mixin flex-center { display: flex; justify-content: center; align-items: center; }
+@mixin flex-row($justify: flex-start, $align: stretch, $gap: 0) {
+  display: flex; flex-direction: row; justify-content: $justify;
+  align-items: $align; gap: $gap; flex-wrap: wrap;
+}
+@mixin flex-col($justify: flex-start, $align: stretch, $gap: 0) {
+  display: flex; flex-direction: column; justify-content: $justify;
+  align-items: $align; gap: $gap;
+}
+
+// CSS Grid
+@mixin grid-auto-fit($min-size: 250px, $gap: 1rem) {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax($min-size, 1fr)); gap: $gap;
+}
+```
+
+### X05) TypeScript Rules (Vanilla)
+
+**Strict Null Checks for DOM:**
+```typescript
+// ❌ Bad - Object is possibly null
+document.querySelector('.btn').addEventListener(...)
+
+// ✅ Good - Check null, cast type
+const btn = document.querySelector('.btn') as HTMLButtonElement;
+if (btn) { btn.addEventListener('click', handler); }
+```
+
+**Rules:**
+- **Strict Mode:** No `any`, handle `null`/`undefined`
+- **Explicit Casting:** Cast to specific type (`HTMLInputElement` not `HTMLElement`)
+- **ES Modules:** Use `import`/`export`, no global variables
+
+### X06) Analytics (Matomo SPA Tracking)
+
+**Problem:** In SPA, page doesn't reload - analytics won't track navigation.
+
+**Solution:** Hook into router's navigation event.
+
+```svelte
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { page } from '$app/stores';
+  import { afterNavigate } from '$app/navigation';
+  import { browser } from '$app/environment';
+
+  function track(action: any[]) {
+    if (browser && window._paq) { window._paq.push(action); }
+  }
+
+  // Initial load
+  onMount(() => {
+    window._paq = window._paq || [];
+    track(['trackPageView']);
+  });
+
+  // SPA navigation
+  afterNavigate((navigation) => {
+    if (navigation.type === 'enter') return;
+    track(['setCustomUrl', $page.url.href]);
+    track(['setDocumentTitle', document.title]);
+    track(['trackPageView']);
+  });
+</script>
+```
+
+---
+
+## X1) System OS Practices
+
+> System-level package management, app installation, and environment standards.
+
+### X10) Package Management
+
+**MANDATORY:** Use the right tool for each package type.
+
+```
+Package Type        | Tool      | Why                                    | Example
+────────────────────┼───────────┼────────────────────────────────────────┼─────────────────────────
+Python Packages     | Poetry    | Dependency isolation, lock files       | poetry add requests
+Python CLI Tools    | pipx      | Isolated environments for CLI apps     | pipx install black
+Node.js Packages    | npm/pnpm  | Per-project node_modules               | npm install
+Node.js Version     | nvm       | Multiple Node versions                 | nvm use 20
+GUI Applications    | Flatpak   | Sandboxed, distro-agnostic             | flatpak install flathub org.gimp.GIMP
+CLI Tools           | Nix       | Reproducible, declarative              | nix-env -iA nixpkgs.ripgrep
+System Packages     | pacman    | Arch Linux system packages             | pacman -S base-devel
+```
+
+### X11) Python Environment
+
+**Poetry is MANDATORY for all Python projects.**
+
+```bash
+# Project setup
+poetry new myproject          # New project
+poetry init                   # Existing project
+poetry add requests           # Add dependency
+poetry add --dev pytest       # Add dev dependency
+poetry install                # Install from lock file
+poetry shell                  # Activate venv
+poetry run python script.py   # Run in venv
+
+# Global CLI tools (NOT Poetry)
+pipx install black            # Code formatter
+pipx install ruff             # Linter
+pipx install pre-commit       # Git hooks
+```
+
+### X12) Node.js Environment
+
+**nvm is MANDATORY for Node.js version management.**
+
+```bash
+# Version management
+nvm install 20                # Install Node 20
+nvm use 20                    # Use Node 20
+nvm alias default 20          # Set default
+
+# Per-project version (.nvmrc)
+echo "20" > .nvmrc
+nvm use                       # Reads .nvmrc
+```
+
+### X13) Application Installation
+
+**Flatpak for GUI apps, Nix for CLI tools.**
+
+```bash
+# GUI Apps → Flatpak (sandboxed, auto-updates)
+flatpak install flathub com.obsidian.Obsidian
+flatpak install flathub org.mozilla.firefox
+
+# CLI Tools → Nix (reproducible, declarative)
+nix-env -iA nixpkgs.ripgrep
+nix-env -iA nixpkgs.fd
+nix-env -iA nixpkgs.bat
+```
+
+### X14) Docker Practices
+
+```bash
+# Development
+docker compose up -d          # Start services
+docker compose logs -f        # Follow logs
+docker compose down           # Stop services
+
+# Never run as root inside containers
+```
+
+---
+
+## X2) Tech Research
 
 > Framework comparisons and benchmarks supporting stack choices.
 
-### X10) LLM Models
+### X20) LLM Models
 
 ```
 Name                | Component   | Stack        | Purpose                        | Quality
@@ -576,7 +804,7 @@ CodeLlama           | Code LLM    | 13B Q4 ~9GB  | Code (older)                 
 Qwen 2.5            | General LLM | 7B Q4 ~5GB   | Multilingual                   | ★★★★☆
 ```
 
-### X11) GPU Providers
+### X21) GPU Providers
 
 ```
 Name                | Component   | Stack        | Purpose                        | Cost/hr
@@ -589,7 +817,7 @@ Lambda Labs         | GPU Cloud   | A10G 24GB    | Limited availability         
 
 > **Our choice:** TensorDock (★) - Best price, good EU availability, RTX 4090 24GB.
 
-### X12) Vector DBs
+### X22) Vector DBs
 
 ```
 Name                | Component   | Stack        | Purpose                        | Cost
@@ -603,7 +831,7 @@ Qdrant              | Vector DB   | Self-host    | High performance, Rust       
 
 > **Our choice:** ChromaDB (★) - Built into Open WebUI, no setup needed.
 
-### X13) Embeddings
+### X23) Embeddings
 
 ```
 Name                | Component   | Stack        | Purpose                        | Cost
@@ -623,9 +851,9 @@ Cohere              | Embeddings  | embed-v3     | Multilingual, good quality   
 
 
 
-## X2) Current State
+## X3) Current State
 
-### X20) Status
+### X30) Status
 
 ```
 Name                 | Component            | Stack                    | Status
@@ -653,7 +881,7 @@ data-store           | Data Storage         | VM2 (pgvector)           | tbd
 > - VM1: Open WebUI + Ollama (inference)
 > - VM2: MyAI + Training stack (training)
 
-### X21) Quick Ref
+### X31) Quick Ref
 
 #### VM Access
 
