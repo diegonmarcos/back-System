@@ -8,58 +8,78 @@
 
 ---
 
-## Executive Summary
+# Executive Summary
 
 This is a **sub-document** of MASTERPLAN_CLOUD.md, defining the AI-specific infrastructure.
 **Two independent GPU VMs:** Multi-Model (inference) + MyAI (training) - both pay-per-use.
 
-```
-┌────────────────────────────────────────────────────────────────────────────────────────────┐
-│  A) HANDOFF                        WHAT we're building (AI Infrastructure)                 │
-├────────────────────────────────────────────────────────────────────────────────────────────┤
-│  A0) Products                      - Name, Component, Stack, Purpose                       │
-│      ├── A00) Multi-Model          - Open WebUI + Ollama (VM1: inference)                  │
-│      └── A01) MyAI Platform        - Train & deploy your own models (VM2: training)        │
-│  A1) Infra Services                - Service, Stack and Component Definition               │
-│      ├── A10) Inference            - Ollama (DeepSeek, Llama, Mistral) on VM1              │
-│      ├── A11) RAG & Knowledge      - Built into Open WebUI (VM1)                           │
-│      └── A12) Training             - PyTorch, MLflow on VM2                                │
-│  A2) Infra Resources               - Resource Allocation, Maps/Topology, Costs             │
-│      ├── A20) Resource Alloc       - Two GPU VMs (TensorDock)                              │
-│      │       ├── A200) Resource Estimation       - RAM, Storage, GPU per service           │
-│      │       ├── A201) VM Capacity & Headroom    - Capacity vs Allocated per VM            │
-│      │       ├── A202) Cost Estimation           - $24-$120/mo (pay-per-use)               │
-│      │       └── A203) URL/Port Proxied          - chat + myai URLs                        │
-│      ├── A21) Maps & Topology      - Two VM architecture diagram                           │
-│      └── A22) Costs                - All variable, no fixed costs                          │
-│  A3) Tech Research                 - Framework comparisons, model benchmarks               │
-│      ├── A30) LLM Models           - Model comparisons (size, VRAM, quality)               │
-│      ├── A31) GPU Providers        - Cloud GPU pricing and availability                    │
-│      ├── A32) Vector DBs           - (using Open WebUI built-in ChromaDB)                  │
-│      └── A33) Embeddings           - (using Open WebUI built-in sentence-transformers)     │
-│  A4) Today                         - Current running state                                 │
-│      ├── A40) Status               - Current deployment status                             │
-│      └── A41) Quick Ref            - VM access, service URLs                               │
-├────────────────────────────────────────────────────────────────────────────────────────────┤
-│  B) ARCHITECTURE                   HOW we're building it (Technical Deep Dives)            │
-├────────────────────────────────────────────────────────────────────────────────────────────┤
-│  B1) Model Architecture            - Model routing, RAG pipeline                           │
-│  B2) Training Pipeline             - Data collection → Training → Deployment               │
-│  B3) Infrastructure Architecture   - GPU provisioning, data flow                           │
-├────────────────────────────────────────────────────────────────────────────────────────────┤
-│  C) ROADMAP                        WHEN we're building it (Planning & Prioritization)      │
-├────────────────────────────────────────────────────────────────────────────────────────────┤
-│  C1) Phases                        - Phase 1: Inference → Phase 2: RAG → Phase 3: Training │
-│  C2) Dependencies                  - Service dependency graph                              │
-│  C3) Backlog                       - Prioritized task list                                 │
-├────────────────────────────────────────────────────────────────────────────────────────────┤
-│  D) DEVOPS                         WHO operates it (Operations & Observability)            │
-├────────────────────────────────────────────────────────────────────────────────────────────┤
-│  D1) Dashboard                     - AI services access UI                                 │
-│  D2) Monitoring                    - GPU metrics, cost alerts, health checks               │
-│  D3) Knowledge Center              - Documentation, runbooks, quick commands               │
-└────────────────────────────────────────────────────────────────────────────────────────────┘
-```
+> [!abstract] A) PRODUCTS & INFRA - WHAT we're building
+> - **[[#A0) Products]]** - User-facing AI applications
+>   - [[#A00) Multi-Model Orchestration (VM1: Inference)]]	- openwebui, ollama
+>   - [[#A01) MyAI Platform (VM2: Training)]]	- dashboard, training, mlflow
+> - **[[#A1) Back-Services]]** - Admin & infrastructure
+>   - [[#A10) AI Portal]]	- AI services dashboard
+>   - [[#A11) Operation Dashboards]]	- GPU monitoring, cost alerts
+>   - [[#A12) Infra Services]]	- Backend services
+>     - [[#A120) Inference Services]]	- ollama-app, models (DeepSeek, Llama, Mistral)
+>     - [[#A121) RAG & Knowledge]]	- chromadb, embeddings
+>     - [[#A122) Training Services]]	- pytorch, mlflow-tracking
+>     - [[#A123) MCP System]]	- → MASTERPLAN_CLOUD.md A122
+>   - [[#A13) Infra Resources]]	- VMs, networks & allocation
+>     - [[#A130) Resource Allocation]]
+>       - [[#A1300) Resource Estimation]]
+>       - [[#A1301) VM Capacity & Headroom]]
+>       - [[#A1302) Cost Estimation]]
+>       - [[#A1303) URL/Port Proxied]]
+>     - [[#A131) Maps & Topology]]
+>     - [[#A132) Costs]]
+
+> [!example] B) ARCHITECTURE - HOW to build it
+> - **[[#B0) Model Architecture]]**
+>   - [[#B00) Model Selection & Routing]]
+>   - [[#B01) RAG Architecture]]
+> - **[[#B1) MCP Architecture]]** - → MASTERPLAN_CLOUD.md B04
+> - **[[#B2) Training Pipeline]]**
+>   - [[#B20) MyAI Training Flow]]
+>   - [[#B21) Experiment Tracking (MLflow)]]
+> - **[[#B3) Infrastructure Architecture]]**
+>   - [[#B30) GPU Provisioning]]
+>   - [[#B31) Data Flow]]
+
+> [!tip] C) ROADMAP - WHEN to build it
+> - **[[#C0) Phases - Implementation Milestones]]**
+>   - [[#C00) Phase 1: Basic Inference (PRIORITY)]]
+>   - [[#C01) Phase 2: RAG Integration]]
+>   - [[#C02) Phase 3: Training Infrastructure]]
+>   - [[#C03) Phase 4: Custom Models]]
+>   - [[#C04) Phase 5: MCP System (Parallel Track)]]
+> - **[[#C1) Dependencies - Service Graph]]**
+> - **[[#C2) Backlog - Prioritized Tasks]]**
+>   - [[#C20) High Priority (Now)]]
+>   - [[#C21) Medium Priority (Next)]]
+>   - [[#C22) Low Priority (Later)]]
+>   - [[#C23) Tech Debt]]
+
+> [!info] D) DEVOPS - HOW to operate it
+> - **[[#D0) Dashboard - AI Services Access]]**
+> - **[[#D1) Monitoring - Metrics & Alerts]]**
+>   - [[#D10) GPU Monitoring]]
+>   - [[#D11) Cost Alerts]]
+>   - [[#D12) Health Checks]]
+> - **[[#D2) Knowledge Center]]**
+>   - [[#D20) AI Documentation]]
+>   - [[#D21) Runbooks]]
+>   - [[#D22) Quick Commands]]
+
+> [!note] X) APPENDIX - Reference Material
+> - **[[#X1) Tech Research]]** - Framework comparisons, model benchmarks
+>   - [[#X10) LLM Models]]
+>   - [[#X11) GPU Providers]]
+>   - [[#X12) Vector DBs]]
+>   - [[#X13) Embeddings]]
+> - **[[#X2) Current State]]** - Today's running state
+>   - [[#X20) Status]]
+>   - [[#X21) Quick Ref]]
 
 **Connection to MASTERPLAN_CLOUD:**
 ```
@@ -102,29 +122,22 @@ external-apis            | External Models      | -                   | Pay-per-
 ```
 
 **Architecture (VM1 - Inference):**
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                 VM1: TENSORDOCK-INFERENCE (On-Demand)                 │
-│                       RTX 4090 24GB | $0.35/hr                        │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  Open WebUI (:3000)                                          │    │
-│  │  • Chat interface                                            │    │
-│  │  • Model selector (switch between models)                    │    │
-│  │  • Built-in RAG (upload docs, PDFs, code)                    │    │
-│  │  • Chat history & users                                      │    │
-│  └─────────────────────────┬───────────────────────────────────┘    │
-│                            │                                         │
-│                            ▼                                         │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  Ollama (:11434)                                             │    │
-│  │  • DeepSeek-Coder-v2 14B (code)                              │    │
-│  │  • Llama 3.1 8B (general)                                    │    │
-│  │  • Mistral 7B (fast)                                         │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                                                                      │
-└──────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph VM1["VM1: TENSORDOCK-INFERENCE (On-Demand)<br/>RTX 4090 24GB | $0.35/hr"]
+        subgraph OpenWebUI["Open WebUI :3000"]
+            OW1["Chat interface"]
+            OW2["Model selector"]
+            OW3["Built-in RAG"]
+            OW4["Chat history & users"]
+        end
+        subgraph Ollama["Ollama :11434"]
+            M1["DeepSeek-Coder-v2 14B"]
+            M2["Llama 3.1 8B"]
+            M3["Mistral 7B"]
+        end
+        OpenWebUI --> Ollama
+    end
 ```
 
 **Why Open WebUI:**
@@ -163,35 +176,25 @@ deploy                   | Deployment Layer     | -                   | Your Ser
 ```
 
 **Architecture (VM2 - Training):**
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                  VM2: TENSORDOCK-TRAINING (On-Demand)                 │
-│                       RTX 4090 24GB | $0.35/hr                        │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  MyAI Dashboard (:8080)                                      │    │
-│  │  • Dataset management                                        │    │
-│  │  • Training job launcher                                     │    │
-│  │  • Model deployment UI                                       │    │
-│  └─────────────────────────┬───────────────────────────────────┘    │
-│                            │                                         │
-│                            ▼                                         │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  Training Stack                                              │    │
-│  │  • PyTorch + HuggingFace Transformers                        │    │
-│  │  • LoRA/QLoRA fine-tuning                                    │    │
-│  │  • MLflow (:5001) experiment tracking                        │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                            │                                         │
-│                            ▼                                         │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  Model Serving (after training)                              │    │
-│  │  • Ollama / vLLM for your trained models                     │    │
-│  │  • FastAPI endpoint (:8000)                                  │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                                                                      │
-└──────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph VM2["VM2: TENSORDOCK-TRAINING (On-Demand)<br/>RTX 4090 24GB | $0.35/hr"]
+        subgraph Dashboard["MyAI Dashboard :8080"]
+            D1["Dataset management"]
+            D2["Training job launcher"]
+            D3["Model deployment UI"]
+        end
+        subgraph Training["Training Stack"]
+            T1["PyTorch + HuggingFace"]
+            T2["LoRA/QLoRA fine-tuning"]
+            T3["MLflow :5001"]
+        end
+        subgraph Serving["Model Serving"]
+            S1["Ollama / vLLM"]
+            S2["FastAPI :8000"]
+        end
+        Dashboard --> Training --> Serving
+    end
 ```
 
 **Access Modes:**
@@ -210,11 +213,27 @@ deploy                   | Deployment Layer     | -                   | Your Ser
 
 
 
-## A1) Infra Services (Service, Stack and Component Definition)
+## A1) Back-Services
 
 > **Two independent VMs:** VM1 for inference (A00), VM2 for training (A01).
 
-### A10) Inference Services (VM1: tensordock-inference)
+### A10) AI Portal
+
+> AI services dashboard - access point for all AI infrastructure.
+
+Managed via → `MASTERPLAN_CLOUD.md` A10) Cloud Portal Front
+
+### A11) Operation Dashboards
+
+> GPU monitoring, cost alerts, health checks.
+
+Managed via → `MASTERPLAN_CLOUD.md` A11) Operation Dashboards (A110-A113)
+
+### A12) Infra Services
+
+> Backend services powering the AI products.
+
+#### A120) Inference Services
 
 ```
 Name                     | Component            | Stack               | Purpose
@@ -227,7 +246,7 @@ models (in Ollama)       | Model Library        | -                   | Download
   ↳ mistral-7b           | Fast Model           | 7B Q4 (~5 GB)       | Fast inference
 ```
 
-### A11) RAG & Knowledge (VM1: Built into Open WebUI)
+#### A121) RAG & Knowledge
 
 ```
 Name                     | Component            | Stack               | Purpose
@@ -240,7 +259,7 @@ openwebui-vectordb       | Built-in Vector DB   | ChromaDB            | Vector s
 
 > **Why Open WebUI:** No custom brain-api, brain-db, pgvector, LangChain, collectors needed.
 
-### A12) Training Services (VM2: tensordock-training)
+#### A122) Training Services
 
 ```
 Name                     | Component            | Stack               | Purpose
@@ -255,20 +274,54 @@ training                 | -                    | -                   | Model Fi
 
 ---
 
+#### A123) MCP System
+
+> **MOVED TO:** `MASTERPLAN_CLOUD.md` → A12) DATA & SAFETY → MCP
+> **Architecture:** `MASTERPLAN_CLOUD.md` → B4) MCP Architecture
+>
+> MCPs are AI-agnostic infrastructure that serves ALL AI clients (Claude Code, Claude Desktop, Ollama, future AIs).
+> They belong in MASTERPLAN_CLOUD as core infrastructure, not in this AI-specific document.
+
+**What MCPs Solve:**
+
+```
+Problem                              | MCP Solution                    | Impact
+─────────────────────────────────────┼─────────────────────────────────┼─────────────────────────────────
+46K tokens of masterplans forgotten  | masterplan-rag (semantic search)| Context preserved across sessions
+18 projects hard to navigate         | file-navigator                  | Find any file in <5s
+Cloud commands need SSH              | cloud-cli                       | VM status from Claude directly
+Secrets exposure risk                | secrets-manager                 | Audit-logged paths only
+Build requires leaving Claude        | build-orchestrator              | Build without context switch
+```
+
+**MCP Tools Summary:**
+
+| MCP | Tools Provided | Example Query |
+|-----|----------------|---------------|
+| masterplan-rag | `semantic_search`, `get_section`, `list_sections` | "What's the auth architecture?" |
+| file-navigator | `find_file`, `list_project`, `tree_structure` | "Find all SCSS files in linktree" |
+| git-integration | `get_commit_history`, `search_commits`, `get_blame` | "Who changed Authelia config?" |
+| secrets-manager | `get_ssh_key_path`, `confirm_credential_exists` | "Path to oci-p-flex_1 SSH key" |
+| cloud-cli | `get_vm_status`, `gcloud_exec`, `oci_exec` | "Is oci-p-flex_1 running?" |
+| docker-manager | `list_services`, `get_docker_logs`, `restart_service` | "Show photoprism logs" |
+| build-orchestrator | `build_project`, `build_all`, `list_projects` | "Build linktree for production" |
+
+---
 
 
 
 
 
 
-## A2) Infra Resources
+
+### A13) Infra Resources
 
 > **Philosophy:** Performance-focused, not GUI-pretty.
 
 
-### A20) Resource Allocation
+#### A130) Resource Allocation
 
-#### A200) Resource Estimation
+##### A1300) Resource Estimation
 
 ```
 Service                  | RAM (active) | Storage | GPU (active) | VM
@@ -299,9 +352,9 @@ TOTAL (parallel)         | 17.5 GB      | 94 GB   | 44 GB        | (if both runn
 > - **RAM/GPU (active):** Memory required while service is running
 > - **Storage:** Disk space (persistent)
 > - **TOTAL (parallel):** Capacity needed if both VMs running simultaneously (e.g., dedicated hardware)
-> - For **cost calculations** (hrs × $0.35), see **A202) Cost Estimation**
+> - For **cost calculations** (hrs × $0.35), see **A1302) Cost Estimation**
 
-#### A201) VM Capacity & Headroom
+##### A1301) VM Capacity & Headroom
 
 ```
 Provider   | VM                   | CPU        | RAM Cap | RAM Alloc | RAM Head | HD Cap | HD Alloc | HD Head | GPU Cap | GPU Alloc | GPU Head
@@ -335,7 +388,7 @@ TensorDock | tensordock-training  | 4 vCPU x86 | 16 GB   | 12.5 GB   | 22%      
 ```
 
 
-#### A202) Cost Estimation
+##### A1302) Cost Estimation
 
 ```
 Resource                  | Type          | Unit Cost     | Usage Est      | Monthly Low | Monthly High
@@ -373,7 +426,7 @@ anthropic-claude          | Pay-per-use   | $15/1M tok    | ~100k tok/mo   | $0 
 | A01 MyAI    | tensordock-training  | $5/mo   | $35/mo  | Training + MLflow              |
 | External    | -                    | $0/mo   | $5/mo   | Optional OpenAI/Claude APIs    |
 
-#### A203) URL/Port Proxied
+##### A1303) URL/Port Proxied
 
 **URL Pattern:** `service.diegonmarcos.com` = Login/Landing → redirects to `/app` after auth success
 
@@ -409,58 +462,56 @@ User → Cloudflare → NPM (gcp-f-micro_1) → Auth (Authelia) → tensordock-t
 
 ---
 
-### A21) Maps & Topology
+#### A131) Maps & Topology
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────────────────┐
-│                            AI INFRASTRUCTURE (Two Independent VMs)                           │
-├─────────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                             │
-│  ┌─────────────────────────────────────┐    ┌─────────────────────────────────────┐        │
-│  │   VM1: TENSORDOCK-INFERENCE          │    │   VM2: TENSORDOCK-TRAINING          │        │
-│  │   RTX 4090 24GB | $0.35/hr           │    │   RTX 4090 24GB | $0.35/hr           │        │
-│  │   (A00 Multi-Model Chat)             │    │   (A01 MyAI Platform)                │        │
-│  ├─────────────────────────────────────┤    ├─────────────────────────────────────┤        │
-│  │                                     │    │                                     │        │
-│  │  ┌───────────────────────────────┐  │    │  ┌───────────────────────────────┐  │        │
-│  │  │  Open WebUI (:3000)            │  │    │  │  MyAI Dashboard (:8080)       │  │        │
-│  │  │  • Chat interface              │  │    │  │  • Dataset management         │  │        │
-│  │  │  • Model selector              │  │    │  │  • Training job launcher      │  │        │
-│  │  │  • Built-in RAG                │  │    │  │  • Model deployment           │  │        │
-│  │  │  • Local embeddings            │  │    │  └───────────────┬───────────────┘  │        │
-│  │  └───────────────┬───────────────┘  │    │                  │                  │        │
-│  │                  │                  │    │                  ▼                  │        │
-│  │                  ▼                  │    │  ┌───────────────────────────────┐  │        │
-│  │  ┌───────────────────────────────┐  │    │  │  Training Stack               │  │        │
-│  │  │  Ollama (:11434)               │  │    │  │  • PyTorch + HuggingFace      │  │        │
-│  │  │  • DeepSeek-Coder-v2 14B      │  │    │  │  • LoRA/QLoRA fine-tuning     │  │        │
-│  │  │  • Llama 3.1 8B               │  │    │  │  • MLflow (:5001)             │  │        │
-│  │  │  • Mistral 7B                 │  │    │  └───────────────┬───────────────┘  │        │
-│  │  └───────────────────────────────┘  │    │                  │                  │        │
-│  │                                     │    │                  ▼                  │        │
-│  │                                     │    │  ┌───────────────────────────────┐  │        │
-│  │                                     │    │  │  Data Store                   │  │        │
-│  │                                     │    │  │  • pgvector (datasets)        │  │        │
-│  │                                     │    │  │  • S3/MinIO (models)          │  │        │
-│  │                                     │    │  └───────────────────────────────┘  │        │
-│  │                                     │    │                                     │        │
-│  └─────────────────────────────────────┘    └─────────────────────────────────────┘        │
-│                   │                                          │                              │
-│                   │              ┌────────────────┐          │                              │
-│                   └──────────────┤  Model Export  ├──────────┘                              │
-│                                  │  (optional)    │                                         │
-│                                  └────────────────┘                                         │
-│                                          │                                                  │
-│                                          ▼                                                  │
-│  ┌─────────────────────────────────────────────────────────────────────────────────────┐   │
-│  │  MASTERPLAN_CLOUD (Proxy + Auth)                                                     │   │
-│  │  Cloudflare → NPM (gcp-f-micro_1) → Authelia                                         │   │
-│  │  • chat.diegonmarcos.com  → VM1                                                      │   │
-│  │  • myai.diegonmarcos.com  → VM2                                                      │   │
-│  │  • mlflow.diegonmarcos.com → VM2                                                     │   │
-│  └─────────────────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                             │
-└─────────────────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph AI["AI INFRASTRUCTURE (Two Independent VMs)"]
+        subgraph VM1["VM1: TENSORDOCK-INFERENCE<br/>RTX 4090 24GB | $0.35/hr<br/>(A00 Multi-Model Chat)"]
+            subgraph OW["Open WebUI :3000"]
+                OW1["Chat interface"]
+                OW2["Model selector"]
+                OW3["Built-in RAG"]
+                OW4["Local embeddings"]
+            end
+            subgraph OL["Ollama :11434"]
+                M1["DeepSeek-Coder-v2 14B"]
+                M2["Llama 3.1 8B"]
+                M3["Mistral 7B"]
+            end
+            OW --> OL
+        end
+
+        subgraph VM2["VM2: TENSORDOCK-TRAINING<br/>RTX 4090 24GB | $0.35/hr<br/>(A01 MyAI Platform)"]
+            subgraph MYAI["MyAI Dashboard :8080"]
+                MY1["Dataset management"]
+                MY2["Training job launcher"]
+                MY3["Model deployment"]
+            end
+            subgraph TRAIN["Training Stack"]
+                TR1["PyTorch + HuggingFace"]
+                TR2["LoRA/QLoRA fine-tuning"]
+                TR3["MLflow :5001"]
+            end
+            subgraph DATA["Data Store"]
+                DA1["pgvector (datasets)"]
+                DA2["S3/MinIO (models)"]
+            end
+            MYAI --> TRAIN --> DATA
+        end
+
+        EXPORT["Model Export<br/>(optional)"]
+        VM1 <-.-> EXPORT <-.-> VM2
+
+        subgraph CLOUD["MASTERPLAN_CLOUD (Proxy + Auth)"]
+            CF["Cloudflare"] --> NPM["NPM (gcp-f-micro_1)"] --> AUTH["Authelia"]
+            URL1["chat.diegonmarcos.com → VM1"]
+            URL2["myai.diegonmarcos.com → VM2"]
+            URL3["mlflow.diegonmarcos.com → VM2"]
+        end
+
+        EXPORT --> CLOUD
+    end
 ```
 
 **Independence:**
@@ -470,11 +521,11 @@ User → Cloudflare → NPM (gcp-f-micro_1) → Auth (Authelia) → tensordock-t
 
 ---
 
-### A22) Costs
+#### A132) Costs
 
-> See **A202) Cost Estimation** for detailed breakdown.
+> See **A1302) Cost Estimation** for detailed breakdown.
 
-#### Cost Summary by Tier (Two VMs)
+##### Cost Summary by Tier (Two VMs)
 
 | Tier        | VM1 (Inf) | VM2 (Train) | APIs   | Total      | Use Case                        |
 |-------------|-----------|-------------|--------|------------|---------------------------------|
@@ -509,11 +560,11 @@ User → Cloudflare → NPM (gcp-f-micro_1) → Auth (Authelia) → tensordock-t
 
 
 
-## A3) Tech Research
+## X1) Tech Research
 
 > Framework comparisons and benchmarks supporting stack choices.
 
-### A30) LLM Model Comparison
+### X10) LLM Models
 
 ```
 Name                | Component   | Stack        | Purpose                        | Quality
@@ -525,7 +576,7 @@ CodeLlama           | Code LLM    | 13B Q4 ~9GB  | Code (older)                 
 Qwen 2.5            | General LLM | 7B Q4 ~5GB   | Multilingual                   | ★★★★☆
 ```
 
-### A31) GPU Provider Comparison
+### X11) GPU Providers
 
 ```
 Name                | Component   | Stack        | Purpose                        | Cost/hr
@@ -538,7 +589,7 @@ Lambda Labs         | GPU Cloud   | A10G 24GB    | Limited availability         
 
 > **Our choice:** TensorDock (★) - Best price, good EU availability, RTX 4090 24GB.
 
-### A32) Vector Database Comparison
+### X12) Vector DBs
 
 ```
 Name                | Component   | Stack        | Purpose                        | Cost
@@ -552,7 +603,7 @@ Qdrant              | Vector DB   | Self-host    | High performance, Rust       
 
 > **Our choice:** ChromaDB (★) - Built into Open WebUI, no setup needed.
 
-### A33) Embeddings Provider Comparison
+### X13) Embeddings
 
 ```
 Name                | Component   | Stack        | Purpose                        | Cost
@@ -572,9 +623,9 @@ Cohere              | Embeddings  | embed-v3     | Multilingual, good quality   
 
 
 
-## A4) Today (Current State)
+## X2) Current State
 
-### A40) Current Status
+### X20) Status
 
 ```
 Name                 | Component            | Stack                    | Status
@@ -602,7 +653,7 @@ data-store           | Data Storage         | VM2 (pgvector)           | tbd
 > - VM1: Open WebUI + Ollama (inference)
 > - VM2: MyAI + Training stack (training)
 
-### A41) Quick Reference
+### X21) Quick Ref
 
 #### VM Access
 
@@ -712,26 +763,16 @@ docker exec -it ollama ollama pull mistral:7b-instruct-q4_K_M
 
 # B) Architecture - Technical Deep Dives
 
-## B1) Model Architecture
+## B0) Model Architecture
 
-### B11) Model Selection & Routing
+### B00) Model Selection & Routing
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      MODEL ROUTING FLOW                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  User Query → Open WebUI → Model Router                         │
-│                               │                                 │
-│               ┌───────────────┼───────────────┐                 │
-│               ▼               ▼               ▼                 │
-│         ┌──────────┐   ┌──────────┐   ┌──────────┐             │
-│         │ DeepSeek │   │ Llama3.1 │   │ Mistral  │             │
-│         │  Coder   │   │   8B     │   │   7B     │             │
-│         │  (Code)  │   │ (General)│   │  (Fast)  │             │
-│         └──────────┘   └──────────┘   └──────────┘             │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Q["User Query"] --> OW["Open WebUI"] --> R["Model Router"]
+    R --> DS["DeepSeek Coder<br/>(Code)"]
+    R --> LL["Llama 3.1 8B<br/>(General)"]
+    R --> MI["Mistral 7B<br/>(Fast)"]
 ```
 
 **Routing Rules:**
@@ -741,21 +782,17 @@ docker exec -it ollama ollama pull mistral:7b-instruct-q4_K_M
 | General chat | Llama 3.1 8B | Good balance |
 | Quick answers | Mistral 7B | Fastest response |
 
-### B12) RAG Architecture
+### B01) RAG Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      RAG PIPELINE                                │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Documents → Chunking → Embeddings → Vector Store               │
-│                              │                                  │
-│                    sentence-transformers                        │
-│                              │                                  │
-│                              ▼                                  │
-│  Query → Embed → Similarity Search → Top-K Chunks → LLM         │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Indexing
+        D["Documents"] --> C["Chunking"] --> E["Embeddings<br/>sentence-transformers"] --> V["Vector Store"]
+    end
+    subgraph Retrieval
+        Q["Query"] --> QE["Embed"] --> SS["Similarity Search"] --> TK["Top-K Chunks"] --> LLM["LLM"]
+    end
+    V --> SS
 ```
 
 **RAG Config (Open WebUI built-in):**
@@ -766,36 +803,48 @@ docker exec -it ollama ollama pull mistral:7b-instruct-q4_K_M
 
 ---
 
+## B1) MCP Architecture
+
+> **MOVED TO:** `MASTERPLAN_CLOUD.md` → B4) MCP Architecture
+>
+> MCPs are AI-agnostic infrastructure. Full documentation including:
+> - B41) System Overview
+> - B42) RAG Pipeline
+> - B43) Security Model
+> - B44) Permission Model
+> - B45) Directory Structure
+> - B46) Tool Specifications (12 MCPs)
+> - B47) Implementation Patterns
+> - B48) Dependencies & Testing
+
+---
+
 ## B2) Training Pipeline
 
-### B21) MyAI Training Flow
+### B20) MyAI Training Flow
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      TRAINING PIPELINE                           │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  1. DATA COLLECTION                                             │
-│     Local → Collectors → pgvector                               │
-│                                                                 │
-│  2. PREPROCESSING                                               │
-│     Raw Data → Clean → Tokenize → Dataset                       │
-│                                                                 │
-│  3. TRAINING                                                    │
-│     Dataset → PyTorch → Fine-tune → Checkpoints                 │
-│         │                                                       │
-│         └──→ MLflow (experiment tracking)                       │
-│                                                                 │
-│  4. EVALUATION                                                  │
-│     Checkpoints → Eval Suite → Metrics → Dashboard              │
-│                                                                 │
-│  5. DEPLOYMENT                                                  │
-│     Best Model → Export → Ollama/GGUF → Serve                   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph S1["1. DATA COLLECTION"]
+        L["Local"] --> C["Collectors"] --> PG["pgvector"]
+    end
+    subgraph S2["2. PREPROCESSING"]
+        R["Raw Data"] --> CL["Clean"] --> TOK["Tokenize"] --> DS["Dataset"]
+    end
+    subgraph S3["3. TRAINING"]
+        DS2["Dataset"] --> PT["PyTorch"] --> FT["Fine-tune"] --> CK["Checkpoints"]
+        PT -.-> MLF["MLflow"]
+    end
+    subgraph S4["4. EVALUATION"]
+        CK2["Checkpoints"] --> EV["Eval Suite"] --> MET["Metrics"] --> DASH["Dashboard"]
+    end
+    subgraph S5["5. DEPLOYMENT"]
+        BM["Best Model"] --> EX["Export"] --> OL["Ollama/GGUF"] --> SRV["Serve"]
+    end
+    S1 --> S2 --> S3 --> S4 --> S5
 ```
 
-### B22) Experiment Tracking (MLflow)
+### B21) Experiment Tracking (MLflow)
 
 | Metric | Description |
 |--------|-------------|
@@ -809,48 +858,50 @@ docker exec -it ollama ollama pull mistral:7b-instruct-q4_K_M
 
 ## B3) Infrastructure Architecture
 
-### B31) GPU Provisioning
+### B30) GPU Provisioning
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                   ON-DEMAND GPU WORKFLOW                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  1. Request comes in (chat or training)                         │
-│  2. Check if VM is running                                      │
-│     ├── Running → Forward request                               │
-│     └── Stopped → Provision VM via TensorDock API               │
-│  3. Wait for VM ready (boot + docker up)                        │
-│  4. Forward request                                             │
-│  5. Auto-shutdown after idle timeout (30 min)                   │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    REQ["1. Request (chat/training)"] --> CHK{"2. VM running?"}
+    CHK -->|Running| FWD["Forward request"]
+    CHK -->|Stopped| PROV["Provision via TensorDock API"]
+    PROV --> WAIT["3. Wait for VM ready"]
+    WAIT --> FWD2["4. Forward request"]
+    FWD --> IDLE["5. Auto-shutdown<br/>after 30 min idle"]
+    FWD2 --> IDLE
 ```
 
-### B32) Data Flow
+### B31) Data Flow
 
-```
-Local Machine                    TensorDock VMs
-─────────────                    ──────────────
-  Documents ──┐
-  Code repos ─┼──→ Collectors ──→ pgvector (VM2)
-  Notes ──────┘                       │
-                                      ▼
-                              Embeddings + Metadata
-                                      │
-                    ┌─────────────────┴─────────────────┐
-                    ▼                                   ▼
-              VM1 (Inference)                    VM2 (Training)
-              RAG queries                        Training data
+```mermaid
+flowchart LR
+    subgraph Local["Local Machine"]
+        DOC["Documents"]
+        CODE["Code repos"]
+        NOTES["Notes"]
+    end
+    COL["Collectors"]
+    subgraph VMs["TensorDock VMs"]
+        PG["pgvector (VM2)"]
+        EMB["Embeddings + Metadata"]
+        VM1["VM1 (Inference)<br/>RAG queries"]
+        VM2["VM2 (Training)<br/>Training data"]
+    end
+    DOC --> COL
+    CODE --> COL
+    NOTES --> COL
+    COL --> PG --> EMB
+    EMB --> VM1
+    EMB --> VM2
 ```
 
 ---
 
 # C) Roadmap - Planning & Prioritization
 
-## C1) Phases - Implementation Milestones
+## C0) Phases - Implementation Milestones
 
-### Phase 1: Basic Inference (PRIORITY)
+### C00) Phase 1: Basic Inference (PRIORITY)
 **Status:** Planned
 **Dependencies:** TensorDock account
 
@@ -862,7 +913,7 @@ Local Machine                    TensorDock VMs
 | 1.4 | Pull initial models | Planned |
 | 1.5 | Test chat interface | Planned |
 
-### Phase 2: RAG Integration
+### C01) Phase 2: RAG Integration
 **Status:** Planned
 **Dependencies:** Phase 1
 
@@ -872,7 +923,7 @@ Local Machine                    TensorDock VMs
 | 2.2 | Test RAG with local documents | Planned |
 | 2.3 | Tune chunk size and retrieval | Planned |
 
-### Phase 3: Training Infrastructure
+### C02) Phase 3: Training Infrastructure
 **Status:** Future
 **Dependencies:** Phase 1
 
@@ -883,7 +934,7 @@ Local Machine                    TensorDock VMs
 | 3.3 | Create data collection pipeline | Future |
 | 3.4 | First fine-tuning experiment | Future |
 
-### Phase 4: Custom Models
+### C03) Phase 4: Custom Models
 **Status:** Future
 **Dependencies:** Phase 3
 
@@ -893,102 +944,132 @@ Local Machine                    TensorDock VMs
 | 4.2 | Fine-tune on personal data | Future |
 | 4.3 | Deploy custom model to VM1 | Future |
 
----
+### C04) Phase 5: MCP System (Parallel Track)
+**Status:** Planned
+**Dependencies:** None (runs locally, independent of GPU VMs)
 
-## C2) Dependencies - Service Graph
+| Step | Task | Status |
+|------|------|--------|
+| 5.1 | Setup ChromaDB + index masterplans | Planned |
+| 5.2 | Build masterplan-rag MCP | Planned |
+| 5.3 | Build file-navigator MCP | Planned |
+| 5.4 | Build git-integration MCP | Planned |
+| 5.5 | Build secrets-manager MCP | Planned |
+| 5.6 | Build cloud-cli MCP | Future |
+| 5.7 | Build docker-manager MCP | Future |
+| 5.8 | Build build-orchestrator MCP | Future |
+| 5.9 | Build remaining MCPs (P3) | Future |
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    AI SERVICE DEPENDENCY GRAPH                       │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  LAYER 0: CLOUD INFRASTRUCTURE (from MASTERPLAN_CLOUD)              │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐                             │
-│  │   NPM   │  │Authelia │  │   DNS   │                             │
-│  │ (proxy) │→ │  (auth) │→ │(Cloudfl)│                             │
-│  └────┬────┘  └────┬────┘  └─────────┘                             │
-│       │            │                                                │
-│  LAYER 1: AI INFERENCE (VM1)                                        │
-│       ▼            ▼                                                │
-│  ┌─────────────────────────────────────────────┐                   │
-│  │  TensorDock VM1                              │                   │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  │                   │
-│  │  │Open WebUI│→ │  Ollama  │→ │  Models  │  │                   │
-│  │  └──────────┘  └──────────┘  └──────────┘  │                   │
-│  └─────────────────────────────────────────────┘                   │
-│                                                                     │
-│  LAYER 2: AI TRAINING (VM2)                                         │
-│  ┌─────────────────────────────────────────────┐                   │
-│  │  TensorDock VM2                              │                   │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  │                   │
-│  │  │  MyAI    │→ │  MLflow  │→ │ pgvector │  │                   │
-│  │  └──────────┘  └──────────┘  └──────────┘  │                   │
-│  └─────────────────────────────────────────────┘                   │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
+> **Note:** MCPs run locally on your machine, not on GPU VMs. Can be developed in parallel with other phases.
 
 ---
 
-## C3) Backlog - Prioritized Tasks
+## C1) Dependencies - Service Graph
 
-### High Priority (Now)
+```mermaid
+flowchart TB
+    subgraph L0["LAYER 0: CLOUD INFRASTRUCTURE"]
+        NPM["NPM (proxy)"] --> AUTH["Authelia (auth)"] --> DNS["DNS (Cloudflare)"]
+    end
+
+    subgraph L1["LAYER 1: AI INFERENCE (VM1)"]
+        subgraph VM1["TensorDock VM1"]
+            OW["Open WebUI"] --> OLL["Ollama"] --> MOD["Models"]
+        end
+    end
+
+    subgraph L2["LAYER 2: AI TRAINING (VM2)"]
+        subgraph VM2["TensorDock VM2"]
+            MYAI["MyAI"] --> MLF["MLflow"] --> PGV["pgvector"]
+        end
+    end
+
+    subgraph L3["LAYER 3: AI AGENT TOOLS (Local)"]
+        subgraph LOCAL["Local Machine (~/.claude/)"]
+            MCP1["MCP RAG<br/>(ChromaDB)"]
+            MCP2["MCP Files<br/>(pathlib)"]
+            MCP3["MCP Git<br/>(GitPython)"]
+            MCP4["MCP Cloud<br/>(gcloud)"]
+            MCP5["MCP Docker<br/>(SDK)"]
+            MCP6["MCP Build<br/>(shell)"]
+        end
+    end
+
+    L0 --> L1
+    L0 --> L2
+```
+
+---
+
+## C2) Backlog - Prioritized Tasks
+
+### C20) High Priority (Now)
+**GPU Infrastructure:**
 - [ ] Setup TensorDock account and billing
 - [ ] Create VM1 deployment script
 - [ ] Test Open WebUI + Ollama locally first
 - [ ] Document model pull commands
 
-### Medium Priority (Next)
+**MCP System (Parallel):**
+- [ ] Setup ChromaDB + sentence-transformers locally
+- [ ] Build masterplan-rag MCP (semantic search)
+- [ ] Build file-navigator MCP (codebase search)
+- [ ] Build git-integration MCP (history queries)
+- [ ] Build secrets-manager MCP (safe credential paths)
+
+### C21) Medium Priority (Next)
+**GPU Infrastructure:**
 - [ ] Configure RAG with personal documents
 - [ ] Setup auto-shutdown script for idle VMs
 - [ ] Create VM2 deployment script
 - [ ] Setup MLflow tracking
 
-### Low Priority (Later)
+**MCP System:**
+- [ ] Build cloud-cli MCP (gcloud/oci wrapper)
+- [ ] Build docker-manager MCP (service control)
+- [ ] Build build-orchestrator MCP (18 projects)
+
+### C22) Low Priority (Later)
 - [ ] Build data collection pipelines
 - [ ] First fine-tuning experiment
 - [ ] Custom model deployment
 - [ ] Multi-model routing optimization
+- [ ] Build remaining MCPs (project-config, github-integration, monitoring)
 
-### Tech Debt
+### C23) Tech Debt
 - [ ] Automate VM provisioning via API
 - [ ] Create backup scripts for model weights
 - [ ] Document training procedures
 - [ ] Setup cost monitoring alerts
+- [ ] MCP audit log rotation
 
 ---
 
 # D) DevOps - Operations & Observability
 
-## D1) Dashboard - AI Services Access
+## D0) Dashboard - AI Services Access
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    AI SERVICES DASHBOARD                      │
-├─────────────────────────────────────────────────────────────┤
-│  [VM1 Status: OFF]  [VM2 Status: OFF]          [Start VM1]  │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  INFERENCE (VM1)                    TRAINING (VM2)          │
-│  ┌─────────────────┐               ┌─────────────────┐     │
-│  │  💬 Open WebUI  │               │  🧠 MyAI        │     │
-│  │  status: off    │               │  status: off    │     │
-│  │  [Launch]       │               │  [Launch]       │     │
-│  └─────────────────┘               └─────────────────┘     │
-│  ┌─────────────────┐               ┌─────────────────┐     │
-│  │  🤖 Ollama      │               │  📊 MLflow      │     │
-│  │  Models: 3      │               │  Experiments: 0 │     │
-│  │  [Manage]       │               │  [View]         │     │
-│  └─────────────────┘               └─────────────────┘     │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph DASH["AI SERVICES DASHBOARD"]
+        direction TB
+        STATUS["VM1: OFF | VM2: OFF | [Start VM1]"]
+        subgraph INF["INFERENCE (VM1)"]
+            OW["Open WebUI<br/>status: off<br/>[Launch]"]
+            OLL["Ollama<br/>Models: 3<br/>[Manage]"]
+        end
+        subgraph TRAIN["TRAINING (VM2)"]
+            MYAI["MyAI<br/>status: off<br/>[Launch]"]
+            MLF["MLflow<br/>Experiments: 0<br/>[View]"]
+        end
+    end
 ```
 
 ---
 
-## D2) Monitoring - Metrics & Alerts
+## D1) Monitoring - Metrics & Alerts
 
-### GPU Monitoring
+### D10) GPU Monitoring
 
 | Metric | Warning | Critical | Action |
 |--------|---------|----------|--------|
@@ -997,7 +1078,7 @@ Local Machine                    TensorDock VMs
 | GPU Utilization | - | - | Info only |
 | VM Cost/day | $5 | $10 | Alert + auto-shutdown |
 
-### Cost Alerts
+### D11) Cost Alerts
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -1014,7 +1095,7 @@ Local Machine                    TensorDock VMs
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Health Checks
+### D12) Health Checks
 
 | Service | Endpoint | Method | Expected |
 |---------|----------|--------|----------|
@@ -1025,9 +1106,9 @@ Local Machine                    TensorDock VMs
 
 ---
 
-## D3) Knowledge Center
+## D2) Knowledge Center
 
-### AI Documentation
+### D20) AI Documentation
 
 | Document | Purpose | Location |
 |----------|---------|----------|
@@ -1036,7 +1117,7 @@ Local Machine                    TensorDock VMs
 | Training Guides | How to fine-tune | docs/training/ |
 | RAG Setup | Document ingestion | docs/rag/ |
 
-### Runbooks
+### D21) Runbooks
 
 | Runbook | Purpose |
 |---------|---------|
@@ -1046,7 +1127,7 @@ Local Machine                    TensorDock VMs
 | backup-models.sh | Backup model weights |
 | cost-check.sh | Check current spending |
 
-### Quick Commands
+### D22) Quick Commands
 
 ```bash
 # Start VM1 (Inference)
@@ -1055,18 +1136,24 @@ Local Machine                    TensorDock VMs
 # Start VM2 (Training)
 ./scripts/vm-start.sh training
 
-# Check costs
+# Check VM costs
 ./scripts/cost-check.sh
 
-# Pull new model
-docker exec ollama ollama pull <model-name>
-
-# Stop all VMs
-./scripts/vm-stop.sh all
+# Pull a new model
+./scripts/model-pull.sh llama3:8b
 ```
+
+---
+
+# END OF MASTERPLAN_AI.md
+
+> **Cross-references:**
+> - MASTERPLAN_CLOUD.md - Cloud infrastructure, networking, services, and MCP Architecture (B4)
+> - CLAUDE.md - Agent configuration and repository guidelines
+> - A13) MCP section references MASTERPLAN_CLOUD.md B4 for MCP implementation details
 
 ---
 
 *Generated by Claude (Opus) - CTO*
 *Sub-document of: MASTERPLAN_CLOUD.md*
-*Last Updated: 2025-12-11*
+*Last Updated: 2025-12-12*

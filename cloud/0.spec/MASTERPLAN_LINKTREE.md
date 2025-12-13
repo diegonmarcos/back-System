@@ -11,32 +11,26 @@
 
 ## Executive Summary
 
-```
-┌────────────────────────────────────────────────────────────────────────────────────────────┐
-│  A) HANDOFF                        WHAT we're building                                     │
-├────────────────────────────────────────────────────────────────────────────────────────────┤
-│  A0) Products                      - 18 web applications & pages                           │
-│      ├── Type 1: Digital Cards     - Landpage, Linktree, CV Web, CV PDF, HealthTracker    │
-│      ├── Type 2: Browser Tools     - CentralBank, MyGames, MyMaps, MyMovies, MyMusic, etc │
-│      ├── Type 3: Dashboards        - Cloud, MarketWatch, MyFeed                           │
-│      └── Type 4: Platforms         - MyProfile, Nexus                                     │
-│  A1) Infra Services                - Build systems, dev servers, analytics                 │
-│  A2) Infra Resources               - GitHub Pages (free), dev ports 8000-8017             │
-│  A3) Tech Research                 - Framework decisions per project type                  │
-│  A4) Today                         - Current status & quick ref                            │
-├────────────────────────────────────────────────────────────────────────────────────────────┤
-│  D) DEVOPS                         HOW we build & deploy                                   │
-├────────────────────────────────────────────────────────────────────────────────────────────┤
-│  D1) Build System                  - build_main.sh orchestrator, per-project scripts       │
-│  D2) CI/CD Pipeline                - GitHub Actions → GitHub Pages                         │
-│  D3) Analytics (Matomo)            - MTM container, event tracking, integration status     │
-│  D4) Folder Structure              - Vanilla/Vue/Svelte project templates                  │
-│  D5) Dependencies                  - Node.js, npm, Python, Sass                            │
-│  D6) Troubleshooting               - Common issues & solutions                             │
-│  D7) Security Vault                - LOCAL_KEYS, SSH access, credentials, Bitwarden        │
-│  D8) Code Practices                - HTML/a11y, SCSS mixins, TS rules, SPA analytics       │
-└────────────────────────────────────────────────────────────────────────────────────────────┘
-```
+> [!abstract] A) HANDOFF - WHAT we're building (18 Web Applications)
+> - **[[#A0) Products]]** - 18 web applications & pages
+>   - Type 1: Digital Cards - Landpage, Linktree, CV Web, CV PDF, HealthTracker, Nexus
+>   - Type 2: Browser Tools - CentralBank, MyGames, MyMaps, MyMovies, MyMusic, JSON Vision, Feed Yourself
+>   - Type 3: Dashboards - Cloud, MarketWatch, MyFeed
+>   - Type 4: Platforms - MyProfile
+> - **[[#A1) Infra Services]]** - Build systems, dev servers, analytics
+> - **[[#A2) Infra Resources]]** - GitHub Pages (free), dev ports 8000-8017
+> - **[[#A3) Tech Research]]** - Framework decisions per project type
+> - **[[#A4) Today (Current State)]]** - Current status & quick ref
+
+> [!info] D) DEVOPS - HOW we build & deploy
+> - **[[#D0) Build System]]** - build_main.sh orchestrator, per-project scripts
+> - **[[#D1) CI/CD Pipeline]]** - GitHub Actions → GitHub Pages
+> - **[[#D2) Analytics (Matomo)]]** - MTM container, event tracking, integration status
+> - **[[#D3) Folder Structure]]** - Vanilla/Vue/Svelte project templates
+> - **[[#D4) Dependencies]]** - Node.js, npm, Python, Sass
+> - **[[#D5) Troubleshooting]]** - Common issues & solutions
+> - **[[#D6) Security Vault (LOCAL_KEYS)]]** - SSH access, credentials, Bitwarden
+> - **[[#D7) Code Practices]]** - HTML/a11y, SCSS mixins, TS rules, SPA analytics
 
 **Connection to MASTERPLAN_CLOUD:**
 ```
@@ -54,40 +48,42 @@ MASTERPLAN_CLOUD.md
 
 ### Product Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────────────────┐
-│  WEBFRONT PRODUCTS (front-Github_io)                                                        │
-├─────────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                             │
-│  TYPE 1: DIGITAL CARDS (Static SSG, SEO-first, minimal JS)                                 │
-│  ├── Landpage        Main landing & entry point         Vanilla + Sass      :8000          │
-│  ├── Linktree        Personal link hub & bio            Vanilla + Sass      :8001          │
-│  ├── CV Web          Digital Resume/CV                  Vanilla + Sass      :8002          │
-│  ├── CV PDF          PDF Resume generator               Vanilla + Sass      :8012          │
-│  ├── HealthTracker   Personal health monitoring         Vanilla + Tailwind  :8009          │
-│  └── Nexus           Company Business Website           Vanilla + Sass+TW   :8005          │
-│                                                                                             │
-│  TYPE 2: BROWSER TOOLS (CSR, Fast DOM, interactivity-first)                                │
-│  ├── CentralBank     Central bank modeling tool         Vanilla + Sass+TW   :8011          │
-│  ├── Feed Yourself   Calculator / Utility Tool          Vanilla + Sass      :8007          │
-│  ├── MyGames         Retro games collection             SvelteKit + Sass    :8013          │
-│  ├── MyMaps          Strategic map viewer               React+Vite + Sass   :8014          │
-│  ├── MyMovies        Movie & TV series browser          Vue 3 + Sass        :8015          │
-│  ├── MyMusic         Winamp-style music library         Vue 3 + Sass        :8016          │
-│  └── JSON Vision     Visual JSON editor & graph         Vue 3 + Sass        :8017          │
-│                                                                                             │
-│  TYPE 3: PRIVATE DASHBOARDS (CSR, complex state, SPA)                                      │
-│  ├── Cloud           Cloud resources monitor            Vanilla + Sass      :8006          │
-│  ├── MarketWatch     Financial market tracker           Vanilla + Sass      :8010          │
-│  └── MyFeed          Social feed aggregator             Vue 3 + Sass        :8003          │
-│                                                                                             │
-│  TYPE 4: PUBLIC PLATFORMS (Hybrid SSR+CSR, SEO + interactivity)                            │
-│  └── MyProfile       Personal portfolio showcase        SvelteKit + Sass    :8004          │
-│                                                                                             │
-│  SCRIPTS                                                                                    │
-│  └── Others          Python tools & scripts             Python 3.11+        :8008          │
-│                                                                                             │
-└─────────────────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph WEBFRONT["WEBFRONT PRODUCTS (front-Github_io)"]
+        subgraph T1["TYPE 1: DIGITAL CARDS<br/>(Static SSG, SEO-first)"]
+            LP["Landpage :8000<br/>Vanilla + Sass"]
+            LT["Linktree :8001<br/>Vanilla + Sass"]
+            CV["CV Web :8002<br/>Vanilla + Sass"]
+            PDF["CV PDF :8012<br/>Vanilla + Sass"]
+            HT["HealthTracker :8009<br/>Vanilla + TW"]
+            NX["Nexus :8005<br/>Vanilla + Sass+TW"]
+        end
+
+        subgraph T2["TYPE 2: BROWSER TOOLS<br/>(CSR, interactivity-first)"]
+            CB["CentralBank :8011<br/>Vanilla + Sass+TW"]
+            FY["Feed Yourself :8007<br/>Vanilla + Sass"]
+            MG["MyGames :8013<br/>SvelteKit + Sass"]
+            MM["MyMaps :8014<br/>React+Vite"]
+            MV["MyMovies :8015<br/>Vue 3"]
+            MU["MyMusic :8016<br/>Vue 3"]
+            JV["JSON Vision :8017<br/>Vue 3"]
+        end
+
+        subgraph T3["TYPE 3: DASHBOARDS<br/>(CSR, complex state, SPA)"]
+            CL["Cloud :8006<br/>Vanilla + Sass"]
+            MW["MarketWatch :8010<br/>Vanilla + Sass"]
+            MF["MyFeed :8003<br/>Vue 3"]
+        end
+
+        subgraph T4["TYPE 4: PLATFORMS<br/>(Hybrid SSR+CSR)"]
+            MP["MyProfile :8004<br/>SvelteKit"]
+        end
+
+        subgraph SC["SCRIPTS"]
+            OT["Others :8008<br/>Python 3.11+"]
+        end
+    end
 ```
 
 ---
@@ -293,47 +289,55 @@ Port  | Project       | Framework   | Server Type
 ### Build Pipelines
 
 **Vanilla Projects (Sass + esbuild):**
+```mermaid
+flowchart LR
+    subgraph SOURCE["SOURCE"]
+        TS["src/main.ts<br/>src/*.ts"]
+        SCSS["src_static/scss/*.scss"]
+        HTML["src_static/index.html"]
+        PUB["public/ (assets)"]
+    end
+    subgraph BUILD["BUILD"]
+        ESB["esbuild"]
+        SASS["sass"]
+    end
+    subgraph OUTPUT["OUTPUT"]
+        DIST["dist/index.html<br/>(single-file, inline CSS+JS)"]
+        DPUB["dist/public/"]
+    end
+    TS --> ESB --> |"script.js"| DIST
+    SCSS --> SASS --> |"style.css"| DIST
+    HTML --> DIST
+    PUB -.-> |"symlink"| DPUB
 ```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                    BUILD PIPELINE (Vanilla + Sass + esbuild)                     │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                 │
-│  SOURCE                      BUILD                        OUTPUT                │
-│  ────────────────────────────────────────────────────────────────────          │
-│                                                                                 │
-│  src/main.ts ─────────┐                                                        │
-│  src/*.ts             ├──→ esbuild ──→ script.js ──┐                           │
-│                       │                             │                           │
-│  src_static/scss/*.scss ──→ sass ──→ style.css ────┼──→ dist/index.html        │
-│                                                     │    (single-file,          │
-│  src_static/index.html ─────────────────────────────┘     inline CSS+JS)        │
-│                                                                                 │
-│  public/ (assets) ─────────────────symlink────────→ dist/public/               │
-│                                                                                 │
-│  Projects: Landpage, Linktree, CV Web, CV PDF, Nexus, Cloud, MarketWatch,      │
-│            Feed Yourself, HealthTracker                                         │
-└─────────────────────────────────────────────────────────────────────────────────┘
-```
+> Projects: Landpage, Linktree, CV Web, CV PDF, Nexus, Cloud, MarketWatch, Feed Yourself, HealthTracker
 
 **Vite Projects (Vue/React/Svelte):**
+```mermaid
+flowchart LR
+    subgraph SOURCE["SOURCE"]
+        VUE["src/**/*.vue"]
+        SVE["src/**/*.svelte"]
+        TSX["src/**/*.tsx"]
+        TSS["src/**/*.ts"]
+        SCSS["src/**/*.scss"]
+    end
+    VITE["Vite"]
+    subgraph OUTPUT["OUTPUT (dist/)"]
+        IDX["index.html"]
+        JS["assets/*.js (hashed)"]
+        CSS["assets/*.css (hashed)"]
+    end
+    VUE --> VITE
+    SVE --> VITE
+    TSX --> VITE
+    TSS --> VITE
+    SCSS --> VITE
+    VITE --> IDX
+    VITE --> JS
+    VITE --> CSS
 ```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                         BUILD PIPELINE (Vite + Framework)                        │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                 │
-│  SOURCE                      BUILD                        OUTPUT                │
-│  ────────────────────────────────────────────────────────────────────          │
-│                                                                                 │
-│  src/**/*.vue ──────────┐                                                       │
-│  src/**/*.svelte        ├──→ Vite ──→ dist/                                    │
-│  src/**/*.tsx           │         ├── index.html                                │
-│  src/**/*.ts            │         ├── assets/*.js (hashed)                      │
-│  src/**/*.scss ─────────┘         └── assets/*.css (hashed)                     │
-│                                                                                 │
-│  Projects: MyFeed, MyProfile, MyGames, MyMaps, MyMovies, MyMusic,               │
-│            JSON Vision, CentralBank                                             │
-└─────────────────────────────────────────────────────────────────────────────────┘
-```
+> Projects: MyFeed, MyProfile, MyGames, MyMaps, MyMovies, MyMusic, JSON Vision, CentralBank
 
 ### SCSS Structure (ITCSS)
 
@@ -417,82 +421,56 @@ TOTAL                  |               | $0/mo         |
 
 ### A21) Maps & Topology
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                          WEBFRONT DEPLOYMENT TOPOLOGY                             │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                 │
-│  LOCAL DEVELOPMENT                                                              │
-│  ┌───────────────────────────────────────────────────────────────────────────┐ │
-│  │  /home/diego/Documents/Git/front-Github_io/                                │ │
-│  │  ├── 1.ops/                  # Shared ops scripts                          │ │
-│  │  │   ├── build_main.sh       # Master build orchestrator                   │ │
-│  │  │   ├── 0_Stack_Main.md     # Stack documentation                         │ │
-│  │  │   └── *.md                # Dev documentation                           │ │
-│  │  │                                                                         │ │
-│  │  ├── landpage/               # :8000 (Vanilla + Sass)                      │ │
-│  │  ├── linktree/               # :8001 (Vanilla + Sass)                      │ │
-│  │  ├── cv_web/                 # :8002 (Vanilla + Sass)                      │ │
-│  │  ├── myfeed/                 # :8003 (Vue 3)                               │ │
-│  │  ├── myprofile/              # :8004 (SvelteKit)                           │ │
-│  │  ├── nexus/                  # :8005 (Vanilla + Sass+TW)                   │ │
-│  │  ├── cloud/                  # :8006 (Vanilla + Sass)                      │ │
-│  │  ├── feed_yourself/          # :8007 (Vanilla + Sass)                      │ │
-│  │  ├── others/                 # :8008 (Python)                              │ │
-│  │  ├── healthtracker/          # :8009 (Vanilla + Tailwind)                  │ │
-│  │  ├── marketwatch/            # :8010 (Vanilla + Sass)                      │ │
-│  │  ├── central_bank/           # :8011 (Vanilla + Sass+TW)                   │ │
-│  │  ├── cv_pdf/                 # :8012 (Vanilla + Sass)                      │ │
-│  │  ├── mygames/                # :8013 (SvelteKit)                           │ │
-│  │  ├── mymaps/                 # :8014 (React+Vite)                          │ │
-│  │  ├── mymovies/               # :8015 (Vue 3)                               │ │
-│  │  ├── mymusic/                # :8016 (Vue 3)                               │ │
-│  │  └── json_vision/            # :8017 (Vue 3)                               │ │
-│  └───────────────────────────────────────────────────────────────────────────┘ │
-│                        │                                                        │
-│                        │ git push                                               │
-│                        ▼                                                        │
-│  GITHUB ACTIONS                                                                 │
-│  ┌───────────────────────────────────────────────────────────────────────────┐ │
-│  │  .github/workflows/deploy.yml                                              │ │
-│  │  1. Checkout repository                                                    │ │
-│  │  2. npm install (per project)                                              │ │
-│  │  3. Build all projects                                                     │ │
-│  │  4. Deploy to GitHub Pages                                                 │ │
-│  └───────────────────────────────────────────────────────────────────────────┘ │
-│                        │                                                        │
-│                        ▼                                                        │
-│  PRODUCTION (GitHub Pages)                                                      │
-│  ┌───────────────────────────────────────────────────────────────────────────┐ │
-│  │  https://diegonmarcos.github.io/                                           │ │
-│  │  ├── /                   → Landpage (entry point)                          │ │
-│  │  ├── /linktree/          → Link hub (navigation)                           │ │
-│  │  ├── /cv_web/            → Digital Resume                                  │ │
-│  │  ├── /cv_pdf/            → PDF Resume                                      │ │
-│  │  ├── /myprofile/         → Portfolio                                       │ │
-│  │  ├── /cloud/             → Cloud Dashboard                                 │ │
-│  │  ├── /myfeed/            → Social Feed                                     │ │
-│  │  └── ... (18 projects total)                                               │ │
-│  └───────────────────────────────────────────────────────────────────────────┘ │
-│                                                                                 │
-└─────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph LOCAL["LOCAL DEVELOPMENT"]
+        direction TB
+        REPO["front-Github_io/"]
+        OPS["1.ops/<br/>build_main.sh"]
+        subgraph PROJECTS["18 Projects"]
+            P1["landpage :8000"]
+            P2["linktree :8001"]
+            P3["cv_web :8002"]
+            P4["myfeed :8003"]
+            P5["myprofile :8004"]
+            P6["nexus :8005"]
+            P7["cloud :8006"]
+            MORE["... +11 more"]
+        end
+    end
+
+    subgraph CICD["GITHUB ACTIONS"]
+        GA[".github/workflows/deploy.yml"]
+        S1["1. Checkout repository"]
+        S2["2. npm install"]
+        S3["3. Build all projects"]
+        S4["4. Deploy to GitHub Pages"]
+    end
+
+    subgraph PROD["PRODUCTION (GitHub Pages)"]
+        GH["https://diegonmarcos.github.io/"]
+        U1["/ → Landpage"]
+        U2["/linktree/ → Link hub"]
+        U3["/cv_web/ → Resume"]
+        U4["/myprofile/ → Portfolio"]
+        U5["... (18 projects)"]
+    end
+
+    LOCAL -->|"git push"| CICD --> PROD
 ```
 
 ---
 
 ### A22) Costs
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  MONTHLY COSTS (18 PROJECTS)                                     │
-├─────────────────────────────────────────────────────────────────┤
-│  GitHub Pages              │  FREE        │  18 static sites    │
-│  Domain (*.github.io)      │  FREE        │  Subdomain hosting  │
-│  Analytics (Matomo)        │  FREE        │  Self-hosted        │
-│  CI/CD (GitHub Actions)    │  FREE        │  Build & deploy     │
-├─────────────────────────────────────────────────────────────────┤
-│  TOTAL                     │  $0/mo       │                     │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph COSTS["MONTHLY COSTS (18 PROJECTS) = $0/mo"]
+        GHP["GitHub Pages<br/>FREE<br/>18 static sites"]
+        DOM["Domain *.github.io<br/>FREE<br/>Subdomain hosting"]
+        ANA["Analytics Matomo<br/>FREE<br/>Self-hosted"]
+        CI["CI/CD Actions<br/>FREE<br/>Build & deploy"]
+    end
 ```
 
 ---
@@ -687,7 +665,7 @@ All projects use Matomo Tag Manager (MTM) for cookie-less analytics:
 
 # D) DEVOPS
 
-## D1) Build System
+## D0) Build System
 
 ### Main Orchestrator
 
@@ -743,7 +721,7 @@ Command                          | Description
 
 ---
 
-## D2) CI/CD Pipeline
+## D1) CI/CD Pipeline
 
 ### GitHub Actions
 
@@ -774,7 +752,7 @@ Build All                             | ./1.ops/build_main.sh build
 
 ---
 
-## D3) Analytics (Matomo)
+## D2) Analytics (Matomo)
 
 ### Configuration
 
@@ -836,7 +814,7 @@ MyProfile     | ✅      | ✅        | ✅      | ❌       | ❌
 
 ---
 
-## D4) Folder Structure
+## D3) Folder Structure
 
 ### Repository Root
 
@@ -955,7 +933,7 @@ MyProfile     | ✅      | ✅        | ✅      | ❌       | ❌
 
 ---
 
-## D5) Dependencies
+## D4) Dependencies
 
 ### System Requirements
 
@@ -984,7 +962,7 @@ sudo apt-get install tmux
 
 ---
 
-## D6) Troubleshooting
+## D5) Troubleshooting
 
 ```
 Issue                          | Solution
@@ -1006,7 +984,7 @@ Check logs                     | tail -f 1.ops/build_main.log
 
 ---
 
-## D7) Security Vault (LOCAL_KEYS)
+## D6) Security Vault (LOCAL_KEYS)
 
 > **Location:** `/home/diego/Documents/Git/LOCAL_KEYS/`
 > **SENSITIVE - DO NOT COMMIT TO ANY REPOSITORY**
@@ -1138,7 +1116,7 @@ API Token            | Stored in LOCAL_KEYS/00_terminal/
 
 ---
 
-## D8) Code Practices
+## D7) Code Practices
 
 > Reference: `/home/diego/Documents/Git/front-Github_io/1.ops/30_Code_Practise.md`
 
