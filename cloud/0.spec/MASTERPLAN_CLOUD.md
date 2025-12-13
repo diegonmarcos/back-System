@@ -54,8 +54,10 @@ This master plan is a **Product-Engineer Handoff Document** defining Diego's clo
 > - [[#D4) System Practices]] - Poetry, pipx, nvm, backups
 
 > [!note] X) APPENDIX - Reference Material
-> - [[#X1) Tech Research]] - Framework comparisons
-> - [[#X2) Current State]] - Today's running services
+> - [[#X0) Code Practices]] - TypeScript, Svelte 5, Vue 3, SCSS standards
+> - [[#X1) System OS Practices]] - Poetry, Flatpak, Nix, dotfiles
+> - [[#X2) Tech Research]] - Framework comparisons
+> - [[#X3) Current State]] - Today's running services
 
 
 **Document Purpose:**
@@ -699,9 +701,301 @@ flowchart TD
 
 ---
 
-## X1) Tech Research
+## X0) Code Practices
 
-### X11) Framework Comparison (Frontend)
+> **Source:** `/front-Github_io/1.ops/30_Code_Practise.md`
+
+### X00) Tech Stack & Environment
+
+- **Framework:** SvelteKit (Svelte 5 Runes Mode) / Vue 3 (Composition API)
+- **Language:** TypeScript (Strict Mode)
+- **Styling:** SCSS (Sass) with "Golden Mixins"
+- **Analytics:** Matomo (Self-Hosted) via custom component
+- **Rendering:** Hybrid (SSR + SPA Client-Side Navigation)
+
+### X01) Svelte 5 & TypeScript Rules
+
+**CRITICAL:** Do NOT use Svelte 4 syntax.
+
+```
+Props     → let { propName }: { propName: Type } = $props();   // NEVER use export let
+State     → let count = $state(0);                              // NEVER use let var = val
+Computed  → let doubled = $derived(count * 2);                  // NEVER use $: var = val
+Effects   → $effect(() => { ... });                             // NEVER use onMount for reactive
+Events    → onclick, oninput                                    // NEVER use on:click
+```
+
+**Typing:**
+- Always import `PageData` and `PageServerLoad` from `./$types`
+- Use `HTMLInputElement`, `HTMLButtonElement`, etc., for DOM refs
+
+### X02) Vue 3 Rules
+
+**Always use Composition API with `<script setup lang="ts">`**
+
+```typescript
+// Props - use generic type syntax
+defineProps<{ id: number; name: string }>()
+
+// Refs - explicit types for nullable
+const user = ref<User | null>(null)
+
+// Emits - typed
+defineEmits<{ (e: 'update', id: number): void }>()
+```
+
+### X03) HTML & Accessibility
+
+**Goal:** Semantic, accessible, and clean HTML.
+
+- **No Div Soup:**
+  - ❌ `div class="nav"` → ✅ `<nav>`
+  - ❌ `div class="card"` → ✅ `<article class="card">`
+  - ❌ `div class="footer"` → ✅ `<footer>`
+- **Buttons vs Links:**
+  - Use `<a href="...">` ONLY for navigation (changing URLs)
+  - Use `<button type="button">` for actions (toggles, modals, API calls)
+- **Forms:** Every `<input>` must have a linked `<label>` (via `for` attribute or wrapping)
+- **Images:** All `<img>` tags MUST have an `alt` attribute
+
+### X04) SCSS & Styling Rules (Golden Mixins)
+
+**Goal:** Consistent, mobile-first responsive design.
+
+**Global Logic:**
+- Use **Flexbox** or **Grid** for all layouts
+- **FORBIDDEN:** `float`, `clear`, or `position: absolute` (unless for UI overlays)
+- Use `rem` for spacing/fonts, `%` for widths
+
+**The Golden Mixins:**
+```scss
+// Breakpoints (Mobile-first)
+$breakpoints: ('sm': 480px, 'md': 768px, 'lg': 1024px, 'xl': 1280px);
+@mixin mq($size) {
+  @media (min-width: map-get($breakpoints, $size)) { @content; }
+}
+
+// Flexbox
+@mixin flex-center { display: flex; justify-content: center; align-items: center; }
+@mixin flex-row($justify: flex-start, $align: stretch, $gap: 0) {
+  display: flex; flex-direction: row; justify-content: $justify;
+  align-items: $align; gap: $gap; flex-wrap: wrap;
+}
+@mixin flex-col($justify: flex-start, $align: stretch, $gap: 0) {
+  display: flex; flex-direction: column; justify-content: $justify;
+  align-items: $align; gap: $gap;
+}
+
+// CSS Grid
+@mixin grid-auto-fit($min-size: 250px, $gap: 1rem) {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax($min-size, 1fr)); gap: $gap;
+}
+```
+
+### X05) TypeScript Rules (Vanilla)
+
+**Strict Null Checks for DOM:**
+```typescript
+// ❌ Bad - Object is possibly null
+document.querySelector('.btn').addEventListener(...)
+
+// ✅ Good - Check null, cast type
+const btn = document.querySelector('.btn') as HTMLButtonElement;
+if (btn) { btn.addEventListener('click', handler); }
+```
+
+**Rules:**
+- **Strict Mode:** No `any`, handle `null`/`undefined`
+- **Explicit Casting:** Cast to specific type (`HTMLInputElement` not `HTMLElement`)
+- **ES Modules:** Use `import`/`export`, no global variables
+
+### X06) Analytics (Matomo SPA Tracking)
+
+**Problem:** In SPA, page doesn't reload - analytics won't track navigation.
+
+**Solution:** Hook into router's navigation event.
+
+```svelte
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { page } from '$app/stores';
+  import { afterNavigate } from '$app/navigation';
+  import { browser } from '$app/environment';
+
+  function track(action: any[]) {
+    if (browser && window._paq) { window._paq.push(action); }
+  }
+
+  // Initial load
+  onMount(() => {
+    window._paq = window._paq || [];
+    track(['trackPageView']);
+  });
+
+  // SPA navigation
+  afterNavigate((navigation) => {
+    if (navigation.type === 'enter') return;
+    track(['setCustomUrl', $page.url.href]);
+    track(['setDocumentTitle', document.title]);
+    track(['trackPageView']);
+  });
+</script>
+```
+
+---
+
+## X1) System OS Practices
+
+> System-level package management, app installation, and environment standards.
+
+### X10) Package Management
+
+**MANDATORY:** Use the right tool for each package type.
+
+```
+Package Type        | Tool      | Why                                    | Example
+────────────────────┼───────────┼────────────────────────────────────────┼─────────────────────────
+Python Packages     | Poetry    | Dependency isolation, lock files       | poetry add requests
+Python CLI Tools    | pipx      | Isolated environments for CLI apps     | pipx install black
+Node.js Packages    | npm/pnpm  | Per-project node_modules               | npm install
+Node.js Version     | nvm       | Multiple Node versions                 | nvm use 20
+GUI Applications    | Flatpak   | Sandboxed, distro-agnostic             | flatpak install flathub org.gimp.GIMP
+CLI Tools           | Nix       | Reproducible, declarative              | nix-env -iA nixpkgs.ripgrep
+System Packages     | pacman    | Arch Linux system packages             | pacman -S base-devel
+```
+
+### X11) Python Environment
+
+**Poetry is MANDATORY for all Python projects.**
+
+```bash
+# Project setup
+poetry new myproject          # New project
+poetry init                   # Existing project
+poetry add requests           # Add dependency
+poetry add --dev pytest       # Add dev dependency
+poetry install                # Install from lock file
+poetry shell                  # Activate venv
+poetry run python script.py   # Run in venv
+
+# Global CLI tools (NOT Poetry)
+pipx install black            # Code formatter
+pipx install ruff             # Linter
+pipx install pre-commit       # Git hooks
+```
+
+**pyproject.toml structure:**
+```toml
+[tool.poetry]
+name = "myproject"
+version = "0.1.0"
+python = "^3.11"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.31"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4"
+ruff = "^0.1"
+```
+
+### X12) Node.js Environment
+
+**nvm is MANDATORY for Node.js version management.**
+
+```bash
+# Version management
+nvm install 20                # Install Node 20
+nvm use 20                    # Use Node 20
+nvm alias default 20          # Set default
+
+# Per-project version (.nvmrc)
+echo "20" > .nvmrc
+nvm use                       # Reads .nvmrc
+
+# Package managers
+npm install                   # Install deps
+npm ci                        # Clean install (CI)
+pnpm install                  # Faster alternative
+```
+
+### X13) Application Installation
+
+**Flatpak for GUI apps, Nix for CLI tools.**
+
+```bash
+# GUI Apps → Flatpak (sandboxed, auto-updates)
+flatpak install flathub org.gimp.GIMP
+flatpak install flathub com.obsidian.Obsidian
+flatpak install flathub com.discordapp.Discord
+flatpak install flathub org.mozilla.firefox
+
+# CLI Tools → Nix (reproducible, declarative)
+nix-env -iA nixpkgs.ripgrep
+nix-env -iA nixpkgs.fd
+nix-env -iA nixpkgs.bat
+nix-env -iA nixpkgs.eza
+
+# Or use home-manager for declarative config
+# ~/.config/home-manager/home.nix
+```
+
+### X14) Dotfiles & Configuration
+
+**Centralized dotfiles with symlinks.**
+
+```bash
+# Structure
+~/Documents/Git/dotfiles/
+├── .bashrc
+├── .zshrc
+├── .gitconfig
+├── .config/
+│   ├── nvim/
+│   ├── alacritty/
+│   └── starship.toml
+└── install.sh              # Symlink script
+
+# Symlink pattern
+ln -sf ~/Documents/Git/dotfiles/.bashrc ~/.bashrc
+ln -sf ~/Documents/Git/dotfiles/.config/nvim ~/.config/nvim
+```
+
+### X15) Docker Practices
+
+```bash
+# Development
+docker compose up -d          # Start services
+docker compose logs -f        # Follow logs
+docker compose down           # Stop services
+
+# Cleanup
+docker system prune -a        # Remove unused
+docker volume prune           # Remove volumes
+
+# Never run as root inside containers
+# Always use non-root user in Dockerfile
+```
+
+### X16) Backup & Sync
+
+```bash
+# Syncthing for real-time sync
+# Restic for backups
+
+# Critical paths to backup:
+# - ~/Documents/Git/LOCAL_KEYS/
+# - ~/Documents/Git/dotfiles/
+# - ~/.ssh/ (symlinked from LOCAL_KEYS)
+# - ~/.gnupg/
+```
+
+---
+
+## X2) Tech Research
+
+### X20) Framework Comparison (Frontend)
 ```
 Criteria        | Vanilla (HTML+CSS+JS)    | Vue3 + Nuxt3 (SSR)       | SvelteKit 5 (SSR)
 ────────────────┼──────────────────────────┼──────────────────────────┼──────────────────────────
@@ -715,7 +1009,7 @@ SSR Support     | Manual only              | Built-in (Nuxt3)         | Built-in
 Static Export   | Native                   | Built-in (Nuxt3)         | Built-in
 ```
 
-### X12) Framework Comparison (Templating - Python/JS Backend)
+### X21) Framework Comparison (Templating - Python/JS Backend)
 ```
 Criteria        | Jinja2 (Python)          | Mako (Python)            | Handlebars (JS)
 ────────────────┼──────────────────────────┼──────────────────────────┼──────────────────────────
@@ -728,7 +1022,7 @@ Inheritance     | ★★★★★ Extends + Blocks   | ★★★★★ Extends +
 Debug           | ★★★★★ Clear errors       | ★★★☆☆ Verbose            | ★★★★☆ Good
 ```
 
-### X13) When to Use
+### X22) When to Use
 ```
 Use Case             | Best Choice              | Why
 ─────────────────────┼──────────────────────────┼────────────────────────────────────────
@@ -761,9 +1055,9 @@ Use Case             | Best Choice              | Why
 
 ---
 
-## X2) Current State
+## X3) Current State
 
-### X20) by Service
+### X30) by Service
 ``` java
 Service           | Public URL                      | VM             | Container       | IP:Port             | Status
 ──────────────────┼─────────────────────────────────┼────────────────┼─────────────────┼─────────────────────┼────────
@@ -801,7 +1095,7 @@ Devs Infrastructure
 ↳ Cache           | (internal)                      | oci-p-flex_1   | cache-app       | 84.235.234.87:6379  | on
 ```
 
-### X21) by VM
+### X31) by VM
 ``` html
 Host   | VM             | RAM   | VRAM | Storage | IP              | Services Running                          | Notes
 ───────┼────────────────┼───────┼──────┼─────────┼─────────────────┼───────────────────────────────────────────┼─────────────────
