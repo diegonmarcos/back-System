@@ -6,78 +6,57 @@
 **Status:** PLANNING COMPLETE - READY FOR IMPLEMENTATION
 
 ---
-
 # Executive Summary
 
 This master plan is a **Product-Engineer Handoff Document** defining Diego's cloud infrastructure:
 
-```
-┌────────────────────────────────────────────────────────────────────────────────────────────┐
-│  A) HANDOFF                        WHAT we're building (Cloud architecture)                │
-├────────────────────────────────────────────────────────────────────────────────────────────┤
-│  A0) Products (FRIDGE)             - Name, Component, Stack, Purpose                       │
-│      ├── Terminals                 - WebTerminal, IDE, AI Chat                             │
-│      ├── User Productivity         - Mail, Calendar, Sync, Drive, Git, Photos, etc.        │
-│      ├── User Security             - Vault, VPN                                            │
-│      ├── User Portfolio            - Linktree, CV, Projects                                │
-│      └── User AIs                  - Multi-Model, MyAI → MASTERPLAN_AI.md                  │
-│  A1) Infra Services (KITCHEN)      - Name, Component, Stack, Purpose                       │
-│      ├── Devs Cloud                - Cloud Portal, Analytics, Workflows                    │
-│      ├── Devs Security             - Proxy (NPM), Authelia, OAuth2                         │
-│      ├── Devs Infra                - API Gateway, Cache                                    │
-│      └── Tech Definition           - DevOps, Security, WebDevs stack choices               │
-│  A2) Infra Resources               - Resource Allocation, Maps/Topology, Costs             │
-│      ├── A20) Resource Alloc       - VMs, IPs, ports, URLs                                 │
-│      │       ├── A200) Resource Estimation       - RAM, Storage, Bandwidth                 │
-│      │       ├── A201) VM Capacity & Headroom    - Capacity vs Allocated                   │
-│      │       ├── A202) Cost Estimation           - Monthly costs breakdown                 │
-│      │       └── A203) URL/Port Proxied          - Service URL mapping                     │
-│      ├── A21) Maps & Topology      - Network diagrams, auth flow                           │
-│      └── A22) Costs                - Monthly cost summary                                  │
-│  A3) Tech Research                 - Framework comparisons supporting stack choices        │
-│      ├── Framework Comparison      - Frontend (Vanilla vs Vue vs Svelte)                   │
-│      ├── Templating Comparison     - Python/JS backend (Jinja2 vs Mako vs Handlebars)      │
-│      └── When to Use               - Decision guide for each use case                      │
-│  A4) Today                         - Current running state                                 │
-│      ├── by Service                - Service status table                                  │
-│      └── by VM                     - VM status table                                       │
-└────────────────────────────────────────────────────────────────────────────────────────────┘
 
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│  B) ARCHITECTURE         HOW to build it (Technical Deep Dives)                 │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│  B1) Security Architecture                                                      │
-│      B11) Web Auth       - Dual auth flows, session mgmt, token handling        │
-│      B12) Dev Access     - SSH patterns, key management, Vault integration      │
-│      B13) Isolation      - Network segmentation, firewall rules, secrets        │
-│  B2) Service Architecture                                                       │
-│      B21) Containers     - Docker Compose patterns, orchestration               │
-│      B22) Databases      - Schemas, migrations, backup strategies               │
-│      B23) APIs           - Contracts, OpenAPI specs, versioning                 │
-│  B3) Infrastructure Architecture                                                │
-│      B31) Networking     - DNS, SSL, reverse proxy configs                      │
-│      B32) Storage        - Volumes, backups, disaster recovery                  │
-│      B33) Scaling        - Triggers, wake-on-demand, GPU provisioning           │
-└─────────────────────────────────────────────────────────────────────────────────┘
+> [!abstract] A) PRODUCTS & CONTROL CENTER
+> - **[[#A0) Products]]** - User-facing applications
+>   - [[#A00) Terminals]]	- vpn, vscode-ssh, vscode-web, ai-chat
+>   - [[#A01) User Productivity]] - mail, calendar, sync, photos, slides, sheets, dashboards, vault
+>   - [[#A02) User Profile]]	- linktree
+> - **[[#A1) Back-Services]]** - Admin panel & ops dashboard
+>   - [[#A10) Cloud Portal Front]] - Cloud Web Portal
+>   - [[#A11) Operation Dashboards]] - Real-time system views
+>     - [[#A110) Monitor]] - Health, CPU, RAM, VRAM
+>     - [[#A111) Orchestrate]] - Container management
+>     - [[#A112) Cost]] - Usage tracking & billing
+>     - [[#A113) Security]] - Vulnerability scans & alerts
+>   - [[#A12) Infra Services Access]] - Backend infrastructure
+>     - [[#A120) Security Services]]	- backup, security
+>     - [[#A120b) Auth & Proxy Services]] - webserver, oauth2, authelia, vpn
+>     - [[#A121) Audit]]	- analytics, audit
+>     - [[#A122) Data & API & MCP]]	- api, cache, mcp
+>   - [[#A13) Infra Resources]] - VMs, networks & allocation
+>     - [[#A130) Resource Allocation]] - IPs, ports, URLs
+>     - [[#A131) Maps & Topology]] - Network diagrams
+>     - [[#A132) Costs]] - Monthly cost breakdown
 
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│  C) ROADMAP              WHEN to build it (Planning & Prioritization)           │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│  C1) Phases              - Implementation milestones                            │
-│  C2) Dependencies        - Service dependency graph                             │
-│  C3) Backlog             - Prioritized task list                                │
-└─────────────────────────────────────────────────────────────────────────────────┘
+> [!example] B) ARCHITECTURE - HOW to build it
+> - **[[#B0) Architecture]]**
+>   - [[#B00) Security Architecture]] - Auth, SSH, network isolation
+>   - [[#B01) Service Architecture]] - Containers, databases, APIs
+>   - [[#B02) Infrastructure Architecture]] - DNS, SSL, storage, scaling
+>   - [[#B03) Collectors & Data]] - Data pipelines, API gateway
+>   - [[#B04) MCP Architecture]] - MCP servers, RAG, secrets
 
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│  D) DEVOPS               HOW to operate it (Operations & Observability)         │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│  D1) Portal              - Services access dashboard (Fridge/Kitchen)           │
-│  D2) Monitoring          - Metrics, alerts, health checks                       │
-│  D3) Knowledge Center    - Architecture docs, API docs, Wiki/FAQ                │
-│  D4) Code Practices      - Python standards, Docker patterns, Jinja2            │
-│  D5) System Practices    - Poetry, pipx, nvm, shell scripts, backups            │
-└─────────────────────────────────────────────────────────────────────────────────┘
-```
+> [!tip] C) ROADMAP - WHEN to build it
+> - [[#C0) Phases - Implementation Milestones]] - Implementation milestones
+> - [[#C1) Dependencies - Service Graph]] - Service dependency graph
+> - [[#C2) Backlog - Prioritized Tasks]] - Prioritized task list
+
+> [!info] D) DEVOPS - HOW to operate it
+> - [[#D0) Portal - Cloud Control Center (C3)]] - Services access dashboard
+> - [[#D1) Monitoring - Uptime Kuma]] - Metrics, alerts, health checks
+> - [[#D2) Knowledge Center]] - Architecture docs, Wiki/FAQ
+> - [[#D3) Code Practices]] - Python standards, Docker, Jinja2
+> - [[#D4) System Practices]] - Poetry, pipx, nvm, backups
+
+> [!note] X) APPENDIX - Reference Material
+> - [[#X1) Tech Research]] - Framework comparisons
+> - [[#X2) Current State]] - Today's running services
+
 
 **Document Purpose:**
 - **A = WHAT** → Complete service catalog + stack allocation (Product defines, Engineer validates)
@@ -93,11 +72,11 @@ This master plan is a **Product-Engineer Handoff Document** defining Diego's clo
 # A) HANDOFF - Services & Infrastructure Definition
 
 
-## A0) Products (FRIDGE)
+## A0) Products
 
 > **Layer 1** = Infrastructure tools (Terminals, Sync, etc.) - what you use to BUILD
 
-### Terminals
+### A00) Terminals
 
 ```
 Name                     | Component            | Stack               | Purpose
@@ -105,15 +84,19 @@ Name                     | Component            | Stack               | Purpose
 terminals                | -                    | -                   | AI-Powered Dev Environment
   ↳ terminals-front      | Hub Landing          | SvelteKit 5 + SCSS  | Tool selector UI
                          |                      |                     |
-  ├─ terminal            | -                    | -                   | Web Terminal (bash/zsh/fish)
-  │    ↳ terminal-front  | Shell Selector       | SvelteKit 5 + SCSS  | Shell selector UI
-  │    ↳ terminal-app    | Terminal Server      | ttyd / wetty        | Terminal server
-  │    ↳ terminal-db0    | Storage              | Filesystem          | Shell history + dotfiles
+  ├─ vpn                 | -                    | -                   | VPN Access (Remote)
+  │    ↳ vpn-front       | Admin UI             | wg-easy / Firezone  | WireGuard management + 2FA
+  │    ↳ vpn-app         | VPN Server           | WireGuard           | VPN tunnel server
+  │    ↳ vpn-db0         | Storage              | Filesystem          | Peer configs + keys
                          |                      |                     |
-  ├─ ide                 | -                    | -                   | Web IDE
-  │    ↳ ide-front       | IDE Launcher         | SvelteKit 5 + SCSS  | IDE launcher + selector
-  │    ↳ ide-app         | Code Server          | code-server         | Code server
-  │    ↳ ide-db0         | Storage              | Filesystem          | Workspaces + extensions
+  ├─ vscode-ssh          | -                    | -                   | VS Code Remote SSH
+  │    ↳ vscode-ssh-app  | SSH Server           | OpenSSH             | SSH access to VMs
+  │    ↳ vscode-ssh-db0  | Storage              | Filesystem          | SSH keys + authorized_keys
+                         |                      |                     |
+  ├─ vscode-web          | -                    | -                   | Web IDE (code-server)
+  │    ↳ vscode-web-front| IDE Launcher         | SvelteKit 5 + SCSS  | IDE launcher + selector
+  │    ↳ vscode-web-app  | Code Server          | code-server         | Code server
+  │    ↳ vscode-web-db0  | Storage              | Filesystem          | Workspaces + extensions
                          |                      |                     |
   └─ ai-chat             | -                    | -                   | AI Chat Assistant
        ↳ ai-front        | Chat UI              | SvelteKit 5 + SCSS  | Chat interface
@@ -123,7 +106,7 @@ terminals                | -                    | -                   | AI-Power
 ```
 
 
-### User Productivity
+### A01) User Productivity
 
 ```
 Name                     | Component            | Stack               | Purpose
@@ -198,27 +181,16 @@ dashboards               | -                    | -                   | Data Das
   └─ dash                | -                    | -                   | Python Dashboards
        ↳ dash-app        | Dashboard Server     | Plotly Dash         | Dashboard server
        ↳ dash-db0        | Storage              | Filesystem          | Dashboard configs + data
-```
-
-### User Security
-
-```
-Name                     | Component            | Stack               | Purpose
-─────────────────────────┼──────────────────────┼─────────────────────┼────────────────────────────────
+                         |                      |                     |
 vault                    | -                    | -                   | Password Manager
   ↳ vault-front          | Login UI             | Vaultwarden (built-in)| Vaultwarden web interface
   ↳ vault-app            | Password Server      | Vaultwarden         | Bitwarden self-hosted
   ↳ vault-db0            | Database             | SQL:SQLite          | Encrypted credentials
-                         |                      |                     |
-vpn                      | -                    | -                   | VPN Server
-  ↳ vpn-front            | Client UI            | wg-easy (built-in)  | Web UI for client management
-  ↳ vpn-app              | VPN Server           | Wireguard           | VPN tunnel server
-  ↳ vpn-db0              | Storage              | Filesystem          | Client configs + keys
 ```
 
 > **Layer 2** = Built solutions - what you CREATE with those tools
 
-### User Profile/Developments/Portfolio
+### A02) User Profile
 
 ```
 Name                     | Component            | Stack               | Purpose
@@ -241,62 +213,41 @@ linktree                 | -                    | -                   | Personal
     • Navigation         | -                    | -                   | Keyboard/gesture support
 ```
 
-### User AIs Models
-
-> **Detailed Spec:** `0.spec/MASTERPLAN_AI.md` (separate infrastructure - performance-focused)
-> **Status:** Premium project (will merge when ready)
-
-```
-Name                     | Component            | Stack               | Purpose
-─────────────────────────┼──────────────────────┼─────────────────────┼────────────────────────────────
-ai-chat (Terminals)      | -                    | -                   | AI Chat Interface
-  ↳ Mode 1: API Keys     | External APIs        | OpenAI/Claude/etc   | Connect external APIs
-  ↳ Mode 2: Multi-Model  | Self-hosted          | → MASTERPLAN_AI.md  | Frontend for AI infrastructure
-                         |                      |                     |
-─────────────────────────┼──────────────────────┼─────────────────────┼────────────────────────────────
-; MASTERPLAN_AI.md contains:                                          |
-─────────────────────────┼──────────────────────┼─────────────────────┼────────────────────────────────
-multimodel               | -                    | -                   | Multi-Model Inference & Routing
-  ↳ routing              | Model Router         | Open WebUI          | Choose best model per task
-  ↳ gateway              | API Gateway          | Ollama              | Unified interface
-  ↳ context              | RAG Engine           | pgvector            | Context management with your data
-                         |                      |                     |
-myai                     | -                    | -                   | Train & Deploy Your Own Models
-  ↳ data                 | Data Pipeline        | Python3             | Collect, store, embed your data
-  ↳ train                | Training Engine      | PyTorch + MLflow    | Fine-tune or train (GPU on-demand)
-  ↳ deploy               | Model Server         | FastAPI             | Serve model (private/shared/public)
-                         |                      |                     |
-infrastructure           | -                    | -                   | Own Cloud Stack
-  ↳ oci-f-arm_1          | Brain API            | Oracle ARM (24GB)   | Vector DB, 24/7 FREE
-  ↳ tensordock-inference | Inference VM         | TensorDock GPU      | Ollama, $0.35/hr
-  ↳ tensordock-training  | Training VM          | TensorDock GPU      | PyTorch, $0.35/hr
-  ↳ local-collectors     | Ingestion            | Python3             | Data ingestion pipelines
-```
-
 ---
 
-## A1) Infra Services (KITCHEN)
+## A1) Back-Services
 
-### Devs Cloud Portal
+### A10) Cloud Portal Front
 
 ```
 Name                     | Component            | Stack               | Purpose
 ─────────────────────────┼──────────────────────┼─────────────────────┼────────────────────────────────
-cloud                    | -                    | -                   | Cloud Portal (Central Hub)
-  ↳ cloud-front          | Portal Landing       | SvelteKit 5 + SCSS  | Portal landing + navigation
-  ↳ cloud-app            | Backend              | Python3             | Backend logic + collectors
-  ↳ cloud-db0            | Storage              | Only JSON           | Config + metrics storage
-                         |                      |                     |
-  ├─ fridge              | -                    | -                   | Solutions Access (User Services)
-  │    ↳ fridge-front    | Services Launcher    | SvelteKit 5 + SCSS  | Services launcher + status cards
-                         |                      |                     |
-  └─ kitchen             | -                    | -                   | Infrastructure Dashboard
-       ↳ kitchen-front   | Arch Dashboard       | SvelteKit 5 + SCSS  | Architecture diagrams + monitoring
-                         |                      |                     |
-analytics                | -                    | -                   | Web Analytics Platform
-  ↳ analytics-front      | Stats UI             | Matomo (built-in)   | Login + stats display
-  ↳ analytics-app        | Analytics Engine     | Matomo (PHP-FPM)    | Analytics processing
-  ↳ analytics-db0        | Database             | SQL:MariaDB         | Visits, events, reports
+cloud-portal                       | -                    | -         | 
+ 
+```
+
+
+### A11) Operation Dashboards
+
+#### A110) Monitor
+
+```
+Name                     | Component            | Stack               | Purpose
+─────────────────────────┼──────────────────────┼─────────────────────┼────────────────────────────────
+monitor                  | -                    | -                   | Health Monitoring
+  ↳ monitor-front        | Status Page          | Uptime Kuma (built-in)| Public status page + badges
+  ↳ monitor-app          | Health Checks        | Uptime Kuma         | Ping, HTTP, TCP, DNS checks
+  ↳ monitor-db0          | Database             | SQL:SQLite          | Incidents, heartbeats
+```
+
+#### A111) Orchestrate
+
+```
+Name                     | Component            | Stack               | Purpose
+─────────────────────────┼──────────────────────┼─────────────────────┼────────────────────────────────
+orchestrate              | -                    | -                   | Container Orchestration
+  ↳ orchestrate-app      | Stack Manager        | Dockge              | Docker Compose UI
+  ↳ orchestrate-db0      | Storage              | Filesystem          | Stack configs (compose files)
                          |                      |                     |
 workflows                | -                    | -                   | Workflow Automation Hub
   ↳ workflows-front      | Selector UI          | SvelteKit 5 + SCSS  | Hub landing + workflow selector
@@ -314,7 +265,59 @@ workflows                | -                    | -                   | Workflow
        ↳ langgraph-gpu   | GPU Runtime          | Vast.ai / Lambda    | GPU compute runtime
 ```
 
-### Devs Security
+#### A112) Cost
+
+```
+Name                     | Component            | Stack               | Purpose
+─────────────────────────┼──────────────────────┼─────────────────────┼────────────────────────────────
+cost                     | -                    | -                   | Cost Tracking & Billing
+  ↳ cost-front           | Cost Dashboard       | SvelteKit 5 + SCSS  | Usage & billing display
+  ↳ cost-app             | Cost Aggregator      | Python3             | Collects usage from all VMs
+  ↳ cost-db0             | Database             | SQL:SQLite          | Usage history, billing records
+```
+
+#### A113) Security
+
+```
+Name                     | Component            | Stack               | Purpose
+─────────────────────────┼──────────────────────┼─────────────────────┼────────────────────────────────
+sec-dashboard            | -                    | -                   | Security Dashboard
+  ↳ sec-front            | Security Overview    | SvelteKit 5 + SCSS  | Vulnerabilities & alerts display
+  ↳ sec-app              | Alert Aggregator     | Python3             | Collects scan results
+  ↳ sec-db0              | Database             | SQL:SQLite          | Scan history, alerts
+```
+
+### A12) Infra Services Access
+
+#### A120) Security Services
+
+```
+Name                     | Component            | Stack               | Purpose
+─────────────────────────┼──────────────────────┼─────────────────────┼────────────────────────────────
+backup                   | -                    | -                   | Backup System
+  ↳ backup-app           | Backup Engine        | Borgmatic           | Deduplicating backups (Borg wrapper)
+  ↳ backup-db0           | Storage              | Filesystem          | Borg repos + borgmatic.yaml
+                         |                      |                     |
+security                 | -                    | -                   | Active Security (Vulnerability Scan)
+  ↳ security-app         | Scanner              | Trivy               | Container image scanning
+  ↳ security-cron        | Scheduler            | Cron                | Daily scans → JSON reports
+```
+
+#### A121) Audit
+
+```
+Name                     | Component            | Stack               | Purpose
+─────────────────────────┼──────────────────────┼─────────────────────┼────────────────────────────────
+analytics                | -                    | -                   | Web Analytics Platform
+  ↳ analytics-front      | Stats UI             | Matomo (built-in)   | Login + stats display
+  ↳ analytics-app        | Analytics Engine     | Matomo (PHP-FPM)    | Analytics processing
+  ↳ analytics-db0        | Database             | SQL:MariaDB         | Visits, events, reports
+                         |                      |                     |
+audit                    | -                    | -                   | Log Auditing (Passive Security)
+  ↳ audit-app            | Log Viewer           | Dozzle              | Real-time container logs
+```
+
+#### A120b) Auth & Proxy Services
 
 ```
 Name                     | Component            | Stack               | Purpose
@@ -333,9 +336,14 @@ authelia                 | -                    | -                   | 2FA / SS
   ↳ authelia-front       | Login UI             | Authelia (built-in) | Login + 2FA prompt
   ↳ authelia-app         | Auth Server          | Authelia            | Auth server + session mgmt
   ↳ authelia-db0         | Database             | SQL:PostgreSQL      | Users, sessions, TOTP seeds
+                         |                      |                     |
+vpn                      | -                    | -                   | VPN Server
+  ↳ vpn-front            | Client UI            | wg-easy (built-in)  | Web UI for client management
+  ↳ vpn-app              | VPN Server           | Wireguard           | VPN tunnel server
+  ↳ vpn-db0              | Storage              | Filesystem          | Client configs + keys
 ```
 
-### Devs Infrastructure
+#### A122) Data & API & MCP
 
 ```
 Name                     | Component            | Stack               | Purpose
@@ -347,11 +355,29 @@ api                      | -                    | -                   | Central 
                          |                      |                     |
 cache                    | -                    | -                   | In-Memory Cache
   ↳ cache-app            | Cache Server         | Redis               | Session/cache data store
+                         |                      |                     |
+mcp                      | -                    | -                   | Model Context Protocol (AI-agnostic)
+                         |                      |                     |
+; RESOURCES (read) - AI knowledge & context
+  ↳ masterplan-rag       | Knowledge Retrieval  | ChromaDB+sentence   | Semantic search across masterplans
+  ↳ file-navigator       | Codebase Navigation  | Python3+pathlib     | Find files across 18+ projects
+  ↳ git-integration      | History Query        | GitPython           | Commits, blame, file evolution
+  ↳ secrets-manager      | Credential Paths     | Python3             | Safe paths to LOCAL_KEYS (never contents)
+  ↳ project-config       | Metadata Query       | Python3             | package.json, dependencies
+  ↳ emails               | Mail Archive         | ChromaDB+IMAP       | MyMail/ - subject, body, attachments
+  ↳ photos               | Photo Metadata       | ChromaDB+API        | MyPhotos/ - tags, captions, metadata
+  ↳ monitoring-dashboard | Health & Costs       | Python3             | Uptime, resource usage, alerts
+                         |                      |                     |
+; TOOLS (act) - AI actions & commands
+  ↳ cloud-cli            | Cloud Commands       | gcloud+oci CLI      | VM status, start, stop
+  ↳ docker-manager       | Service Control      | Docker SDK          | Container logs, restart, health
+  ↳ build-orchestrator   | Build Automation     | Shell+Python3       | Trigger builds across 18 projects
+  ↳ github-integration   | GitHub API           | PyGithub            | PR status, workflow runs, triggers
 ```
 
-### Tech Definition
+### X10) Tech Definition
 
-#### DevOps Stack
+#### X100) DevOps Stack
 ```
 Category             | Provider                 | Purpose
 ─────────────────────┼──────────────────────────┼────────────────────────────────
@@ -363,7 +389,7 @@ Analytics            | Matomo (self-hosted)     | Privacy-focused web analytics
 DNS + CDN            | Cloudflare               | DNS, SSL, caching, DDoS protection
 ```
 
-#### Security Stack
+#### X101) Security Stack
 ```
 Component            | Stack                    | Purpose
 ─────────────────────┼──────────────────────────┼────────────────────────────────
@@ -375,7 +401,7 @@ OAuth2 Providers     | OAuth2-Proxy             | Social Login Integration
   ↳ X (Twitter)      | X OAuth                  | Future option
 ```
 
-#### WebDevs Stack
+#### X102) WebDevs Stack
 ```
 Project Type         | Stack                    | Output                  | Render
 ─────────────────────┼──────────────────────────┼─────────────────────────┼────────────
@@ -398,11 +424,11 @@ Spec Docs (ArchSpecs)| Jinja2             | .spec.json     | .md.j2           | 
 
 ---
 
-## A2) Infra Resources
+### A13) Infra Resources
 
-### A20) Resource Allocation
+#### A130) Resource Allocation
 
-#### A200) Resource Estimation
+##### A1300) Resource Estimation
 ```
 Service              | RAM      | Storage   | GPU    | Bandwidth/mo | VM
 ─────────────────────┼──────────┼───────────┼────────┼──────────────┼────────────────
@@ -440,11 +466,15 @@ FRIDGE TOTALS        | 4.1 GB   | 49.6 GB   | -      | 483 GB       |
 
 ## KITCHEN
 
-Devs Cloud Portal
+Cloud Control Center (C3)
 ↳ analytics-app      | 256 MB   | 5 GB      | -      | 100 GB       | oci-f-micro_2
-↳ cloud-app          | 128 MB   | 500 MB    | -      | 5 GB         | oci-p-flex_1
-  ↳ fridge-front     | 64 MB    | 100 MB    | -      | 10 GB        | oci-p-flex_1
-  ↳ kitchen-front    | 64 MB    | 100 MB    | -      | 5 GB         | oci-p-flex_1
+↳ c3-app             | 64 MB    | 100 MB    | -      | 5 GB         | oci-p-flex_1
+  ↳ dashboard        | 64 MB    | 50 MB     | -      | 10 GB        | oci-p-flex_1
+  ↳ monitor          | 64 MB    | 500 MB    | -      | 5 GB         | oci-p-flex_1
+  ↳ orchestrate      | 128 MB   | 100 MB    | -      | 5 GB         | oci-p-flex_1
+  ↳ backup           | 128 MB   | varies    | -      | 2 GB         | oci-p-flex_1
+  ↳ audit            | 32 MB    | -         | -      | 2 GB         | oci-p-flex_1
+  ↳ security         | 128 MB   | 1 GB      | -      | 2 GB         | oci-p-flex_1
 ↳ workflows-app      | 64 MB    | 100 MB    | -      | 2 GB         | oci-p-flex_1
   ↳ temporal         | 512 MB   | 2 GB      | -      | 20 GB        | oci-p-flex_1
   ↳ langgraph        | 512 MB   | 2 GB      | -      | 30 GB        | oci-p-flex_1
@@ -465,7 +495,7 @@ KITCHEN TOTALS       | 2.4 GB   | 12.9 GB   | -      | 257 GB       |
 GRAND TOTALS         | 6.5 GB   | 62.5 GB   | -      | 740 GB       |
 ```
 
-#### A201) VM Capacity & Headroom
+##### A1301) VM Capacity & Headroom
 ```
 Host       | VM             | RAM    | Alloc  | HD     | Alloc  | Headroom | Services Running
 ───────────┼────────────────┼────────┼────────┼────────┼────────┼──────────┼─────────────────────────────────────────
@@ -477,7 +507,7 @@ Oracle     | oci-p-flex_1   | 8 GB   | 5.1 GB | 100 GB | 45 GB  | 36% RAM  | syn
 TOTALS     |                | 11 GB  | 6.4 GB | 224 GB | 62 GB  | 42% RAM  |
 ```
 
-#### A202) Cost Estimation
+##### A1302) Cost Estimation
 ```
 Item                   | Provider   | Monthly Cost  | Notes
 ───────────────────────┼────────────┼───────────────┼─────────────────────────────
@@ -494,7 +524,7 @@ TOTAL                  |            | ~$6.50/mo     | Cloud infrastructure
 
 
 
-#### A203) URL/Port Proxied
+##### A1303) URL/Port Proxied
 
 **URL Pattern:** `service.diegonmarcos.com` = Login/Landing → redirects to `/app` after auth success
 
@@ -539,12 +569,17 @@ User Security
 
 ## KITCHEN
 
-Devs Cloud Portal
+Cloud Control Center (C3)
 ↳ Analytics       | analytics.diegonmarcos.com                      | oci-f-micro_2  | analytics-front  | -       | 129.151.228.66:8080
   ↳ Matomo        | analytics.diegonmarcos.com/matomo               | oci-f-micro_2  | analytics-app    | x       | 129.151.228.66:8080
-↳ Cloud Portal    | cloud.diegonmarcos.com                          | oci-p-flex_1   | cloud-front      | -       | 84.235.234.87:3005
-  ↳ Fridge        | cloud.diegonmarcos.com/fridge                   | oci-p-flex_1   | fridge-front     | x       | 84.235.234.87:3005
-  ↳ Kitchen       | cloud.diegonmarcos.com/kitchen                  | oci-p-flex_1   | kitchen-front    | x       | 84.235.234.87:3005
+↳ Dashboard       | cloud.diegonmarcos.com                          | oci-p-flex_1   | dashboard-app    | -       | 84.235.234.87:3000
+  ↳ Homepage      | cloud.diegonmarcos.com                          | oci-p-flex_1   | homepage         | -       | 84.235.234.87:3000
+↳ Monitor         | status.diegonmarcos.com                         | oci-p-flex_1   | monitor-app      | -       | 84.235.234.87:3001
+  ↳ Uptime Kuma   | status.diegonmarcos.com                         | oci-p-flex_1   | uptime-kuma      | x       | 84.235.234.87:3001
+↳ Orchestrate     | dockge.diegonmarcos.com                         | oci-p-flex_1   | orchestrate-app  | x       | 84.235.234.87:5001
+  ↳ Dockge        | dockge.diegonmarcos.com                         | oci-p-flex_1   | dockge           | x       | 84.235.234.87:5001
+↳ Audit           | logs.diegonmarcos.com                           | oci-p-flex_1   | audit-app        | x       | 84.235.234.87:9999
+  ↳ Dozzle        | logs.diegonmarcos.com                           | oci-p-flex_1   | dozzle           | x       | 84.235.234.87:9999
 ↳ Workflows       | workflow.diegonmarcos.com                       | oci-p-flex_1   | workflows-front  | -       | 84.235.234.87:3006
   ↳ Temporal      | workflow.diegonmarcos.com/temporal              | oci-p-flex_1   | temporal-app     | x       | 84.235.234.87:8233
   ↳ LangGraph     | workflow.diegonmarcos.com/langgraph             | oci-p-flex_1   | langgraph-app    | x       | 84.235.234.87:8123
@@ -574,98 +609,79 @@ Oracle     | oci-p-flex_1   | 84.235.234.87   | -                               
 
 
 
-### A21) Maps & Topology
+#### A131) Maps & Topology
 
-#### Network Topology
-```
-                                    INTERNET
-                                       │
-                                       ▼
-                          ┌────────────────────────┐
-                          │      CLOUDFLARE        │
-                          │   DNS + CDN + Proxy    │
-                          │   diegonmarcos.com     │
-                          └───────────┬────────────┘
-                                      │
-                    ┌─────────────────┼─────────────────┐
-                    │                 │                 │
-                    ▼                 ▼                 ▼
-┌───────────────────────────────────────────────────────────────────────────────┐
-│                              GOOGLE CLOUD                                      │
-│  ┌─────────────────────────────────────────────────────────────────────────┐  │
-│  │  gcp-f-micro_1 (us-central1-a)              34.55.55.234                │  │
-│  │  e2-micro | 1 GB RAM | 30 GB | FREE 24/7                                │  │
-│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐          │  │
-│  │  │  NPM :80/:443   │  │ Authelia :9091  │  │  Flask API      │          │  │
-│  │  │  Reverse Proxy  │  │  2FA Gateway    │  │  :5000          │          │  │
-│  │  └────────┬────────┘  └────────┬────────┘  └─────────────────┘          │  │
-│  │           │                    │                                         │  │
-│  │           └────────────────────┘                                         │  │
-│  │                    │ Forward Auth                                        │  │
-│  └────────────────────┼─────────────────────────────────────────────────────┘  │
-└───────────────────────┼────────────────────────────────────────────────────────┘
-                        │
-        ┌───────────────┼───────────────┬───────────────┐
-        │               │               │               │
-        ▼               ▼               ▼               ▼
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                                 ORACLE CLOUD                                     │
-│                                                                                  │
-│  ┌────────────────────────┐  ┌────────────────────────┐                         │
-│  │  oci-f-micro_1         │  │  oci-f-micro_2         │                         │
-│  │  130.110.251.193       │  │  129.151.228.66        │                         │
-│  │  1 GB | 47 GB          │  │  1 GB | 47 GB          │                         │
-│  │  FREE 24/7             │  │  FREE 24/7             │                         │
-│  │  ─────────────────     │  │  ─────────────────     │                         │
-│  │  • mail-* (8 cont)     │  │  • analytics (Matomo)  │                         │
-│  │    - IMAP/SMTP         │  │    - PHP-FPM           │                         │
-│  │    - Webmail           │  │    - MariaDB           │                         │
-│  │    - Admin             │  │                        │                         │
-│  └────────────────────────┘  └────────────────────────┘                         │
-│                                                                                  │
-│  ┌──────────────────────────────────────────────────────────────────────────┐   │
-│  │  oci-p-flex_1 (eu-frankfurt-1)                      84.235.234.87        │   │
-│  │  A1.Flex | 8 GB RAM | 100 GB | PAID (wake-on-demand) ~$5.50/mo           │   │
-│  │  ────────────────────────────────────────────────────────────────────    │   │
-│  │  FRIDGE (Solutions)                  │  KITCHEN (Infrastructure)         │   │
-│  │  • terminal, ide, ai-chat            │  • cloud-portal                   │   │
-│  │  • sync, drive (Rclone), git (Gitea) │    - /fridge (services access)    │   │
-│  │  • photos (Photoprism), calendar     │    - /kitchen (arch + monitoring) │   │
-│  │  • slides (Marp/Slidev/Reveal)       │  • workflows                      │   │
-│  │  • sheets (Pandas/XSV)               │    - temporal, langgraph          │   │
-│  │  • dashboards (Jupyter/Dash)         │  • cache (Redis)                  │   │
-│  │  • vault (Vaultwarden), vpn (WG)     │                                   │   │
-│  └──────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                  │
-└──────────────────────────────────────────────────────────────────────────────────┘
+##### A1310) Network Topology
+
+```mermaid
+flowchart TD
+    subgraph INTERNET
+        USER[User Request]
+    end
+
+    subgraph CLOUDFLARE["CLOUDFLARE (DNS + CDN)"]
+        CF[diegonmarcos.com]
+    end
+
+    subgraph GCP["GOOGLE CLOUD (gcp-f-micro_1 - FREE 24/7)"]
+        direction TB
+        NPM["NPM :80/:443<br>Reverse Proxy"]
+        AUTH["Authelia :9091<br>2FA Gateway"]
+        FLASK["Flask API :5000"]
+        NPM -->|Forward Auth| AUTH
+    end
+
+    subgraph OCI["ORACLE CLOUD"]
+        subgraph MICRO1["oci-f-micro_1 (FREE 24/7)<br>130.110.251.193"]
+            MAIL["mail-* (8 containers)<br>IMAP/SMTP/Webmail"]
+        end
+        subgraph MICRO2["oci-f-micro_2 (FREE 24/7)<br>129.151.228.66"]
+            ANALYTICS["analytics (Matomo)<br>PHP-FPM + MariaDB"]
+        end
+        subgraph FLEX["oci-p-flex_1 (PAID ~$5.50/mo)<br>84.235.234.87 | 8GB RAM"]
+            direction LR
+            subgraph FRIDGE["FRIDGE (Solutions)"]
+                F1[terminal, ide, ai-chat]
+                F2[sync, drive, git]
+                F3[photos, calendar]
+                F4[slides, sheets, dashboards]
+                F5[vault, vpn]
+            end
+            subgraph KITCHEN["KITCHEN (C3)"]
+                K1[Homepage, Uptime Kuma]
+                K2[Dockge, Borgmatic]
+                K3[Dozzle, Trivy, Redis]
+            end
+        end
+    end
+
+    USER --> CF
+    CF --> NPM
+    NPM --> MAIL
+    NPM --> ANALYTICS
+    NPM --> FLEX
 ```
 
-#### Auth Flow
-```
-User Request → Cloudflare → NPM (gcp-f-micro_1)
-                              │
-                              ▼
-                      ┌───────────────┐
-                      │   Authelia    │
-                      │   2FA Check   │
-                      └───────┬───────┘
-                              │
-            ┌─────────────────┼─────────────────┐
-            ▼                 ▼                 ▼
-      ┌──────────┐      ┌──────────┐      ┌──────────┐
-      │  GitHub  │      │   TOTP   │      │ Passkey  │
-      │  OAuth2  │      │  (Local) │      │ WebAuthn │
-      └────┬─────┘      └────┬─────┘      └────┬─────┘
-           └─────────────────┼─────────────────┘
-                             ▼
-                   Session Cookie Created
-                   (.diegonmarcos.com)
-                             │
-                             ▼
-                   Access Granted → Backend VM
+##### A1311) Auth Flow
+
+```mermaid
+flowchart TD
+    REQ[User Request] --> CF[Cloudflare]
+    CF --> NPM[NPM gcp-f-micro_1]
+    NPM --> AUTH{Authelia<br>2FA Check}
+
+    AUTH --> GH[GitHub OAuth2]
+    AUTH --> TOTP[TOTP Local]
+    AUTH --> PK[Passkey WebAuthn]
+
+    GH --> SESSION[Session Cookie Created<br>.diegonmarcos.com]
+    TOTP --> SESSION
+    PK --> SESSION
+
+    SESSION --> ACCESS[Access Granted → Backend VM]
 ```
 
-### A22) Costs
+#### A132) Costs
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  MONTHLY COSTS                                                   │
@@ -683,9 +699,9 @@ User Request → Cloudflare → NPM (gcp-f-micro_1)
 
 ---
 
-## A3) Tech Research
+## X1) Tech Research
 
-#### Framework Comparison (Frontend)
+### X11) Framework Comparison (Frontend)
 ```
 Criteria        | Vanilla (HTML+CSS+JS)    | Vue3 + Nuxt3 (SSR)       | SvelteKit 5 (SSR)
 ────────────────┼──────────────────────────┼──────────────────────────┼──────────────────────────
@@ -699,7 +715,7 @@ SSR Support     | Manual only              | Built-in (Nuxt3)         | Built-in
 Static Export   | Native                   | Built-in (Nuxt3)         | Built-in
 ```
 
-#### Framework Comparison (Templating - Python/JS Backend)
+### X12) Framework Comparison (Templating - Python/JS Backend)
 ```
 Criteria        | Jinja2 (Python)          | Mako (Python)            | Handlebars (JS)
 ────────────────┼──────────────────────────┼──────────────────────────┼──────────────────────────
@@ -712,7 +728,7 @@ Inheritance     | ★★★★★ Extends + Blocks   | ★★★★★ Extends +
 Debug           | ★★★★★ Clear errors       | ★★★☆☆ Verbose            | ★★★★☆ Good
 ```
 
-#### When to Use
+### X13) When to Use
 ```
 Use Case             | Best Choice              | Why
 ─────────────────────┼──────────────────────────┼────────────────────────────────────────
@@ -745,10 +761,10 @@ Use Case             | Best Choice              | Why
 
 ---
 
-## A4) Today (Current State)
+## X2) Current State
 
-### by Service
-```
+### X20) by Service
+``` java
 Service           | Public URL                      | VM             | Container       | IP:Port             | Status
 ──────────────────┼─────────────────────────────────┼────────────────┼─────────────────┼─────────────────────┼────────
 
@@ -770,7 +786,7 @@ User Security
 
 ## KITCHEN
 
-Devs Cloud Dashboard
+Cloud Control Center (C3)
 ↳ Analytics       | analytics.diegonmarcos.com      | oci-f-micro_2  | matomo-app      | 129.151.228.66:8080 | on
 ↳ Cloud Dashboard | cloud.diegonmarcos.com          | squarespace    | (external)      | 198.49.23.144       | on
 ↳ Flask API       | (internal)                      | gcp-f-micro_1  | flask-app       | 34.55.55.234:5000   | on
@@ -785,8 +801,8 @@ Devs Infrastructure
 ↳ Cache           | (internal)                      | oci-p-flex_1   | cache-app       | 84.235.234.87:6379  | on
 ```
 
-### by VM
-```
+### X21) by VM
+``` html
 Host   | VM             | RAM   | VRAM | Storage | IP              | Services Running                          | Notes
 ───────┼────────────────┼───────┼──────┼─────────┼─────────────────┼───────────────────────────────────────────┼─────────────────
 GCloud | gcp-f-micro_1  | 1 GB  | -    | 30 GB   | 34.55.55.234    | npm, authelia, redis, flask-app           | 24/7 FREE
@@ -807,36 +823,28 @@ Oracle | oci-p-flex_1   | 8 GB  | -    | 100 GB  | 84.235.234.87   | sync, photo
 
 # B) Architecture - Technical Deep Dives
 
-## B1) Security Architecture
+## B0) Architecture
 
-### B11) Web Auth - Dual Authentication
+### B00) Security Architecture
+
+#### B000) Web Auth - Dual Authentication
 
 **Plan:** `0.spec/Task_Security2faOAuth20/PLAN_DualAuth_Security.md`
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         DUAL AUTH FLOW                           │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  User Request → NPM → auth_request → Authelia                   │
-│                                          │                      │
-│                          ┌───────────────┼───────────────┐      │
-│                          │               │               │      │
-│                          ▼               ▼               ▼      │
-│                    ┌──────────┐   ┌──────────┐   ┌──────────┐  │
-│                    │  GitHub  │   │   TOTP   │   │ Passkey  │  │
-│                    │  OAuth2  │   │  (Local) │   │ (WebAuthn)│  │
-│                    └────┬─────┘   └────┬─────┘   └────┬─────┘  │
-│                         │              │              │         │
-│                         └──────────────┴──────────────┘         │
-│                                        │                        │
-│                                        ▼                        │
-│                              Session Cookie Created             │
-│                              (.diegonmarcos.com)                │
-│                                        │                        │
-│                                        ▼                        │
-│                              Access Granted to Service          │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    REQ[User Request] --> NPM[NPM]
+    NPM -->|auth_request| AUTH{Authelia}
+
+    AUTH --> GH[GitHub OAuth2]
+    AUTH --> TOTP[TOTP Local]
+    AUTH --> PK[Passkey WebAuthn]
+
+    GH --> COOKIE[Session Cookie<br>.diegonmarcos.com]
+    TOTP --> COOKIE
+    PK --> COOKIE
+
+    COOKIE --> ACCESS[Access Granted to Service]
 ```
 
 **Authentication Paths (Either grants access):**
@@ -851,7 +859,7 @@ Oracle | oci-p-flex_1   | 8 GB  | -    | 100 GB  | 84.235.234.87   | sync, photo
 
 ---
 
-### B12) Dev Access - SSH & Vault Management
+#### B001) Dev Access - SSH & Vault Management
 
 **Secrets Storage Tiers:**
 
@@ -897,38 +905,35 @@ ssh -i ~/.ssh/id_rsa ubuntu@84.235.234.87    # Dev (p-flex)
 
 ---
 
-### B13) Isolation - Network Segmentation & Hardening
+#### B002) Isolation - Network Segmentation & Hardening
 
 **Defense Layers:**
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      SECURITY LAYERS                             │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  LAYER 1: Network Edge                                          │
-│  ├── Cloudflare Proxy (DDoS, WAF)                              │
-│  └── UFW Firewall (allow only 80, 443, 22)                     │
-│                                                                 │
-│  LAYER 2: Reverse Proxy                                         │
-│  ├── NGINX Security Headers                                     │
-│  │   ├── X-Frame-Options: DENY                                 │
-│  │   ├── X-Content-Type-Options: nosniff                       │
-│  │   ├── Content-Security-Policy                               │
-│  │   └── Strict-Transport-Security                             │
-│  └── NPM Forward Auth → Authelia                               │
-│                                                                 │
-│  LAYER 3: Network Isolation                                     │
-│  ├── Wireguard VPN (inter-VM traffic)                          │
-│  ├── Docker Network (bridge isolation)                         │
-│  └── No exposed ports (internal only)                          │
-│                                                                 │
-│  LAYER 4: Container Security                                    │
-│  ├── Docker Compose: no "ports:" (use networks)                │
-│  ├── Read-only containers where possible                       │
-│  └── Non-root user in containers                               │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph L1["LAYER 1: Network Edge"]
+        CF[Cloudflare Proxy<br>DDoS + WAF]
+        UFW[UFW Firewall<br>80, 443, 22 only]
+    end
+
+    subgraph L2["LAYER 2: Reverse Proxy"]
+        HEADERS[NGINX Security Headers<br>X-Frame-Options, CSP, HSTS]
+        FWDAUTH[NPM Forward Auth → Authelia]
+    end
+
+    subgraph L3["LAYER 3: Network Isolation"]
+        WG[Wireguard VPN<br>inter-VM traffic]
+        DOCKER[Docker Network<br>bridge isolation]
+        NOPORTS[No exposed ports<br>internal only]
+    end
+
+    subgraph L4["LAYER 4: Container Security"]
+        COMPOSE[No ports: in compose<br>use networks]
+        READONLY[Read-only containers]
+        NONROOT[Non-root user]
+    end
+
+    L1 --> L2 --> L3 --> L4
 ```
 
 **UFW Rules (per VM):**
@@ -977,9 +982,9 @@ add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
 
 ---
 
-## B2) Service Architecture
+### B01) Service Architecture
 
-### B21) Containers - Docker Compose Patterns
+#### B010) Containers - Docker Compose Patterns
 
 **Standard Service Pattern:**
 
@@ -1035,7 +1040,7 @@ volumes:
 
 ---
 
-### B22) Databases - Schemas & Migrations
+#### B011) Databases - Schemas & Migrations
 
 **Database Distribution:**
 
@@ -1056,7 +1061,7 @@ volumes:
 
 ---
 
-### B23) APIs - Contracts & Versioning
+#### B012) APIs - Contracts & Versioning
 
 **API Standards:**
 
@@ -1080,9 +1085,9 @@ volumes:
 
 ---
 
-## B3) Infrastructure Architecture
+### B02) Infrastructure Architecture
 
-### B31) Networking - DNS, SSL, Reverse Proxy
+#### B020) Networking - DNS, SSL, Reverse Proxy
 
 **DNS Configuration (Cloudflare):**
 
@@ -1107,43 +1112,42 @@ volumes:
 
 ---
 
-### B32) Storage - Volumes & Backups
+#### B021) Storage - Volumes & Backups
 
 **Volume Strategy:**
 
-| Type | Mount | Backup |
-|------|-------|--------|
-| Config | `./config:/config` | Git repo |
-| Data | `./data:/data` | Syncthing |
-| Database | Named volume | SQL dump |
-| Logs | `/var/log` | Rotate + archive |
+| Type     | Mount              | Backup           |
+| -------- | ------------------ | ---------------- |
+| Config   | `./config:/config` | Git repo         |
+| Data     | `./data:/data`     | Syncthing        |
+| Database | Named volume       | SQL dump         |
+| Logs     | `/var/log`         | Rotate + archive |
 
 **Backup Schedule:**
 
-| Target | Frequency | Retention | Method |
-|--------|-----------|-----------|--------|
-| Configs | On change | Forever | Git push |
-| User data | Real-time | 30 days | Syncthing |
-| Databases | Daily 3AM | 7 days | pg_dump/mysqldump |
-| Full VM | Weekly | 4 weeks | Cloud snapshot |
+| Target    | Frequency | Retention | Method            |
+| --------- | --------- | --------- | ----------------- |
+| Configs   | On change | Forever   | Git push          |
+| User data | Real-time | 30 days   | Syncthing         |
+| Databases | Daily 3AM | 7 days    | pg_dump/mysqldump |
+| Full VM   | Weekly    | 4 weeks   | Cloud snapshot    |
 
 ---
 
-### B33) Scaling - Wake-on-Demand & GPU
+#### B022) Scaling - Wake-on-Demand & GPU
 
 **Wake-on-Demand (oci-p-flex_1):**
 
-```
-Request → NPM → Check if VM running
-                    │
-        ┌───────────┴───────────┐
-        │ Running               │ Stopped
-        ▼                       ▼
-   Forward to VM          Wake VM via OCI API
-                               │
-                          Wait for ready
-                               │
-                          Forward request
+```mermaid
+flowchart TD
+    REQ[Request] --> NPM[NPM]
+    NPM --> CHECK{Check if VM running}
+
+    CHECK -->|Running| FWD1[Forward to VM]
+    CHECK -->|Stopped| WAKE[Wake VM via OCI API]
+
+    WAKE --> WAIT[Wait for ready]
+    WAIT --> FWD2[Forward request]
 ```
 
 **GPU Provisioning (TensorDock/Vast.ai):**
@@ -1160,9 +1164,379 @@ Request → NPM → Check if VM running
 
 ---
 
+### B03) Collectors & Data
+
+> **TODO:** Data pipelines, API gateway, collectors
+
+---
+
+### B04) MCP Architecture
+
+> **Purpose:** Tools that give AI assistants (Claude Code, Claude Desktop, future AIs) access to your architecture, codebase, data, and infrastructure.
+> **Location:** Runs locally on your machine, AI-agnostic infrastructure.
+
+#### B030) System Overview
+
+
+
+
+```mermaid
+flowchart TB
+    subgraph AI["AI CLIENT (Claude Code, Desktop, Future AIs)"]
+        USER["User: What's the resource allocation?"]
+        CALL["AI calls MCP: semantic_search()"]
+        USER --> CALL
+    end
+
+    subgraph MCP["MCP LAYER (Local Python)"]
+        subgraph RESOURCES["RESOURCES (read)"]
+            RAG[masterplan-rag<br>ChromaDB]
+            FILE[file-navigator<br>pathlib]
+            GIT[git-integration<br>GitPython]
+            SECRETS[secrets-manager<br>audit]
+            EMAILS[emails<br>IMAP]
+            PHOTOS[photos<br>API]
+            CONFIG[project-config]
+            MONITOR[monitoring<br>dashboard]
+        end
+        subgraph TOOLS["TOOLS (act)"]
+            CLOUD[cloud-cli<br>gcloud/oci]
+            DOCKER[docker-manager]
+            BUILD[build-orchestrator]
+            GITHUB[github-integration]
+        end
+    end
+
+    subgraph DATA["DATA LAYER"]
+        CHROMA[(ChromaDB<br>~/.claude/)]
+        FRONT[(front-end repo<br>18 projects)]
+        BACK[(back-end repo<br>cloud specs)]
+        KEYS[(LOCAL_KEYS<br>paths only)]
+        MAIL[(MyMail<br>IMAP)]
+        PHOTO[(MyPhotos<br>Photoprism)]
+    end
+
+    CALL --> MCP
+    RESOURCES --> DATA
+    TOOLS --> DATA
+```
+
+
+#### B031) RAG Pipeline (masterplan-rag)
+
+```mermaid
+flowchart TB
+    subgraph INDEXING["INDEXING (on masterplan change)"]
+        MD[MASTERPLAN_*.md] --> PARSER[Section Parser]
+        PARSER --> CHUNKS[Chunks by section ID]
+        CHUNKS --> EMBED1[sentence-transformers<br>all-MiniLM-L6-v2]
+        EMBED1 --> CHROMA[(ChromaDB<br>~/.claude/rag/)]
+    end
+
+    subgraph QUERYING["QUERYING (every AI request)"]
+        QUERY["User Query<br>e.g. 'auth flow'"] --> EMBED2[Embed Query<br>vector: 0.12, -0.34...]
+        EMBED2 --> SEARCH[Similarity Search<br>cosine sim]
+        SEARCH --> TOPK[Top-K Sections<br>B11, B12, D7]
+        TOPK --> RETURN[Return to AI<br>2-5 relevant sections]
+    end
+
+    CHROMA -.-> SEARCH
+```
+
+**Chunking Strategy:**
+```
+Chunk Type       | Granularity      | Example
+─────────────────┼──────────────────┼─────────────────────────────────────
+Section (H2)     | Major topic      | "## A2) Infra Resources"
+Subsection (H3)  | Specific topic   | "### A201) VM Capacity & Headroom"
+Table            | Data block       | Resource allocation tables
+Code block       | Implementation   | Docker compose examples
+```
+
+#### B032) Security Model (secrets-manager)
+
+```mermaid
+flowchart LR
+    subgraph ALLOWED["ALLOWED OPERATIONS"]
+        A1["get_ssh_key_path(vm_id)<br>→ Returns: /path/to/key<br>→ Never: key contents"]
+        A2["confirm_credential_exists()<br>→ Returns: True/False<br>→ Never: credential value"]
+        A3["get_vault_structure()<br>→ Returns: folder/file names<br>→ Never: file contents"]
+    end
+
+    subgraph BLOCKED["BLOCKED OPERATIONS"]
+        B1["read_file_contents()"]
+        B2["get_api_token()"]
+        B3["get_password()"]
+        B4["export_vault()"]
+    end
+
+    subgraph AUDIT["AUDIT LOGGING"]
+        LOG["~/.claude/mcp/audit.log<br>All access logged with timestamp"]
+    end
+
+    ALLOWED --> LOG
+    BLOCKED -.->|denied| LOG
+```
+
+#### B033) Permission Model
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           MCP PERMISSION MODEL                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  MCP                  │ READ │ WRITE │ EXECUTE │ DELETE │ Notes            │
+│  ─────────────────────┼──────┼───────┼─────────┼────────┼──────────────────│
+│  masterplan-rag       │  ✅  │  ❌   │   ❌    │   ❌   │ Query only       │
+│  file-navigator       │  ✅  │  ❌   │   ❌    │   ❌   │ List/find only   │
+│  git-integration      │  ✅  │  ❌   │   ❌    │   ❌   │ History only     │
+│  secrets-manager      │  ⚠️  │  ❌   │   ❌    │   ❌   │ Paths only       │
+│  project-config       │  ✅  │  ❌   │   ❌    │   ❌   │ Read package.json│
+│  emails               │  ✅  │  ❌   │   ❌    │   ❌   │ Read only        │
+│  photos               │  ✅  │  ❌   │   ❌    │   ❌   │ Metadata only    │
+│  monitoring-dashboard │  ✅  │  ❌   │   ❌    │   ❌   │ Metrics only     │
+│  cloud-cli            │  ✅  │  ❌   │   ⚠️    │   ❌   │ Status cmds only │
+│  docker-manager       │  ✅  │  ❌   │   ⚠️    │   ❌   │ Restart allowed  │
+│  build-orchestrator   │  ✅  │  ❌   │   ✅    │   ❌   │ Build scripts    │
+│  github-integration   │  ✅  │  ❌   │   ⚠️    │   ❌   │ Trigger workflows│
+│                                                                             │
+│  Legend: ✅ Full  ⚠️ Limited  ❌ Blocked                                    │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### B034) Directory Structure
+
+```
+~/.claude/
+├── mcp/                              # MCP implementations
+│   ├── masterplan_rag.py             # RAG with ChromaDB
+│   ├── file_navigator.py             # File search
+│   ├── git_integration.py            # Git queries
+│   ├── secrets_manager.py            # Safe credential paths
+│   ├── project_config.py             # Metadata queries
+│   ├── emails.py                     # Mail archive search
+│   ├── photos.py                     # Photo metadata search
+│   ├── monitoring_dashboard.py       # Health/costs
+│   ├── cloud_cli.py                  # gcloud/oci wrapper
+│   ├── docker_manager.py             # Docker control
+│   ├── build_orchestrator.py         # Build triggers
+│   ├── github_integration.py         # GitHub API
+│   ├── requirements.txt              # Python dependencies
+│   └── audit.log                     # Access audit trail
+│
+├── rag/                              # RAG data
+│   ├── masterplans.db                # ChromaDB vector store
+│   └── chunks/                       # Cached chunks (debug)
+│
+└── mcp.json                          # MCP configuration
+```
+
+#### B035) Tool Specifications
+
+#### RESOURCES (read)
+
+**1. Masterplan RAG**
+```
+semantic_search(query: str) → List[Section]
+  "What are the inference VM requirements?"
+  → A20) Resource Estimation, A30) LLM Models
+
+get_section(section_id: str) → Section
+  get_section('B11') → Full B11) Web Auth section
+
+list_sections(plan: str) → List[SectionMetadata]
+  → All sections in MASTERPLAN_CLOUD.md
+```
+
+**2. File Navigator**
+```
+find_file(pattern: str, project: str = None) → List[FilePath]
+  find_file('*.scss', 'linktree') → /linktree/src_static/scss/main.scss
+
+list_project(project_name: str) → ProjectStructure
+  → { framework: 'Vue 3', build_tool: 'Vite', port: 8003 }
+
+tree_structure(max_depth: int = 2) → TreeView
+```
+
+**3. Git Integration**
+```
+get_commit_history(file: str, limit: int = 10) → List[Commit]
+get_file_blame(file: str) → List[BlameLine]
+search_commits(query: str) → List[Commit]
+```
+
+**4. Secrets Manager**
+```
+get_ssh_key_path(vm_id: str) → Path       # PATH ONLY, never key
+confirm_credential_exists(service: str) → Boolean
+get_vault_structure() → Dict              # Structure, not contents
+```
+
+**5. Project Config**
+```
+get_package_json(project_name: str) → PackageJSON
+list_dependencies(project_name: str) → List[Dependency]
+```
+
+**6. Emails**
+```
+search_emails(query: str, limit: int = 10) → List[Email]
+get_email(id: str) → Email
+list_folders() → List[Folder]
+```
+
+**7. Photos**
+```
+search_photos(query: str, limit: int = 20) → List[PhotoMetadata]
+get_photo_metadata(id: str) → PhotoMetadata
+list_albums() → List[Album]
+```
+
+**8. Monitoring Dashboard**
+```
+get_uptime_status() → Dict[Service, Status]
+get_cost_summary(period: str = 'month') → CostData
+get_alerts() → List[Alert]
+```
+
+#### TOOLS (act)
+
+**9. Cloud CLI**
+```
+get_vm_status(vm_id: str) → VMStatus
+gcloud_exec(command: str, args: List[str]) → Output
+oci_exec(command: str, args: List[str]) → Output
+```
+
+**10. Docker Manager**
+```
+list_services() → List[Service]
+get_docker_logs(service_name: str, lines: int = 50) → String
+restart_service(service_name: str) → Result
+health_check(service_name: str) → Health
+```
+
+**11. Build Orchestrator**
+```
+build_project(project_name: str) → BuildResult
+build_all() → Dict[ProjectName, BuildResult]
+list_projects() → List[ProjectInfo]
+```
+
+**12. GitHub Integration**
+```
+get_workflow_status(workflow_name: str) → Status
+list_open_issues() → List[Issue]
+trigger_workflow(workflow_name: str) → Result
+```
+
+#### B036) Implementation Patterns
+
+#### MCP Base Class (masterplan_rag.py)
+
+```python
+from sentence_transformers import SentenceTransformer
+from pathlib import Path
+import chromadb
+
+class MasterplanRAG:
+    def __init__(self, plans_dir):
+        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+        self.client = chromadb.PersistentClient(path="~/.claude/rag")
+        self.collection = self.client.get_or_create_collection("masterplans")
+
+    def semantic_search(self, query: str, top_k: int = 5):
+        query_embedding = self.embedding_model.encode(query).tolist()
+        results = self.collection.query(
+            query_embeddings=[query_embedding],
+            n_results=top_k
+        )
+        return results
+```
+
+#### Secrets Manager (Security-Critical)
+
+```python
+class SecretsManager:
+    ALLOWED_PATHS = {
+        'oci-p-flex_1': '00_terminal/ssh/id_rsa',
+        'gcp-f-micro_1': '00_terminal/ssh/gcp_arch1',
+    }
+
+    def get_ssh_key_path(self, vm_id: str) -> str:
+        """Return path to SSH key (NEVER the key itself)"""
+        if vm_id not in self.ALLOWED_PATHS:
+            self._log_denied_access(vm_id)
+            raise PermissionError(f"Not authorized: {vm_id}")
+
+        key_path = self.vault / self.ALLOWED_PATHS[vm_id]
+        self._log_access(vm_id, 'get_path')
+        return str(key_path)  # PATH ONLY
+```
+
+#### MCP Configuration (~/.claude/mcp.json)
+
+```json
+{
+  "mcpServers": {
+    "masterplan_rag": {
+      "command": "python3",
+      "args": ["/home/diego/.claude/mcp/masterplan_rag.py"],
+      "env": {
+        "PLANS_DIR": "/home/diego/Documents/Git/back-System/cloud/0.spec"
+      }
+    },
+    "file_navigator": {
+      "command": "python3",
+      "args": ["/home/diego/.claude/mcp/file_navigator.py"],
+      "env": {
+        "FRONT_REPO": "/home/diego/Documents/Git/front-Github_io",
+        "BACK_REPO": "/home/diego/Documents/Git/back-System"
+      }
+    },
+    "secrets_manager": {
+      "command": "python3",
+      "args": ["/home/diego/.claude/mcp/secrets_manager.py"],
+      "env": {
+        "VAULT_PATH": "/home/diego/Documents/Git/LOCAL_KEYS"
+      }
+    }
+  }
+}
+```
+
+#### B037) Dependencies & Testing
+
+#### Python Dependencies
+
+```
+# ~/.claude/mcp/requirements.txt
+sentence-transformers>=2.2.0
+chromadb>=0.4.0
+GitPython>=3.1.0
+google-cloud-compute>=1.0.0
+oci>=2.80.0
+docker>=6.0.0
+PyGithub>=2.0.0
+```
+
+#### Success Metrics
+
+| Metric | Target |
+|--------|--------|
+| Context retention | No loss after 100K tokens |
+| File navigation | < 5 sec (find any file) |
+| Infrastructure access | 100% (no manual SSH) |
+| Secret exposure | 0 (audit log confirms) |
+| Build cycle time | < 2 min from AI |
+
+---
+
 # C) Roadmap - Planning & Prioritization
 
-## C1) Phases - Implementation Milestones
+## C0) Phases - Implementation Milestones
 
 ### Phase 1: Security Foundation (PRIORITY)
 **Status:** In Progress
@@ -1211,43 +1585,42 @@ Request → NPM → Check if VM running
 
 ---
 
-## C2) Dependencies - Service Graph
+## C1) Dependencies - Service Graph
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                      SERVICE DEPENDENCY GRAPH                         │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  LAYER 0: INFRASTRUCTURE (must be first)                            │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐                             │
-│  │   NPM   │  │Authelia │  │  Redis  │                             │
-│  │ (proxy) │→ │  (auth) │→ │ (cache) │                             │
-│  └────┬────┘  └────┬────┘  └─────────┘                             │
-│       │            │                                                │
-│  LAYER 1: CORE SERVICES (24/7)                                      │
-│       ▼            ▼                                                │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐                             │
-│  │  Mail   │  │Analytics│  │Flask API│                             │
-│  └─────────┘  └─────────┘  └────┬────┘                             │
-│                                 │                                   │
-│  LAYER 2: ON-DEMAND SERVICES                                        │
-│                                 ▼                                   │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐               │
-│  │  Sync   │  │ Photos  │  │  Vault  │  │   Git   │               │
-│  └─────────┘  └─────────┘  └─────────┘  └─────────┘               │
-│                                                                     │
-│  LAYER 3: PORTAL & MONITORING                                       │
-│  ┌─────────────────────────────────────────────────────────────┐   │
-│  │  Cloud Portal (depends on: Flask API, all services)          │   │
-│  │  Monitoring (depends on: all VMs running collectors)         │   │
-│  └─────────────────────────────────────────────────────────────┘   │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph L0["LAYER 0: INFRASTRUCTURE (must be first)"]
+        NPM[NPM proxy] --> AUTH[Authelia auth]
+        AUTH --> REDIS[Redis cache]
+    end
+
+    subgraph L1["LAYER 1: CORE SERVICES (24/7)"]
+        MAIL[Mail]
+        ANALYTICS[Analytics]
+        FLASK[Flask API]
+    end
+
+    subgraph L2["LAYER 2: ON-DEMAND SERVICES"]
+        SYNC[Sync]
+        PHOTOS[Photos]
+        VAULT[Vault]
+        GIT[Git]
+    end
+
+    subgraph L3["LAYER 3: PORTAL & MONITORING"]
+        PORTAL[Cloud Portal<br>depends on all services]
+        MONITOR[Monitoring<br>depends on all VMs]
+    end
+
+    L0 --> L1
+    L1 --> L2
+    FLASK --> L2
+    L2 --> L3
 ```
 
 ---
 
-## C3) Backlog - Prioritized Tasks
+## C2) Backlog - Prioritized Tasks
 
 ### High Priority (Now)
 - [ ] Complete Authelia TOTP setup
@@ -1277,87 +1650,99 @@ Request → NPM → Check if VM running
 
 # D) DevOps - Operations & Observability
 
-## D1) Portal - Services Access Dashboard
+## D0) Portal - Cloud Control Center (C3)
 
-**Plan:** `0.spec/Task_CloudDash_Webfront/PLAN_Webfront.md`
-**Stack:** SvelteKit 5 + SCSS
+**Stack:** Homepage (gethomepage.dev) + Uptime Kuma
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    SERVICES DASHBOARD                        │
-├─────────────────────────────────────────────────────────────┤
-│  [Cards] [List]                              [Dark/Light]   │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  FRIDGE (Products)                                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │   📧 Mail   │  │   📂 Sync   │  │   📷 Photos │         │
-│  │   status:on │  │   status:on │  │   status:dev│         │
-│  │   [Access]  │  │   [Access]  │  │   [Access]  │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-│                                                             │
-│  KITCHEN (Infrastructure)                                   │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │  📊 Matomo  │  │   ⚙️ n8n    │  │   🔒 Vault  │         │
-│  │   status:on │  │   status:on │  │   status:on │         │
-│  │   [Access]  │  │   [Access]  │  │   [Access]  │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph C3["CLOUD CONTROL CENTER (C3) - cloud.diegonmarcos.com"]
+        subgraph HOMEPAGE["01. HOMEPAGE - Service Launcher"]
+            direction LR
+            MAIL["Mail online"]
+            SYNC["Sync online"]
+            PHOTOS["Photos online"]
+            VAULT["Vault offline"]
+        end
+        subgraph UPTIME["10. UPTIME KUMA - status.diegonmarcos.com"]
+            STATUS["All Systems Operational 99.9%"]
+        end
+        subgraph OPS["Operations Tools"]
+            direction LR
+            DOCKGE["11. DOCKGE - 8 stacks"]
+            DOZZLE["21. DOZZLE - logs"]
+        end
+    end
+    HOMEPAGE --> UPTIME
+    UPTIME --> OPS
 ```
 
-**Features:**
-- Cards/List view toggle
-- Auth redirect through Authelia
-- Service status indicators (on/dev/hold/offline)
-- Fridge/Kitchen category grouping
+**C3 Components:**
+
+| Code | Service | URL | Purpose |
+|------|---------|-----|---------|
+| 01 | Homepage | cloud.diegonmarcos.com | Service launcher + widgets |
+| 10 | Uptime Kuma | status.diegonmarcos.com | Health checks + public status |
+| 11 | Dockge | dockge.diegonmarcos.com | Docker Compose management |
+| 20 | Borgmatic | (cron) | Automated backups |
+| 21 | Dozzle | logs.diegonmarcos.com | Real-time container logs |
+| 22 | Trivy | (cron) | Container vulnerability scans |
 
 ---
 
-## D2) Monitoring - Metrics & Alerts
+## D1) Monitoring - Uptime Kuma
 
-**Plan:** `0.spec/Task_Monitoring/PLAN_Monitoring.md`
+**Tool:** Uptime Kuma (status.diegonmarcos.com)
 
 ### Monitoring Architecture
 
-```
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│ VM Collector │    │ VM Collector │    │ VM Collector │
-│ (Python)     │    │ (Python)     │    │ (Python)     │
-└──────┬───────┘    └──────┬───────┘    └──────┬───────┘
-       │                   │                   │
-       └───────────────────┼───────────────────┘
-                           │ Syncthing
-                           ▼
-              ┌──────────────────────────────┐
-              │     Main Python (p-flex)      │
-              │  • Aggregation                │
-              │  • Alert checking             │
-              │  • Export: JSON/CSV/MD        │
-              │  • Flask API                  │
-              └──────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph UK["UPTIME KUMA - status.diegonmarcos.com"]
+        subgraph MONITORS["Monitor Types"]
+            HTTP["HTTP(s)<br>Website/API"]
+            TCP["TCP Port<br>Service checks"]
+            PING["Ping<br>Host availability"]
+            DNS["DNS<br>Resolution checks"]
+            DOCKER["Docker<br>Container health"]
+        end
+        subgraph NOTIFY["Notifications"]
+            EMAIL["Email<br>SMTP via Mailu"]
+            WEBHOOK["Discord/Telegram<br>webhooks"]
+            PUSH["Pushover/Gotify"]
+        end
+        subgraph FEATURES["Features"]
+            STATUS["Public status page"]
+            HISTORY["Incident history"]
+            GRAPHS["Response time graphs"]
+        end
+    end
+
+    MONITORS --> NOTIFY
 ```
 
-### Export Formats
+### Monitor Configuration
 
-| Format | Purpose | Location |
-|--------|---------|----------|
-| JSON | API responses, webfront | `/data/metrics.json` |
-| CSV | Spreadsheet analysis | `/data/metrics.csv` |
-| MD | Human-readable reports | `/data/REPORT.md` |
+| Service | Type | Interval | Timeout |
+|---------|------|----------|---------|
+| NPM Proxy | HTTP | 60s | 10s |
+| Authelia | HTTP | 60s | 10s |
+| Mail (SMTP) | TCP:25 | 300s | 30s |
+| Analytics | HTTP | 300s | 10s |
+| Photos | HTTP | 300s | 10s |
+| Sync | HTTP | 300s | 10s |
 
 ### Alert Thresholds
 
 | Metric | Warning | Critical | Action |
 |--------|---------|----------|--------|
-| CPU | 70% | 90% | Email alert |
-| RAM | 80% | 95% | Email + scale |
-| Disk | 80% | 90% | Email + cleanup |
-| Service Down | 1 min | 5 min | Email + restart |
+| Response Time | >2s | >5s | Email alert |
+| Consecutive Fails | 2 | 5 | Email + restart |
+| Certificate Expiry | 14 days | 7 days | Email alert |
 
 ---
 
-## D3) Knowledge Center
+## D2) Knowledge Center
 
 ### Architecture Docs
 **Plan:** `0.spec/Task_ArchSpecs/PLAN_ArchSpecs.md`
@@ -1383,7 +1768,7 @@ Request → NPM → Check if VM running
 
 ---
 
-## D4) Code Practices
+## D3) Code Practices
 
 > Reference: `MASTERPLAN_LINKTREE.md → D8) Code Practices` (full details)
 
@@ -1444,7 +1829,7 @@ networks:
 
 ---
 
-## D5) System Practices
+## D4) System Practices
 
 ### Package Management
 
@@ -1600,34 +1985,39 @@ LOCAL_KEYS        | Manual to encrypted USB    | Monthly       | Forever
 │   ├── Task_Security2faOAuth20/         # B1) Security Architecture
 │   │   └── PLAN_DualAuth_Security.md
 │   │
-│   ├── Task_ArchSpecs/                  # B2) Service Architecture
-│   │   └── PLAN_ArchSpecs.md
-│   │
-│   ├── Task_Monitoring/                 # D2) Monitoring
-│   │   └── PLAN_Monitoring.md
-│   │
-│   └── Task_CloudDash_Webfront/         # D1) Portal
-│       └── PLAN_Webfront.md
+│   └── Task_ArchSpecs/                  # B2) Service Architecture
+│       └── PLAN_ArchSpecs.md
 │
 ├── 1.ops/
 │   ├── cloud_dash.json                  # Services data (source of truth)
 │   ├── cloud_dash.py                    # Flask API server
-│   └── monitoring/                      # Python collectors & aggregators
+│   └── vm-control.sh                    # VM start/stop script
+│
+├── 2.app/                               # C3 Docker Compose stacks
+│   ├── c3-homepage/                     # 01 Homepage dashboard
+│   │   ├── docker-compose.yml
+│   │   └── config/
+│   │       ├── services.yaml
+│   │       └── bookmarks.yaml
+│   ├── c3-uptime-kuma/                  # 10 Uptime Kuma
+│   │   └── docker-compose.yml
+│   ├── c3-dockge/                       # 11 Dockge
+│   │   └── docker-compose.yml
+│   ├── c3-borgmatic/                    # 20 Borgmatic
+│   │   ├── docker-compose.yml
+│   │   └── borgmatic.yaml
+│   ├── c3-dozzle/                       # 21 Dozzle
+│   │   └── docker-compose.yml
+│   └── c3-trivy/                        # 22 Trivy
+│       └── trivy-scan.sh
 │
 ├── vps_oracle/
 │   ├── vm-oci-f-micro_1/               # Mail VM
 │   ├── vm-oci-f-micro_2/               # Analytics VM
-│   └── vm-oci-p-flex_1/                # Dev services VM
+│   └── vm-oci-p-flex_1/                # Dev services VM (hosts C3)
 │
 └── vps_gcloud/
     └── vm-gcp-f-micro_1/               # Proxy + Auth VM
-
-/home/diego/Documents/Git/front-Github_io/cloud/
-├── src/                                 # SvelteKit 5 source
-│   ├── lib/                             # Components & utilities
-│   └── routes/                          # Page routes
-├── static/                              # Static assets
-└── 1.ops/build.sh                       # Build script
 ```
 
 ---
