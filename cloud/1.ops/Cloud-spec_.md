@@ -2,7 +2,7 @@
 
 > **Single Source of Truth**: `cloud-infrastructure.json`
 > **Dashboard**: `cloud-dashboard.py` (TUI + Flask API)
-> **Version**: 3.3.0 | **Updated**: 2025-12-10
+> **Version**: 3.5.0 | **Updated**: 2025-12-14
 
 ---
 
@@ -33,13 +33,13 @@
 ### Active Services
 | Service ID | Display Name | URL | Status |
 |------------|--------------|-----|--------|
-| photoprism-app | Photo Gallery (with 2FA) | https://photos.diegonmarcos.com/photoprism | on |
+| photoprism-app | Photo Gallery (with 2FA) | https://photos.diegonmarcos.com | on |
 | matomo-app | Matomo Analytics | https://analytics.diegonmarcos.com | on |
 | sync-app | Syncthing | https://sync.diegonmarcos.com | on |
-| n8n-infra-app | n8n (Infra) | https://n8n.diegonmarcos.com | on |
 | cloud-app | Cloud Dashboard | https://cloud.diegonmarcos.com | on |
 | api | Cloud API | https://api.diegonmarcos.com | on |
-| mailu | Mail Server | https://mailapp.diegonmarcos.com | on |
+| mailu | Mail Server | https://mail.diegonmarcos.com | on |
+| calendar | Radicale Calendar | https://cal.diegonmarcos.com | on |
 
 ### Proxy Admin Panel (SINGLE NPM)
 | Server | URL |
@@ -54,11 +54,17 @@
 
 ### SSH Quick Commands
 ```bash
-# Oracle Web Server 1 (Matomo, Syncthing)
+# Oracle Paid Flex 1 (Syncthing, Photoprism, Cloud API)
+ssh ubuntu@84.235.234.87
+
+# Oracle Free Micro 1 (Mailu Mail)
 ssh ubuntu@130.110.251.193
 
-# Oracle Services Server 1 (n8n)
+# Oracle Free Micro 2 (Matomo)
 ssh ubuntu@129.151.228.66
+
+# GCloud Free Micro 1 (NPM, Authelia)
+gcloud compute ssh arch-1 --zone us-central1-a
 ```
 
 ---
@@ -71,54 +77,47 @@ ssh ubuntu@129.151.228.66
 +-------------------------------------------------------------------------+
 |                                                                          |
 |  +-------------------------------------------------------------------+  |
-|  |                    ORACLE CLOUD (Always Free)                      |  |
+|  |                    ORACLE CLOUD                                    |  |
 |  |                                                                    |  |
 |  |  +-------------------------+    +-------------------------+        |  |
-|  |  |  Oracle Web Server 1    |    |  Oracle Services Srv 1  |        |  |
+|  |  |  oci-f-micro_1          |    |  oci-f-micro_2          |        |  |
 |  |  |  130.110.251.193        |    |  129.151.228.66         |        |  |
+|  |  |  WireGuard: 10.0.0.3    |    |  WireGuard: 10.0.0.4    |        |  |
 |  |  |  VM.Standard.E2.1.Micro |    |  VM.Standard.E2.1.Micro |        |  |
 |  |  |  1 OCPU | 1GB RAM       |    |  1 OCPU | 1GB RAM       |        |  |
 |  |  |                         |    |                         |        |  |
 |  |  |  Services:              |    |  Services:              |        |  |
-|  |  |  - Matomo Analytics     |    |  - n8n Automation       |        |  |
-|  |  |  - Syncthing            |    |  - NPM (proxy)          |        |  |
-|  |  |  - NPM (proxy)          |    |                         |        |  |
-|  |  |                         |    |  Status: ONLINE         |        |  |
-|  |  |  Status: ONLINE         |    +-------------------------+        |  |
-|  |  +-------------------------+                                       |  |
+|  |  |  - Mailu (Mail)         |    |  - Matomo Analytics     |        |  |
+|  |  |                         |    |                         |        |  |
+|  |  |  Status: ONLINE (Free)  |    |  Status: ONLINE (Free)  |        |  |
+|  |  +-------------------------+    +-------------------------+        |  |
 |  |                                                                    |  |
 |  |  +-------------------------+                                       |  |
-|  |  |  Oracle ARM Server      |    (VM.Standard.A1.Flex)              |  |
-|  |  |  IP: pending            |    4 OCPU | 24GB RAM | 200GB          |  |
+|  |  |  oci-p-flex_1           |    (VM.Standard.E4.Flex)              |  |
+|  |  |  84.235.234.87          |    1 OCPU | 8GB RAM | 100GB           |  |
+|  |  |  WireGuard: 10.0.0.2    |                                       |  |
 |  |  |                         |                                       |  |
-|  |  |  Planned Services:      |    Status: CAPACITY WAITLIST          |  |
-|  |  |  - Cloud (Nextcloud)    |                                       |  |
-|  |  |  - Mail Server          |                                       |  |
-|  |  |  - OS Terminal          |                                       |  |
+|  |  |  Services:              |    Status: WAKE-ON-DEMAND (Paid)      |  |
+|  |  |  - Photoprism (Photos)  |                                       |  |
+|  |  |  - Syncthing            |                                       |  |
+|  |  |  - Radicale (Calendar)  |                                       |  |
 |  |  +-------------------------+                                       |  |
-|  |                                                                    |  |
-|  |  +-------------------------+    +-------------------------+        |  |
-|  |  |  ML VM1                 |    |  ML VM2                 |        |  |
-|  |  |  IP: pending            |    |  IP: pending            |        |  |
-|  |  |  Status: PLANNED        |    |  Status: PLANNED        |        |  |
-|  |  +-------------------------+    +-------------------------+        |  |
 |  +-------------------------------------------------------------------+  |
 |                                                                          |
 |  +-------------------------------------------------------------------+  |
 |  |                    GOOGLE CLOUD (Free Tier)                        |  |
 |  |                                                                    |  |
 |  |  +-------------------------+                                       |  |
-|  |  |  GCloud Arch Linux 1    |    (e2-micro)                         |  |
+|  |  |  gcp-f-micro_1          |    (e2-micro)                         |  |
 |  |  |  34.55.55.234           |    0.25-2 vCPU | 1GB RAM              |  |
 |  |  |  WireGuard: 10.0.0.1    |                                       |  |
 |  |  |                         |                                       |  |
 |  |  |  Services:              |                                       |  |
 |  |  |  - NPM (Central Proxy)  |                                       |  |
 |  |  |  - Authelia (2FA)       |                                       |  |
-|  |  |  - OAuth2 Proxy         |                                       |  |
 |  |  |  - Cloud API (Flask)    |                                       |  |
 |  |  |                         |                                       |  |
-|  |  |  Status: ACTIVE         |                                       |  |
+|  |  |  Status: ONLINE (Free)  |                                       |  |
 |  |  +-------------------------+                                       |  |
 |  +-------------------------------------------------------------------+  |
 |                                                                          |
@@ -134,9 +133,8 @@ ssh ubuntu@129.151.228.66
 | Category | Description |
 |----------|-------------|
 | **Services** | General purpose VMs for web services and applications |
-| **Machine Learning** | VMs dedicated to ML workloads and automation |
 
-### 3.2 Services VMs
+### 3.2 Active VMs
 
 #### Oracle Web Server 1
 | Property | Value |
@@ -144,11 +142,12 @@ ssh ubuntu@129.151.228.66
 | **ID** | oracle-web-server-1 |
 | **Provider** | Oracle Cloud |
 | **IP** | 130.110.251.193 |
+| **WireGuard IP** | 10.0.0.3 |
 | **Type** | VM.Standard.E2.1.Micro |
 | **Specs** | 1 OCPU (AMD), 1GB RAM, 47GB Boot |
 | **OS** | Ubuntu 24.04 LTS |
 | **Services** | Matomo, Syncthing, NPM |
-| **Ports** | 22, 80, 443, 81, 22000, 21027 |
+| **Ports** | 22, 80, 443, 81, 22000, 21027, 51820 |
 | **Status** | Active |
 
 #### Oracle Services Server 1
@@ -157,46 +156,27 @@ ssh ubuntu@129.151.228.66
 | **ID** | oracle-services-server-1 |
 | **Provider** | Oracle Cloud |
 | **IP** | 129.151.228.66 |
+| **WireGuard IP** | 10.0.0.4 |
 | **Type** | VM.Standard.E2.1.Micro |
 | **Specs** | 1 OCPU (AMD), 1GB RAM, 47GB Boot |
 | **OS** | Ubuntu 24.04 LTS |
-| **Services** | n8n, NPM |
-| **Ports** | 22, 80, 443, 81 |
+| **Services** | NPM |
+| **Ports** | 22, 80, 443, 81, 51820 |
 | **Status** | Active |
 
-#### GCloud Arch Linux 1
+#### GCloud Arch Linux 1 (WireGuard Hub)
 | Property | Value |
 |----------|-------|
 | **ID** | gcloud-arch-1 |
 | **Provider** | Google Cloud |
 | **IP** | 34.55.55.234 |
-| **WireGuard IP** | 10.0.0.1 |
+| **WireGuard IP** | 10.0.0.1 (Hub) |
 | **Type** | e2-micro |
 | **Specs** | 0.25-2 vCPU, 1GB RAM, 30GB |
 | **OS** | Arch Linux (rolling) |
 | **Services** | NPM (Central Proxy), Authelia, OAuth2 Proxy, API |
 | **Ports** | 22, 80, 443, 81, 5000, 9091, 51820 |
 | **Status** | Active |
-
-### 3.3 Machine Learning VMs
-
-#### Oracle ARM Server
-| Property | Value |
-|----------|-------|
-| **ID** | oracle-arm-server |
-| **Provider** | Oracle Cloud |
-| **IP** | pending |
-| **Type** | VM.Standard.A1.Flex |
-| **Specs** | 4 OCPU (ARM64 Ampere), 24GB RAM, 200GB |
-| **OS** | Ubuntu 24.04 LTS |
-| **Planned Services** | Cloud, Mail, Terminal, Dashboard |
-| **Status** | Capacity Waitlist |
-
-#### ML VM1 & ML VM2
-| Property | Value |
-|----------|-------|
-| **Status** | Planned |
-| **Purpose** | Future ML workloads |
 
 ---
 
@@ -206,66 +186,50 @@ ssh ubuntu@129.151.228.66
 
 | Category | Description |
 |----------|-------------|
-| **Infrastructure** | Core infrastructure services (storage, proxy) |
+| **Infrastructure** | Core infrastructure services (proxy, API, auth) |
 | **Productivity** | Productivity and communication tools |
 | **Web** | Web analytics and monitoring |
-| **Machine Learning** | ML and automation services |
+| **Automation** | Workflow automation services |
 
 ### 4.2 Service Resource Requirements
 
 | Status | Service ID | Category | RAM (Avg) | Storage (Avg) | Bandwidth (Avg) | Notes |
 |--------|------------|----------|-----------|---------------|-----------------|-------|
-| | **n8n-ai** | ML | | | | AI Agentic workflows |
-| hold | ↳ n8n-ai-app | | 1-4 GB | 2-10 GB | 5-20 GB/mo | LLM context + workflows |
-| hold | ↳ n8n-ai-db | | 256-512 MB | 1-10 GB | - | PostgreSQL - varies by usage |
 | | **mail** | Productivity | | | | Mailu Email Suite (Cloudflare routing) |
 | on | ↳ mailu (8 containers) | | 300-500 MB | 5-50 GB | 1-10 GB/mo | Full mail suite, Cloudflare Email Routing |
 | on | ↳ mail-db (RocksDB) | | 8-32 MB | Variable | - | Embedded RocksDB |
 | | **analytics** | Web | | | | Matomo Analytics platform |
 | on | ↳ matomo-app | | 256-512 MB | 2-5 GB | 500 MB-2 GB/mo | PHP FPM Alpine |
 | on | ↳ matomo-db | | 256-512 MB | 1-10 GB | - | MariaDB - grows with data |
-| | **git** | Productivity | | | | Gitea hosting |
-| dev | ↳ git-app | | 256-512 MB | 1-5 GB | 2-10 GB/mo | Web + Git server |
-| dev | ↳ git-db | | 8-32 MB | Variable | - | SQLite embedded |
-| dev | ↳ git-repos | | - | ~10 GB | - | Git repositories storage |
-| | **n8n-infra** | Automation | | | | Workflow automation |
-| on | ↳ n8n-infra-app | | 256-512 MB | 500 MB - 2 GB | 1-5 GB/mo | Workflows + execution logs |
 | | **sync** | Productivity | | | | Syncthing file sync |
 | on | ↳ sync-app | | 128-256 MB | 100-500 MB | 10-50 GB/mo | App + config |
 | on | ↳ sync-index-db | | - | 100-500 MB | - | File metadata index |
 | on | ↳ sync-files-db | | - | ~100 GB | - | Synced files storage |
 | on | ↳ sync-obj-db | | - | ~5 GB | - | Object/blob storage |
-| | **npm** | Infrastructure | | | | Reverse proxy (4 instances) |
-| on | ↳ npm-gcloud (SINGLE CENTRAL PROXY)
-| on | ↳ npm-gcloud (SINGLE CENTRAL PROXY)
-| hold | ↳ npm-gcloud (on hold - ARM not deployed)
-| dev | ↳ npm-gcloud | | 128-256 MB | 100-500 MB | 5-20 GB/mo | SSL certs + configs |
-| | **cache** | Cache | | | | Redis in-memory store |
-| dev | ↳ cache-app | | 64-256 MB | 100 MB - 1 GB | - | Session/cache data |
-| | **vpn** | Infrastructure | | | | OpenVPN server |
-| dev | ↳ vpn-app | | 64-128 MB | 50-100 MB | 5-50 GB/mo | Client configs + certs |
-| | **cloud** | Coder | | | | Cloud Dashboard |
+| | **npm** | Infrastructure | | | | Central reverse proxy |
+| on | ↳ npm-gcloud | | 128-256 MB | 100-500 MB | 5-20 GB/mo | SSL certs + configs |
+| | **authelia** | Infrastructure | | | | 2FA authentication |
+| on | ↳ authelia-app | | 32-64 MB | 50-100 MB | 100-500 MB/mo | TOTP + session management |
+| | **photos** | Productivity | | | | Photoprism photo gallery |
+| on | ↳ photoprism-app | | 1-2 GB | 10-50 GB | 5-20 GB/mo | Photo indexing + UI |
+| on | ↳ photoprism-db | | 128-256 MB | 1-5 GB | - | MariaDB |
+| | **calendar** | Productivity | | | | Radicale calendar |
+| on | ↳ radicale-app | | 32-64 MB | 50-200 MB | 50-200 MB/mo | CalDAV/CardDAV |
+| | **cloud** | Infrastructure | | | | Cloud Dashboard |
 | on | ↳ cloud-app | | - | 5 MB | 50-200 MB/mo | Static HTML/CSS/JS |
-| dev | ↳ flask-app | | 64-128 MB | 50-100 MB | 100-500 MB/mo | Flask Web Server |
-| dev | ↳ cloud-db | | 8-32 MB | 50-200 MB | - | SQLite or PostgreSQL |
-| | **terminal** | Productivity | | | | Web terminal |
-| dev | ↳ terminal-app | | 64-128 MB | 50-100 MB | 500 MB-2 GB/mo | wetty/ttyd session-based |
-| | **Total ON** | | **~1-1.8 GB** | **~8-23 GB** | **~17-77 GB/mo** | Active services |
-| | **Total DEV** | | **~2-5.7 GB** | **~122-182 GB** | **~14-92 GB/mo** | In development |
-| | **TOTAL** | | **~3-7.5 GB** | **~130-205 GB** | **~31-169 GB/mo** | All services combined |
+| on | ↳ flask-app | | 64-128 MB | 50-100 MB | 100-500 MB/mo | Flask API Server |
+| | **TOTAL** | | **~2.5-4.5 GB** | **~120-230 GB** | **~23-105 GB/mo** | All active services |
 
 
 **VM Totals (Estimated)**:
 
-| Status | VM | Services | Total RAM (Est) | Total Storage (Est) | Bandwidth (Est) |
-|--------|-----|----------|-----------------|---------------------|-----------------|
-| on | Oracle Web Server 1 | n8n-infra-app, sync-app, cloud-app, flask-app, npm-gcloud (SINGLE CENTRAL PROXY)
-| on | Oracle Services Server 1 | matomo-app, matomo-db, cloud-db, npm-gcloud (SINGLE CENTRAL PROXY)
-| hold | Oracle ARM Server | n8n-ai-app, n8n-ai-db, npm-gcloud (on hold - ARM not deployed)
-| hold | OCI Free Micro 1 | mail-app, mail-db | ~520 MB - 1 GB | ~5-50 GB | ~1-10 GB/mo |
-| | **Total ON** | | **~1.4-2.7 GB** | **~10-30 GB** | **~25-100 GB/mo** |
-| | **Total DEV** | | **~2.3-6.5 GB** | **~15-70 GB** | **~15-55 GB/mo** |
-| | **TOTAL** | | **~3.7-9.2 GB** | **~25-100 GB** | **~40-155 GB/mo** |
+| VM | Services | Total RAM (Est) | Total Storage (Est) | Bandwidth (Est) |
+|----|----------|-----------------|---------------------|-----------------|
+| oci-f-micro_1 | mailu | ~300-500 MB | ~5-50 GB | ~1-10 GB/mo |
+| oci-f-micro_2 | matomo-app, matomo-db | ~500 MB - 1 GB | ~3-15 GB | ~500 MB-2 GB/mo |
+| oci-p-flex_1 | photoprism, sync, radicale | ~1.5-3 GB | ~110-160 GB | ~16-75 GB/mo |
+| gcp-f-micro_1 | npm, authelia, flask-app | ~200-450 MB | ~200 MB-700 MB | ~5-20 GB/mo |
+| **TOTAL** | | **~2.5-5 GB** | **~120-230 GB** | **~23-105 GB/mo** |
 
 ---
 
@@ -322,20 +286,7 @@ ssh ubuntu@129.151.228.66
 | **Features** | Anti-blocker proxy, Tag Manager, Custom events |
 | **Status** | Active |
 
-### 4.5 Machine Learning Services
-
-#### n8n Automation
-| Property | Value |
-|----------|-------|
-| **VM** | Oracle Services Server 1 |
-| **Domain** | n8n.diegonmarcos.com |
-| **Internal Port** | 5678 |
-| **Technology** | n8nio/n8n |
-| **Container** | n8n |
-| **Features** | Workflow automation, 400+ integrations, Webhooks |
-| **Status** | Active |
-
-### 4.6 Productivity Services
+### 4.5 Productivity Services
 
 #### Syncthing
 | Property | Value |
@@ -352,14 +303,15 @@ ssh ubuntu@129.151.228.66
 | Property | Value |
 |----------|-------|
 | **VM** | oci-f-micro_1 (130.110.251.193) |
-| **Webmail Domain** | mailapp.diegonmarcos.com |
-| **IMAP Domain** | imap.diegonmarcos.com |
-| **SMTP Domain** | smtp.diegonmarcos.com |
-| **Technology** | Mailu (8 containers: front, admin, imap, smtp, webmail, antispam, fetchmail, resolver) |
-| **Admin URL** | https://mailapp.diegonmarcos.com/admin |
-| **Webmail URL** | https://mailapp.diegonmarcos.com/webmail |
-| **Ports** | 25 (SMTP), 587 (Submission), 993 (IMAPS), 443 (HTTPS) |
-| **Features** | IMAP, SMTP, Webmail (Roundcube), Antispam (Rspamd), CalDAV, CardDAV |
+| **Login Page** | https://mail.diegonmarcos.com → diegonmarcos.github.io/mymail (Authelia SSO) |
+| **Webmail URL** | https://mail.diegonmarcos.com/webmail (Roundcube via Authelia) |
+| **Admin URL** | https://mail.diegonmarcos.com/admin |
+| **IMAP Server** | imap.diegonmarcos.com:993 (SSL) |
+| **SMTP Server** | smtp.diegonmarcos.com:465 (SSL) - Note: Port 587 blocked by Oracle Cloud |
+| **Technology** | Mailu (8 containers: front, admin, imap, smtp, webmail, antispam, resolver, redis) |
+| **Auth** | Authelia SSO (proxy auth via NPM) + PROXY_AUTH_HEADER |
+| **Ports** | 25 (SMTP relay), 465 (SMTPS client), 993 (IMAPS), 443 (HTTPS webmail) |
+| **Features** | IMAP, SMTP, Webmail (Roundcube), Antispam (Rspamd) |
 | **Email Routing** | Cloudflare Email Routing → Mailu:587 |
 | **Status** | On |
 
@@ -404,9 +356,11 @@ Oracle Cloud blocks SMTP port 25 both inbound and outbound (anti-spam policy). T
 |-----------|------|------|---------|
 | **Inbound** | 25→587 | Internet → Cloudflare MX → Mailu | Receiving external mail |
 | **Outbound** | 25→relay | Mailu → Oracle Email Delivery → Internet | Sending external mail |
-| **IMAP** | 993 | Client ↔ Mailu (direct) | Reading mail (TLS) |
-| **Submission** | 587 | Client → Mailu → relay | Sending from mail client |
-| **Webmail** | 443 | Browser → NPM → Mailu Roundcube | Web interface |
+| **IMAP** | 993 | Client ↔ Mailu (direct) | Reading mail (SSL) |
+| **SMTPS** | 465 | Client → Mailu → relay | Sending from mail client (SSL) |
+| **Webmail** | 443 | Browser → NPM → Authelia → Mailu | Web interface (SSO) |
+
+**Note:** Port 587 (STARTTLS) is blocked by Oracle Cloud. Use port 465 (SSL) for email clients.
 
 **DNS Records:**
 
@@ -423,13 +377,6 @@ SPF Record (Outbound authorization):
 DKIM: mail._domainkey.diegonmarcos.com (RSA 2048-bit)
 ```
 
-#### OS Terminal Web
-| Property | Value |
-|----------|-------|
-| **VM** | Oracle ARM Server (planned) |
-| **Technology** | wetty or ttyd |
-| **Status** | Development |
-
 #### Calendar & Contacts (Radicale)
 | Property | Value |
 |----------|-------|
@@ -440,23 +387,9 @@ DKIM: mail._domainkey.diegonmarcos.com (RSA 2048-bit)
 | **Container** | tomsquest/docker-radicale |
 | **Features** | CalDAV, CardDAV |
 | **RAM** | ~30-50 MB |
-| **Status** | Development |
+| **Status** | Active |
 
 **Clients:** Thunderbird, iOS Calendar, Android DAVx5
-
-#### Office Suite (CryptPad)
-| Property | Value |
-|----------|-------|
-| **VM** | oci-p-flex_1 (wake-on-demand) |
-| **Domain** | pad.diegonmarcos.com |
-| **Internal Port** | 3000 |
-| **Technology** | CryptPad (Node.js) |
-| **Container** | cryptpad/cryptpad:latest |
-| **Features** | E2E Encrypted Docs, Sheets, Presentations, Kanban |
-| **RAM** | ~500 MB - 1 GB |
-| **Status** | Development |
-
-**Key Benefits:** Zero-knowledge encryption, no account required, real-time collaboration
 
 ---
 
@@ -520,7 +453,6 @@ DKIM: mail._domainkey.diegonmarcos.com (RSA 2048-bit)
 |------|---------|-----|
 | 8080 | Matomo | Web Server 1 |
 | 8384 | Syncthing GUI | Web Server 1 |
-| 5678 | n8n | Services Server 1 |
 | 3306 | MariaDB | Web Server 1 |
 
 ### 5.4 Key Design Decisions
@@ -789,36 +721,64 @@ services:
       - internal
 ```
 
-### 7.10 WireGuard VPN Tunnel (Cross-VM Security)
+### 7.10 WireGuard VPN Mesh Network
 
-When services span multiple VMs (e.g., NPM on GCP, Photoprism on Oracle), direct IP access bypasses proxy authentication. WireGuard creates a secure private tunnel.
+All VMs are connected via WireGuard mesh network with GCP as the central hub. This enables secure inter-VM communication and prevents direct public IP access bypassing authentication.
 
-**Architecture**:
+**Network Topology**:
+```
+                           WireGuard Mesh Network (10.0.0.0/24)
+                           ═══════════════════════════════════
+
+                                  ┌─────────────────────┐
+                                  │  GCP Hub (10.0.0.1) │
+                                  │  34.55.55.234:51820 │
+                                  │  NPM, Authelia, API │
+                                  └──────────┬──────────┘
+                                             │
+              ┌──────────────────────────────┼──────────────────────────────┐
+              │                              │                              │
+              ▼                              ▼                              ▼
+┌─────────────────────┐      ┌─────────────────────┐      ┌─────────────────────┐
+│  Oracle Dev         │      │  Oracle Web         │      │  Oracle Services    │
+│  10.0.0.2           │      │  10.0.0.3           │      │  10.0.0.4           │
+│  84.235.234.87      │      │  130.110.251.193    │      │  129.151.228.66     │
+│  Photoprism,Sync    │      │  Mailu              │      │  Matomo             │
+└─────────────────────┘      └─────────────────────┘      └─────────────────────┘
+
+              ┌─────────────────────┐
+              │  Local Machine      │
+              │  10.0.0.5           │  (optional peer)
+              │  diego-laptop       │
+              └─────────────────────┘
+```
+
+**WireGuard IP Assignments**:
+| Node | Public IP | WireGuard IP | Role |
+|------|-----------|--------------|------|
+| GCP Hub | 34.55.55.234 | 10.0.0.1 | Central Hub |
+| Oracle Dev | 84.235.234.87 | 10.0.0.2 | Peer |
+| Oracle Web | 130.110.251.193 | 10.0.0.3 | Peer |
+| Oracle Services | 129.151.228.66 | 10.0.0.4 | Peer |
+| Local Machine | dynamic | 10.0.0.5 | Optional Peer |
+
+**Security Benefits**:
 ```
 WITHOUT WireGuard (INSECURE):
-──────────────────────────────
-User → photos.diegonmarcos.com → GCP:443 → NPM → Authelia 2FA ✓
 User → 84.235.234.87:2342 → Photoprism directly (BYPASSES 2FA!) ✗
 
 WITH WireGuard (SECURE):
-────────────────────────
-GCP VM (34.55.55.234)              Oracle VM (84.235.234.87)
-┌─────────────────────┐            ┌─────────────────────┐
-│ Public: 34.x.x.x    │            │ Public: 84.x.x.x    │
-│                     │  Encrypted │                     │
-│ WireGuard:          │◄══════════►│ WireGuard:          │
-│ 10.0.0.1            │   Tunnel   │ 10.0.0.2            │
-└─────────────────────┘            └─────────────────────┘
-         │                                   │
-      NPM ───────► 10.0.0.2:2342 ───────► Photoprism
-                  (private IP only)      (not on public IP!)
+User → photos.diegonmarcos.com → GCP:443 → NPM → Authelia 2FA ✓
+                                             │
+                                             ▼
+                                    10.0.0.2:2342 (WireGuard only)
+                                             │
+                                             ▼
+                                        Photoprism
 ```
 
-**Setup**:
+**Configuration (GCP Hub)**:
 ```bash
-# On GCP VM (Server)
-wg genkey | tee /etc/wireguard/privatekey | wg pubkey > /etc/wireguard/publickey
-
 # /etc/wireguard/wg0.conf
 [Interface]
 Address = 10.0.0.1/24
@@ -826,22 +786,39 @@ PrivateKey = <GCP_PRIVATE_KEY>
 ListenPort = 51820
 
 [Peer]
-PublicKey = <ORACLE_PUBLIC_KEY>
+# Oracle Dev
+PublicKey = <ORACLE_DEV_PUBKEY>
 AllowedIPs = 10.0.0.2/32
-
-# On Oracle VM (Client)
-[Interface]
-Address = 10.0.0.2/24
-PrivateKey = <ORACLE_PRIVATE_KEY>
+Endpoint = 84.235.234.87:51820
+PersistentKeepalive = 25
 
 [Peer]
-PublicKey = <GCP_PUBLIC_KEY>
-Endpoint = 34.55.55.234:51820
-AllowedIPs = 10.0.0.1/32
+# Oracle Web
+PublicKey = <ORACLE_WEB_PUBKEY>
+AllowedIPs = 10.0.0.3/32
+Endpoint = 130.110.251.193:51820
+PersistentKeepalive = 25
+
+[Peer]
+# Oracle Services
+PublicKey = <ORACLE_SERVICES_PUBKEY>
+AllowedIPs = 10.0.0.4/32
+Endpoint = 129.151.228.66:51820
 PersistentKeepalive = 25
 ```
 
-**Photoprism Docker Compose (bind to WireGuard only)**:
+**Local Machine VPN Manager**:
+```bash
+# Location: cloud/a_solutions/vpn/wireguard/vpn_manager.py
+
+python vpn_manager.py status      # Check VPN status
+python vpn_manager.py setup       # Generate keys and config
+python vpn_manager.py add-peer    # Add this machine to GCP hub
+python vpn_manager.py connect     # Connect to VPN
+python vpn_manager.py disconnect  # Disconnect
+```
+
+**Bind Services to WireGuard Only**:
 ```yaml
 services:
   photoprism:
@@ -950,7 +927,7 @@ Browser: https://photos.diegonmarcos.com
         │                  │                  │
         ▼                  ▼                  ▼
 ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│   photos.    │  │   drive.     │  │   n8n.       │
+│   photos.    │  │   drive.     │  │   sync.      │
 │diegonmarcos  │  │diegonmarcos  │  │diegonmarcos  │
 │    .com      │  │    .com      │  │    .com      │
 └──────────────┘  └──────────────┘  └──────────────┘
@@ -1037,6 +1014,148 @@ totp:
   period: 30
   skew: 1
 ```
+
+### 7.11.1 Authelia OIDC Provider
+
+Authelia is configured as an **OpenID Connect (OIDC) Identity Provider** to enable SSO for applications that don't support forward auth but do support OIDC (like NPM admin panel).
+
+**OIDC Architecture**:
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         OIDC AUTHENTICATION FLOW                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Browser: https://proxy.diegonmarcos.com
+         │
+         ▼
+┌─────────────────┐
+│   CLOUDFLARE    │  DNS resolves to GCP IP (34.55.55.234)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   NPM Proxy     │  Routes to oauth2-proxy-npm
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  oauth2-proxy   │  Checks for valid OIDC session
+│  (Port 4180)    │  No session → redirect to Authelia OIDC
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  AUTHELIA OIDC  │  /authelia/api/oidc/authorization
+│  (Port 9091)    │  User authenticates (password + TOTP)
+└────────┬────────┘
+         │
+         │  Authorization code + redirect
+         ▼
+┌─────────────────┐
+│  oauth2-proxy   │  Exchanges code for tokens
+│  /oauth2/callback│  Sets session cookie (_oauth2_proxy)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   NPM Admin     │  User accesses NPM without NPM's own login
+│   (Port 81)     │  Headers: X-User, X-Email from oauth2-proxy
+└─────────────────┘
+```
+
+**OIDC Configuration in Authelia**:
+```yaml
+# ~/authelia/config/configuration.yml
+
+identity_providers:
+  oidc:
+    hmac_secret: '<random-hex-string>'
+    jwks:
+      - key_id: 'main'
+        algorithm: 'RS256'
+        use: 'sig'
+        key: |
+          -----BEGIN PRIVATE KEY-----
+          <RSA private key>
+          -----END PRIVATE KEY-----
+    clients:
+      - client_id: 'oauth2-proxy-npm'
+        client_name: 'NPM Proxy Manager'
+        client_secret: '$plaintext$<secret>'
+        public: false
+        authorization_policy: 'two_factor'
+        redirect_uris:
+          - 'https://proxy.diegonmarcos.com/oauth2/callback'
+        scopes:
+          - 'openid'
+          - 'profile'
+          - 'email'
+          - 'groups'
+        userinfo_signed_response_alg: 'none'
+        token_endpoint_auth_method: 'client_secret_basic'
+```
+
+**oauth2-proxy Configuration**:
+```yaml
+# ~/oauth2-proxy-npm/docker-compose.yml
+services:
+  oauth2-proxy-npm:
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest
+    container_name: oauth2-proxy-npm
+    command:
+      - --http-address=0.0.0.0:4180
+      - --provider=oidc
+      - --client-id=oauth2-proxy-npm
+      - --client-secret=<secret>
+      - --redirect-url=https://proxy.diegonmarcos.com/oauth2/callback
+      - --oidc-issuer-url=https://auth.diegonmarcos.com/authelia
+      - --cookie-secret=<32-byte-hex>
+      - --cookie-domain=.diegonmarcos.com
+      - --upstream=http://npm:81
+      - --skip-provider-button=true
+      - --pass-user-headers=true
+    networks:
+      - npm_default
+```
+
+**NPM Nginx Config for OIDC**:
+```nginx
+# proxy.diegonmarcos.com config
+
+# oauth2-proxy endpoints
+location /oauth2/ {
+    proxy_pass http://oauth2-proxy-npm:4180;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+location = /oauth2/auth {
+    proxy_pass http://oauth2-proxy-npm:4180;
+    proxy_set_header Content-Length "";
+    proxy_pass_request_body off;
+}
+
+location / {
+    auth_request /oauth2/auth;
+    error_page 401 = /oauth2/sign_in;
+
+    auth_request_set $user $upstream_http_x_auth_request_user;
+    auth_request_set $email $upstream_http_x_auth_request_email;
+
+    proxy_set_header X-User $user;
+    proxy_set_header X-Email $email;
+    proxy_pass http://npm:81;
+}
+```
+
+**Authentication Methods Summary**:
+| Method | Use Case | Services |
+|--------|----------|----------|
+| **Forward Auth** | Services behind NPM that support auth_request | photos, mail, sync, analytics |
+| **OIDC** | Apps that need bypass of their own auth | proxy (NPM admin) |
+| **Native Auth** | Services with their own authentication | Matomo, Mailu admin |
 
 ### 7.12 Network Isolation Strategy
 
@@ -1182,7 +1301,7 @@ async function wakeServer() {
 **Dormant VMs**:
 | VM | Services | Idle Timeout | Wake Time |
 |----|----------|--------------|-----------|
-| oci-p-flex_1 (84.235.234.87) | Photoprism, n8n, Gitea | 30 min | ~60-90s |
+| oci-p-flex_1 (84.235.234.87) | Photoprism, Gitea | 30 min | ~60-90s |
 
 **WireGuard Reconnection**:
 After wake, the WireGuard peer (10.0.0.2) takes ~30s to re-establish handshake with GCP (10.0.0.1). The API polls the WireGuard status before reporting the VM as fully ready.
@@ -1201,7 +1320,6 @@ After wake, the WireGuard peer (10.0.0.2) takes ~30s to re-establish handshake w
 | **VM Boot Disk** | oci-p-flex_1 | 100 GB | ~13 GB | OS, Docker, Services | $5.50/mo |
 | **Object Storage** | oracle_s3:my-photos | Unlimited | ~204 GB | Google Photos Takeout | ~$5/mo |
 | **Object Storage** | oracle_s3:archlinux-images | Unlimited | ~2 GB | Arch Linux images | ~$0.05/mo |
-| **Block Volume** | oci-f-arm_1 (future) | 200 GB | - | AI workloads | $0 (Free) |
 
 **Oracle Object Storage Buckets:**
 
@@ -1299,13 +1417,13 @@ private_crypt /dev/sdb1 /root/.luks-keyfile luks
 
 ```bash
 # === OCI (Oracle Cloud) - Use SSH key ===
-# Oracle Flex 1 - Main Services (Flask, Photos, n8n, Gitea)
+# Oracle Flex 1 - Main Services (Flask, Photos, Gitea)
 ssh -i ~/Documents/Git/LOCAL_KEYS/00_terminal/ssh/id_rsa ubuntu@84.235.234.87
 
 # Oracle Micro 1 - Web Server (Matomo, Syncthing)
 ssh -i ~/Documents/Git/LOCAL_KEYS/00_terminal/ssh/id_rsa ubuntu@130.110.251.193
 
-# Oracle Micro 2 - Services (n8n)
+# Oracle Micro 2 - Services
 ssh -i ~/Documents/Git/LOCAL_KEYS/00_terminal/ssh/id_rsa ubuntu@129.151.228.66
 
 # === GCP (Google Cloud) - Use gcloud CLI ===
@@ -1339,7 +1457,6 @@ sudo docker logs --tail 100 -f matomo-db
 sudo docker exec -it matomo-app bash
 sudo docker exec -it matomo-db bash
 sudo docker exec -it syncthing sh
-sudo docker exec -it n8n sh
 
 # Restart container
 sudo docker restart matomo-app
@@ -1434,8 +1551,7 @@ The front-end dashboard reads from `cloud-infrastructure.json`:
     "ml": { "name": "Machine Learning" }
   },
   "services": {
-    "matomo": { "urls": {...}, "docker": {...}, "status": "active" },
-    "n8n": { "urls": {...}, "docker": {...}, "status": "active" }
+    "matomo": { "urls": {...}, "docker": {...}, "status": "active" }
   },
   "domains": { "primary": "diegonmarcos.com", "subdomains": {...} },
   "firewallRules": { "oracle-web-server-1": [...] }
@@ -1464,7 +1580,6 @@ interface CloudInfrastructure {
 |------|-----------|--------------|
 | Matomo Analytics | `services.matomo` | Open `urls.gui` |
 | Syncthing | `services.syncthing` | Open `urls.gui` |
-| n8n Automation | `services.n8n` | Open `urls.gui` |
 | Oracle Cloud | `providers.oracle` | Open `consoleUrl` |
 | Google Cloud | `providers.gcloud` | Open `consoleUrl` |
 
@@ -1473,9 +1588,6 @@ interface CloudInfrastructure {
 | Status | Display | Card Style | Description |
 |--------|---------|------------|-------------|
 | `on` | Online | Green indicator | Running and accessible |
-| `dev` | In Development | Blue indicator | Under active development |
-| `hold` | On Hold | Yellow/Orange indicator | Waiting for resources |
-| `tbd` | To Be Determined | Gray indicator | Planned for future |
 
 ### 11.6 Naming Convention
 
@@ -1484,9 +1596,8 @@ All services follow a consistent naming pattern:
 | Pattern | Example | Description |
 |---------|---------|-------------|
 | `{service}-app` | `matomo-app`, `sync-app` | Application/service container |
-| `{service}-db` | `matomo-db`, `git-db` | Database container |
-| `npm-{provider}-{vm}` | `npm-gcloud (SINGLE CENTRAL PROXY)
-| `n8n-{type}-app` | `n8n-infra-app`, `n8n-ai-app` | n8n workflow variants |
+| `{service}-db` | `matomo-db`, `photoprism-db` | Database container |
+| `npm-gcloud` | Central NPM proxy | Single reverse proxy on GCP |
 
 ---
 
@@ -1946,7 +2057,6 @@ graph TD
             subgraph SVC["Services Server 1 - 129.151.228.66"]
                 subgraph DOCKER2["Docker Engine"]
                     NGINX2["NPM :80, :443, :81"]
-                    N8N["n8n :5678"]
                 end
             end
             subgraph ARM["ARM Server - Pending"]
@@ -1966,18 +2076,14 @@ graph TD
         INTERNET["Internet"]
         ANALYTICS["analytics.diegonmarcos.com"]
         SYNCDOM["sync.diegonmarcos.com"]
-        N8NDOM["n8n.diegonmarcos.com"]
     end
 
     INTERNET --> ANALYTICS
     INTERNET --> SYNCDOM
-    INTERNET --> N8NDOM
     ANALYTICS --> NGINX1
     SYNCDOM --> NGINX1
-    N8NDOM --> NGINX2
     NGINX1 --> MATOMO
     NGINX1 --> SYNC
-    NGINX2 --> N8N
     MATOMO --> MARIADB
 ```
 
@@ -2102,22 +2208,19 @@ GitHub App settings:
 5. **Rate Limiting**: Admin endpoints rate-limited to prevent abuse
 6. **Audit Logging**: All admin actions logged with timestamp and user
 
-### 14.8 Implementation Status
-
-| Component | Status |
-|-----------|--------|
-| GitHub OAuth flow | `dev` |
-| JWT token generation | `dev` |
-| Admin endpoints | `dev` |
-| Dashboard UI (login button) | `dev` |
-| Dashboard UI (admin controls) | `dev` |
-
 ---
 
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| 2025-12-14 | **v3.5.0** - Removed all dev/hold/backlog items, keeping only active services |
+| 2025-12-14 | Removed ML VMs, ARM server, and all dev services (git, vpn, terminal, cryptpad, cache) |
+| 2025-12-14 | Simplified status to single `on` value |
+| 2025-12-14 | **v3.4.0** - Reorganized folder structure to `a_solutions/` and `b_infra/` separation |
+| 2025-12-14 | Solutions grouped by domain (analytics, api, mail, photos, sync, etc.) |
+| 2025-12-14 | Infrastructure grouped by VM identifier (oci-p-flex_1, gcp-f-micro_1, etc.) |
+| 2025-12-14 | Added Structure Philosophy table explaining the new layout |
 | 2025-12-04 | **v3.2.0** - Added Section 15 (Dashboard Architecture) and Section 16 (Frontend Views Spec) |
 | 2025-12-04 | Detailed Source of Truth hierarchy with 4-layer flow diagram |
 | 2025-12-04 | Added Runtime Data Flow diagram (Browser → GitHub Pages → Flask API → JSON) |
@@ -2127,13 +2230,13 @@ GitHub App settings:
 | 2025-12-04 | **v3.1.0** - Added OAuth 2.0 (GitHub) authentication spec for admin endpoints |
 | 2025-12-03 | **v3.0.0** - Unified cloud-dashboard.py (TUI + Flask API in single file) |
 | 2025-12-03 | Established naming convention: `{service}-app`, `{service}-db`, `npm-{provider}-{vm}` |
-| 2025-12-03 | New status values: `on`, `dev`, `hold`, `tbd` (replaces active/pending/development/planned) |
+| 2025-12-03 | Established status value: `on` for active services |
 | 2025-12-03 | Added `displayName` field for human-readable service names |
 | 2025-12-03 | Created Cloud-spec_Tables.md with architecture reference tables |
 | 2025-12-02 | Consolidated HANDOFF.md, spec_infra.md, SPEC.md, VPS_ARCHITECTURE_SPEC.md into single CLOUD-SPEC.md |
 | 2025-12-02 | Reorganized VMs and services with categories |
 | 2025-12-01 | Migrated to JSON data source, deprecated CSV |
-| 2025-11-27 | Added services-server-1 with n8n |
+| 2025-11-27 | Added services-server-1 |
 | 2025-11-26 | Initial infrastructure documentation |
 
 ---
@@ -2143,45 +2246,140 @@ GitHub App settings:
 ```
 /home/diego/Documents/Git/back-System/cloud/
 │
-├── 0.spec/                                 ← SOURCE OF TRUTH FOLDER
+├── 0.spec/                                 ← SPECS & RESEARCH
+│   ├── TASKS_OVERVIEW.md                   ← Task management and project structure
+│   ├── Research/                           ← Research and reference materials
+│   └── archive/                            ← Archived specs
+│
+├── 1.ops/                                  ← OPERATIONS & ORCHESTRATION
 │   ├── Cloud-spec_.md                      ← Main specification (this file)
 │   ├── Cloud-spec_Tables.md                ← Architecture reference tables
 │   ├── cloud_dash.json                     ← PRIMARY DATA SOURCE (JSON)
 │   ├── cloud_dash.py                       ← UNIFIED DASHBOARD (TUI + Flask API)
 │   ├── front-cloud/                        ← Symlink to website repo
-│   │   ├── src_vanilla/                    ← HTML/CSS/JS source
-│   │   └── dist_vanilla/                   ← Built static files
-│   └── TASKS_OVERVIEW.md                   ← Task management and project structure
+│   ├── AI_Dashboard/                       ← Symlink to AI dashboard
+│   └── vm-control.sh                       ← VM control scripts
 │
-├── vps_oracle/                             ← ORACLE CLOUD VMs
+├── a_solutions/                            ← APPLICATIONS & SERVICES (by solution)
 │   │
-│   ├── vm-oci-f-micro_1/                   ← 24/7 FREE E2.Micro (Mail)
-│   │   ├── 1.os/oci-f-micro_1.md
-│   │   ├── 2.app/mail-app/
-│   │   └── 3.db/mail-db/
+│   ├── analytics/                          ← Matomo Analytics
+│   │   ├── analytics-app/                  ← Matomo application
+│   │   │   ├── docker-compose.yml
+│   │   │   ├── scripts/                    ← Setup & management scripts
+│   │   │   └── tags/                       ← Tracking tags per project
+│   │   └── analytics-db/                   ← MariaDB for Matomo
+│   │       └── docker-compose.yml
 │   │
-│   ├── vm-oci-f-micro_2/                   ← 24/7 FREE E2.Micro (Analytics)
-│   │   ├── 1.os/oci-f-micro_2.md
-│   │   ├── 2.app/matomo-app/, npm-app/
-│   │   └── 3.db/matomo-db/
+│   ├── api/                                ← Cloud API & Dashboard Backend
+│   │   ├── src/                            ← Source files (JSON, JS, Python)
+│   │   │   ├── cloud_dash.json             ← Infrastructure data
+│   │   │   ├── cloud_dash.py               ← Dashboard script
+│   │   │   └── openapi.yaml                ← API specification
+│   │   ├── flask-app/                      ← Flask API server
+│   │   │   ├── app/                        ← Flask application modules
+│   │   │   ├── docker-compose.yml
+│   │   │   └── requirements.txt
+│   │   ├── db/                             ← API database
+│   │   └── dist/                           ← Built/exported files
 │   │
-│   ├── vm-oci-f-arm_1/                     ← HOLD FREE A1.Flex ARM (AI)
-│   │   ├── 1.os/oci-f-arm_1.md
-│   │   ├── 2.app/n8n-ai-app/
-│   │   └── 3.db/n8n-ai-db/
+│   ├── calendar/                           ← Radicale Calendar
+│   │   └── calendar-app/
+│   │       ├── docker-compose.yml
+│   │       └── config/
 │   │
-│   └── vm-oci-p-flex_1/                    ← Wake-on-Demand PAID E4.Flex (Dev)
-│       ├── 1.os/oci-p-flex_1.md
-│       ├── 2.app/n8n-infra-app/, sync-app/, flask-app/, git-app/, vpn-app/, terminal-app/, cache-app/
-│       └── 3.db/cloud-db/, git-db/
+│   ├── db_cache/                           ← Redis Cache
+│   │   └── cache-app/
+│   │       └── docker-compose.yml
+│   │
+│   ├── mail/                               ← Mailu Mail Server
+│   │   ├── mail-app/                       ← Mailu containers
+│   │   │   ├── docker-compose.yml
+│   │   │   ├── cloudflare-worker/          ← Email routing worker
+│   │   │   └── smtp-proxy/                 ← SMTP proxy config
+│   │   └── mail-db/
+│   │       └── docker-compose.yml
+│   │
+│   ├── npm/                                ← Nginx Proxy Manager
+│   │   └── npm-app/
+│   │       └── docker-compose.yml
+│   │
+│   ├── photos/                             ← Photoprism Photo Gallery
+│   │   └── photos-webhook/                 ← Webhook handler
+│   │       ├── docker-compose.yml
+│   │       └── webhook.py
+│   │
+│   ├── sync/                               ← Syncthing File Sync
+│   │   └── sync-app/
+│   │       └── docker-compose.yml
+│   │
+│   ├── vault/                              ← Vaultwarden (Bitwarden)
+│   │   └── vault-app/
+│   │       └── docker-compose.yml
+│   │
+│   ├── vpn/                                ← VPN Server
+│   │   └── vpn-app/
+│   │       └── docker-compose.yml
+│   │
+│   └── web_front/                          ← Static Web Frontend
 │
-└── vps_gcloud/                             ← GOOGLE CLOUD VMs
+└── b_infra/                                ← INFRASTRUCTURE (by VM/machine)
     │
-    └── vm-arch-1/                          ← 24/7 FREE e2-micro (NPM Proxy + Authelia)
-        ├── 1.os/arch-1.md
-        ├── 2.app/npm-app/, authelia-app/, mail-app/, terminal-app/, billing-disabler/
-        └── 3.db/mail-db/, authelia-db/
+    ├── gcp-f-micro_1/                      ← GCloud Free e2-micro (NPM + Authelia)
+    │   └── 1.os/
+    │       └── gcp-f-micro_1.md            ← VM spec & config
+    │
+    ├── oci-f-micro_1/                      ← Oracle Free E2.Micro (Mail)
+    │   └── 1.os/
+    │       └── oci-f-micro_1.md
+    │
+    ├── oci-f-micro_2/                      ← Oracle Free E2.Micro (Analytics)
+    │   └── 1.os/
+    │       └── oci-f-micro_2.md
+    │
+    ├── oci-p-flex_1/                       ← Oracle Paid E4.Flex (Wake-on-Demand)
+    │   └── 1.os/
+    │       ├── oci-p-flex_1.md
+    │       ├── idle-shutdown.sh            ← Auto-shutdown script
+    │       ├── idle-shutdown.service       ← Systemd service
+    │       └── idle-shutdown.timer         ← Systemd timer
+    │
+    ├── local_SurfacePro8/                  ← Local Development Machine
+    │   ├── 1.spec/                         ← Hardware specs
+    │   │   └── surface-pro-8.md
+    │   ├── 2.app/                          ← App documentation
+    │   │   ├── dev-tools.md
+    │   │   ├── cli-tools.md
+    │   │   └── gui-apps.md
+    │   ├── 3.config/                       ← Shell & config backups
+    │   │   └── backup/                     ← bashrc, zshrc, etc.
+    │   ├── 4.secrets/                      ← Local secrets (gitignored)
+    │   └── migration_plan/                 ← OS migration scripts
+    │       └── migration-scripts/
+    │
+    ├── vps_oracle/                         ← Oracle Cloud provider-level docs
+    │   └── README.md
+    │
+    └── vps_gcloud/                         ← GCloud provider-level docs
+        └── billing/
+            └── billing-disabler/           ← Budget protection automation
+                ├── main.py
+                ├── budget-config.yaml
+                └── requirements.txt
 ```
+
+### Structure Philosophy
+
+| Layer | Folder | Purpose | Naming Convention |
+|-------|--------|---------|-------------------|
+| **Specs** | `0.spec/` | Documentation, research, task tracking | `*.md` |
+| **Ops** | `1.ops/` | Orchestration, dashboards, CI/CD | `*.sh`, `*.py` |
+| **Solutions** | `a_solutions/` | Applications grouped by solution domain | `{solution}/{solution}-app/` |
+| **Infrastructure** | `b_infra/` | VMs & machines, grouped by identifier | `{vm-id}/1.os/` |
+
+**Key Principles:**
+1. **Solutions are portable** - `a_solutions/` contains docker-compose files that can be deployed to any VM
+2. **Infrastructure is machine-specific** - `b_infra/` contains OS configs, systemd services, and VM specs
+3. **Separation of concerns** - What to deploy (solutions) vs Where to deploy (infra)
 
 ### Source of Truth Hierarchy
 
@@ -2375,11 +2573,11 @@ index.html (Navigation Hub)
 
 **Card Layout: 3 Columns**
 
-| User | Coder | AI |
-|------|-------|-----|
-| sync-app | terminal-app | n8n-ai-app |
-| mail-app | git-app | ai-webchat (future) |
-| vpn-app | matomo-app | ai-cli (future) |
+| User | Coder |
+|------|-------|
+| sync-app | terminal-app |
+| mail-app | git-app |
+| vpn-app | matomo-app |
 
 **Card Component:**
 ```
@@ -2403,7 +2601,7 @@ index.html (Navigation Hub)
 | - Google Cloud Console | **Databases** |
 | **VMs (SSH Access)** | - matomo-db, git-db, etc. |
 | - oracle-web-server-1 | **Infra Services** |
-| - oracle-services-server-1 | - n8n-infra-app, flask-app, cache-app |
+| - oracle-services-server-1 | - flask-app, cache-app |
 | - oracle-arm-server | **Proxies** |
 | - gcloud-arch-1 | - npm-gcloud (SINGLE CENTRAL PROXY)
 
@@ -2447,8 +2645,8 @@ index.html (Navigation Hub)
 │  ┌─────────┐  ┌─────────┐  ┌─────────┐                     │
 │  │  User   │  │  Coder  │  │   AI    │    ← Column headers │
 │  ├─────────┤  ├─────────┤  ├─────────┤                     │
-│  │ 🔄 Sync │  │ 💻 Term │  │ 🤖 n8n  │                     │
-│  │ 📧 Mail │  │ 📊 Git  │  │   AI    │                     │
+│  │ 🔄 Sync │  │ 💻 Term │  │ 🤖 AI   │                     │
+│  │ 📧 Mail │  │ 📊 Git  │  │         │                     │
 │  │ 🔐 VPN  │  │ 📈 Stats│  │         │                     │
 │  └─────────┘  └─────────┘  └─────────┘                     │
 │                                                              │
