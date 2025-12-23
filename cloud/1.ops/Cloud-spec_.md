@@ -8,25 +8,37 @@
 
 ## Table of Contents
 
-1. [Quick Reference](#1-quick-reference)
-2. [Infrastructure Overview](#2-infrastructure-overview)
-3. [Virtual Machines](#3-virtual-machines)
-4. [Services](#4-services)
-5. [Network Architecture](#5-network-architecture)
-6. [Docker Network Isolation](#6-docker-network-isolation)
-7. [Security Architecture](#7-security-architecture)
-8. [Volume & Storage Strategy](#8-volume--storage-strategy)
-9. [Database Strategy](#9-database-strategy)
-10. [SSH & Access Commands](#10-ssh--access-commands)
-11. [Front-End Integration](#11-front-end-integration)
-12. [Operations & Maintenance](#12-operations--maintenance)
-12A. [Monitoring Dashboard Specification](#12a-monitoring-dashboard-specification)
-13. [Diagrams](#13-diagrams)
-14. [Authentication & Admin API](#14-authentication--admin-api)
-15. [Dashboard Architecture](#15-dashboard-architecture)
-16. [Frontend Views Specification](#16-frontend-views-specification)
+### PART I: OVERVIEW
+- 1. [Quick Reference](#1-quick-reference)
+- 2. [Infrastructure Overview](#2-infrastructure-overview)
+
+### PART II: INFRASTRUCTURE
+- 3. [Virtual Machines](#3-virtual-machines)
+- 4. [Services](#4-services)
+- 5. [Network Architecture](#5-network-architecture)
+- 6. [Docker Network Isolation](#6-docker-network-isolation)
+
+### PART III: SECURITY
+- 7. [Security Architecture](#7-security-architecture)
+
+### PART IV: DATA
+- 8. [Volume & Storage Strategy](#8-volume--storage-strategy)
+- 9. [Database Strategy](#9-database-strategy)
+
+### PART V: OPERATIONS
+- 10. [SSH & Access Commands](#10-ssh--access-commands)
+- 11. [Front-End Integration](#11-front-end-integration)
+- 12. [Operations & Maintenance](#12-operations--maintenance)
+
+### PART VI: REFERENCE & DASHBOARD
+- 13. [Diagrams](#13-diagrams)
+- 14. [Authentication & Admin API](#14-authentication--admin-api)
+- 15. [Dashboard Architecture](#15-dashboard-architecture)
+- 16. [Frontend Views Specification](#16-frontend-views-specification)
 
 ---
+
+# PART I: OVERVIEW
 
 ## 1. Quick Reference
 
@@ -125,6 +137,8 @@ gcloud compute ssh arch-1 --zone us-central1-a
 ```
 
 ---
+
+# PART II: INFRASTRUCTURE
 
 ## 3. Virtual Machines
 
@@ -536,6 +550,8 @@ docker exec nextcloud-db curl -s http://google.com  # Should fail
 
 ---
 
+# PART III: SECURITY
+
 ## 7. Security Architecture
 
 ### 7.1 Architecture Philosophy
@@ -864,7 +880,7 @@ Browser: https://photos.diegonmarcos.com
          │
          ▼
 ┌─────────────────┐
-│  REDIRECT 302   │  → https://auth.diegonmarcos.com/authelia/?rd=https://photos.diegonmarcos.com
+│  REDIRECT 302   │  → https://auth.diegonmarcos.com/?rd=https://photos.diegonmarcos.com
 └────────┬────────┘
          │
          ▼
@@ -969,7 +985,7 @@ location = /authelia-verify {
 
 location /photoprism {
     auth_request /authelia-verify;
-    error_page 401 =302 https://auth.diegonmarcos.com/authelia/?rd=$scheme://$http_host$request_uri;
+    error_page 401 =302 https://auth.diegonmarcos.com/?rd=$scheme://$http_host$request_uri;
 
     # Rewrite /photoprism to / for backend
     rewrite ^/photoprism(/.*)$ $1 break;
@@ -1045,7 +1061,7 @@ Browser: https://proxy.diegonmarcos.com
          │
          ▼
 ┌─────────────────┐
-│  AUTHELIA OIDC  │  /authelia/api/oidc/authorization
+│  AUTHELIA OIDC  │  /api/oidc/authorization
 │  (Port 9091)    │  User authenticates (password + TOTP)
 └────────┬────────┘
          │
@@ -1084,6 +1100,7 @@ identity_providers:
         client_secret: '$plaintext$<secret>'
         public: false
         authorization_policy: 'two_factor'
+        consent_mode: implicit  # Skip consent screen for SSO UX
         redirect_uris:
           - 'https://proxy.diegonmarcos.com/oauth2/callback'
         scopes:
@@ -1108,7 +1125,7 @@ services:
       - --client-id=oauth2-proxy-npm
       - --client-secret=<secret>
       - --redirect-url=https://proxy.diegonmarcos.com/oauth2/callback
-      - --oidc-issuer-url=https://auth.diegonmarcos.com/authelia
+      - --oidc-issuer-url=https://auth.diegonmarcos.com
       - --cookie-secret=<32-byte-hex>
       - --cookie-domain=.diegonmarcos.com
       - --upstream=http://npm:81
@@ -1308,6 +1325,8 @@ After wake, the WireGuard peer (10.0.0.2) takes ~30s to re-establish handshake w
 
 ---
 
+# PART IV: DATA
+
 ## 8. Volume & Storage Strategy
 
 ### 8.0 Storage Overview
@@ -1410,6 +1429,8 @@ private_crypt /dev/sdb1 /root/.luks-keyfile luks
 ```
 
 ---
+
+# PART V: OPERATIONS
 
 ## 10. SSH & Access Commands
 
@@ -2014,6 +2035,8 @@ def api_costs_ai_daily():
 ```
 
 ---
+
+# PART VI: REFERENCE & DASHBOARD
 
 ## 13. Diagrams
 
