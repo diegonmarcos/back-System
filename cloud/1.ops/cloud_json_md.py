@@ -23,6 +23,8 @@ MONITOR_JSON = SCRIPT_DIR / "cloud_monitor.json"
 MONITOR_MD = SCRIPT_DIR / "cloud_monitor.md"
 API_JSON = SCRIPT_DIR / "cloud_api.json"
 API_MD = SCRIPT_DIR / "cloud_api.md"
+OPENAPI_JSON = SCRIPT_DIR / "openapi.json"
+OPENAPI_YAML = SCRIPT_DIR / "openapi.yaml"
 
 
 def load_json(path: Path) -> dict:
