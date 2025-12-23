@@ -1,0 +1,828 @@
+{
+  "$schema": "cloud-api-spec",
+  "version": "1.0.0",
+  "title": "Cloud Infrastructure API",
+  "description": "REST API endpoints for cloud_architecture.json and cloud_control.json data. Equivalent to cloud_json_md.py but for web/programmatic access.",
+  "lastUpdated": "2025-12-23",
+
+  "_meta": {
+    "generator": "flask-app",
+    "vmId": "gcp-f-micro_1",
+    "sources": {
+      "architecture": "cloud_architecture.json",
+      "control": "cloud_control.json"
+    },
+    "exports": {
+      "topology": "cloud_control_topology.md",
+      "cost": "cloud_control_cost.md",
+      "monitor": "cloud_control_monitor.md"
+    }
+  },
+
+  "server": {
+    "production": {
+      "baseUrl": "https://api.diegonmarcos.com",
+      "description": "Production API via NPM proxy"
+    },
+    "internal": {
+      "baseUrl": "http://127.0.0.1:5000",
+      "description": "Direct Flask access (internal only)"
+    },
+    "dev": {
+      "baseUrl": "http://localhost:5000",
+      "description": "Local development"
+    }
+  },
+
+  "auth": {
+    "type": "bearer",
+    "provider": "authelia",
+    "tokenEndpoint": "https://auth.diegonmarcos.com/api/oidc/token",
+    "header": "Authorization: Bearer <token>",
+    "scopes": {
+      "read": "Read-only access to all data",
+      "write": "Modify runtime status and trigger actions",
+      "admin": "Full access including VM control"
+    }
+  },
+
+  "endpoints": {
+
+    "health": {
+      "_description": "API health and status checks",
+
+      "ping": {
+        "method": "GET",
+        "path": "/health",
+        "auth": "none",
+        "description": "Simple health check",
+        "response": {
+          "status": "ok",
+          "timestamp": "2025-12-23T15:30:00Z",
+          "version": "1.0.0"
+        },
+        "curl": "curl https://api.diegonmarcos.com/health"
+      },
+
+      "ready": {
+        "method": "GET",
+        "path": "/health/ready",
+        "auth": "none",
+        "description": "Readiness check (DB, cache connections)",
+        "response": {
+          "ready": true,
+          "checks": {
+            "database": "ok",
+            "cache": "ok",
+            "fileSystem": "ok"
+          }
+        }
+      }
+    },
+
+    "architecture": {
+      "_description": "Access cloud_architecture.json data (static infrastructure definitions)",
+      "_source": "cloud_architecture.json",
+
+      "full": {
+        "method": "GET",
+        "path": "/architecture",
+        "auth": "read",
+        "description": "Get complete architecture.json",
+        "response": "cloud_architecture.json (entire file)",
+        "curl": "curl -H 'Authorization: Bearer $TOKEN' https://api.diegonmarcos.com/architecture"
+      },
+
+      "overview": {
+        "method": "GET",
+        "path": "/architecture/overview",
+        "auth": "read",
+        "description": "Get partI_overview section",
+        "response": "cloud_architecture.partI_overview",
+        "fields": ["providers", "activeServicesSummary", "proxyAdmin"]
+      },
+
+      "infrastructure": {
+        "method": "GET",
+        "path": "/architecture/infrastructure",
+        "auth": "read",
+        "description": "Get partII_infrastructure section",
+        "response": "cloud_architecture.partII_infrastructure",
+        "fields": ["vmCategories", "virtualMachines", "serviceCategories", "services", "dockerNetworks"]
+      },
+
+      "security": {
+        "method": "GET",
+        "path": "/architecture/security",
+        "auth": "read",
+        "description": "Get partIII_security section",
+        "response": "cloud_architecture.partIII_security",
+        "fields": ["domains", "firewallRules", "authentication"]
+      },
+
+      "data": {
+        "method": "GET",
+        "path": "/architecture/data",
+        "auth": "read",
+        "description": "Get partIV_data section",
+        "response": "cloud_architecture.partIV_data",
+        "fields": ["databases", "objectStorage", "rcloneRemotes"]
+      },
+
+      "operations": {
+        "method": "GET",
+        "path": "/architecture/operations",
+        "auth": "read",
+        "description": "Get partV_operations section",
+        "response": "cloud_architecture.partV_operations",
+        "fields": ["sshCommands", "dockerCommands", "monitoringCommands", "statusLegend"]
+      },
+
+      "reference": {
+        "method": "GET",
+        "path": "/architecture/reference",
+        "auth": "read",
+        "description": "Get partVI_reference section",
+        "response": "cloud_architecture.partVI_reference",
+        "fields": ["costs", "wakeOnDemand", "portMapping", "dockerImages"]
+      },
+
+      "version": {
+        "method": "GET",
+        "path": "/architecture/version",
+        "auth": "none",
+        "description": "Get architecture version and metadata",
+        "response": {
+          "version": "7.0.0",
+          "lastUpdated": "2025-12-23",
+          "owner": "Diego Nepomuceno Marcos"
+        }
+      }
+    },
+
+    "vms": {
+      "_description": "Virtual machine operations",
+      "_source": "cloud_architecture.partII_infrastructure.virtualMachines + cloud_control.monitor.vmStatus",
+
+      "list": {
+        "method": "GET",
+        "path": "/vms",
+        "auth": "read",
+        "description": "List all virtual machines",
+        "query": {
+          "provider": {"type": "string", "enum": ["oracle", "gcloud"], "description": "Filter by provider"},
+          "status": {"type": "string", "enum": ["active", "stopped"], "description": "Filter by status"},
+          "availability": {"type": "string", "enum": ["24/7", "wake-on-demand"], "description": "Filter by availability"}
+        },
+        "response": "cloud_architecture.partII_infrastructure.virtualMachines[]",
+        "curl": "curl -H 'Authorization: Bearer $TOKEN' https://api.diegonmarcos.com/vms"
+      },
+
+      "get": {
+        "method": "GET",
+        "path": "/vms/{vmId}",
+        "auth": "read",
+        "description": "Get single VM details",
+        "params": {
+          "vmId": {"type": "string", "required": true, "enum": ["oci-f-micro_1", "oci-f-micro_2", "gcp-f-micro_1", "oci-p-flex_1"]}
+        },
+        "response": "cloud_architecture.partII_infrastructure.virtualMachines[vmId]",
+        "curl": "curl -H 'Authorization: Bearer $TOKEN' https://api.diegonmarcos.com/vms/oci-p-flex_1"
+      },
+
+      "status": {
+        "method": "GET",
+        "path": "/vms/{vmId}/status",
+        "auth": "read",
+        "description": "Get live VM status (runtime data)",
+        "params": {
+          "vmId": {"type": "string", "required": true}
+        },
+        "response": "cloud_control.monitor.vmStatus[vmId]",
+        "example": {
+          "ip": "84.235.234.87",
+          "pingable": true,
+          "sshable": true,
+          "latencyMs": 45,
+          "lastCheck": "2025-12-23T15:30:00Z"
+        }
+      },
+
+      "start": {
+        "method": "POST",
+        "path": "/vms/{vmId}/start",
+        "auth": "admin",
+        "description": "Start a stopped VM (wake-on-demand only)",
+        "params": {
+          "vmId": {"type": "string", "required": true, "allowed": ["oci-p-flex_1"]}
+        },
+        "response": {
+          "success": true,
+          "vmId": "oci-p-flex_1",
+          "state": "starting",
+          "estimatedReadySeconds": 60
+        },
+        "errors": {
+          "400": "VM already running",
+          "403": "VM not in allowed list (only wake-on-demand VMs)",
+          "500": "Cloud provider API error"
+        },
+        "curl": "curl -X POST -H 'Authorization: Bearer $TOKEN' https://api.diegonmarcos.com/vms/oci-p-flex_1/start"
+      },
+
+      "stop": {
+        "method": "POST",
+        "path": "/vms/{vmId}/stop",
+        "auth": "admin",
+        "description": "Stop a running VM (wake-on-demand only)",
+        "params": {
+          "vmId": {"type": "string", "required": true, "allowed": ["oci-p-flex_1"]}
+        },
+        "response": {
+          "success": true,
+          "vmId": "oci-p-flex_1",
+          "state": "stopping"
+        }
+      },
+
+      "ssh": {
+        "method": "GET",
+        "path": "/vms/{vmId}/ssh",
+        "auth": "read",
+        "description": "Get SSH connection command for VM",
+        "response": {
+          "vmId": "oci-p-flex_1",
+          "command": "ssh -i ~/.ssh/id_rsa ubuntu@84.235.234.87",
+          "user": "ubuntu",
+          "ip": "84.235.234.87"
+        }
+      }
+    },
+
+    "services": {
+      "_description": "Service and container operations",
+      "_source": "cloud_architecture.partII_infrastructure.services + cloud_control.topology.containers",
+
+      "list": {
+        "method": "GET",
+        "path": "/services",
+        "auth": "read",
+        "description": "List all services",
+        "query": {
+          "vmId": {"type": "string", "description": "Filter by VM"},
+          "category": {"type": "string", "enum": ["user-productivity", "coder", "infra-proxy", "infra-auth", "infra-db", "infra-services"]},
+          "status": {"type": "string", "enum": ["on", "off", "wake"]}
+        },
+        "response": "cloud_architecture.partII_infrastructure.services[]"
+      },
+
+      "get": {
+        "method": "GET",
+        "path": "/services/{serviceId}",
+        "auth": "read",
+        "description": "Get single service details",
+        "params": {
+          "serviceId": {"type": "string", "required": true}
+        },
+        "response": "cloud_architecture.partII_infrastructure.services[serviceId]"
+      },
+
+      "health": {
+        "method": "GET",
+        "path": "/services/{serviceId}/health",
+        "auth": "read",
+        "description": "Check service health",
+        "response": {
+          "serviceId": "photos",
+          "healthy": true,
+          "containers": {
+            "photoprism": {"running": true, "uptime": "5d 3h"},
+            "photos-db": {"running": true, "uptime": "5d 3h"}
+          },
+          "httpCheck": {"url": "https://photos.diegonmarcos.com", "status": 200, "responseMs": 234}
+        }
+      },
+
+      "containers": {
+        "method": "GET",
+        "path": "/services/{serviceId}/containers",
+        "auth": "read",
+        "description": "List containers for a service",
+        "response": "cloud_control.topology.containers[vmId].items[]"
+      },
+
+      "restart": {
+        "method": "POST",
+        "path": "/services/{serviceId}/restart",
+        "auth": "admin",
+        "description": "Restart all containers for a service",
+        "response": {
+          "success": true,
+          "serviceId": "photos",
+          "containersRestarted": ["photoprism", "photos-db"]
+        }
+      },
+
+      "logs": {
+        "method": "GET",
+        "path": "/services/{serviceId}/logs",
+        "auth": "read",
+        "description": "Get recent logs for service containers",
+        "query": {
+          "lines": {"type": "integer", "default": 100, "max": 1000},
+          "container": {"type": "string", "description": "Specific container name"}
+        },
+        "response": {
+          "serviceId": "photos",
+          "logs": ["2025-12-23 15:30:00 INFO Starting server...", "..."]
+        }
+      }
+    },
+
+    "domains": {
+      "_description": "Domain and SSL operations",
+      "_source": "cloud_architecture.partIII_security.domains + cloud_control.monitor.endpointStatus",
+
+      "list": {
+        "method": "GET",
+        "path": "/domains",
+        "auth": "read",
+        "description": "List all domains and subdomains",
+        "response": "cloud_architecture.partIII_security.domains.subdomains"
+      },
+
+      "get": {
+        "method": "GET",
+        "path": "/domains/{domain}",
+        "auth": "read",
+        "description": "Get domain configuration",
+        "params": {
+          "domain": {"type": "string", "required": true, "example": "photos.diegonmarcos.com"}
+        },
+        "response": "cloud_architecture.partIII_security.domains.subdomains[domain]"
+      },
+
+      "status": {
+        "method": "GET",
+        "path": "/domains/{domain}/status",
+        "auth": "read",
+        "description": "Check domain DNS, SSL, and HTTP status",
+        "response": {
+          "domain": "photos.diegonmarcos.com",
+          "dns": {"resolved": true, "ip": "34.55.55.234"},
+          "ssl": {"valid": true, "issuer": "Let's Encrypt", "expiresAt": "2026-03-23"},
+          "http": {"status": 200, "responseMs": 145}
+        }
+      },
+
+      "ssl": {
+        "method": "GET",
+        "path": "/domains/{domain}/ssl",
+        "auth": "read",
+        "description": "Get SSL certificate details",
+        "response": "cloud_control.monitor.endpointStatus[domain]"
+      }
+    },
+
+    "topology": {
+      "_description": "Infrastructure topology data (for cloud_control_topology.md)",
+      "_source": "cloud_control.topology",
+
+      "full": {
+        "method": "GET",
+        "path": "/topology",
+        "auth": "read",
+        "description": "Get complete topology data",
+        "response": "cloud_control.topology"
+      },
+
+      "vms": {
+        "method": "GET",
+        "path": "/topology/vms",
+        "auth": "read",
+        "description": "Get VM topology table",
+        "response": "cloud_control.topology.virtualMachines"
+      },
+
+      "servicesByVm": {
+        "method": "GET",
+        "path": "/topology/services-by-vm",
+        "auth": "read",
+        "description": "Get services grouped by VM",
+        "response": "cloud_control.topology.servicesByVm"
+      },
+
+      "serviceTypes": {
+        "method": "GET",
+        "path": "/topology/service-types",
+        "auth": "read",
+        "description": "Get services grouped by type (A120, A121, etc.)",
+        "response": "cloud_control.topology.serviceTypes"
+      },
+
+      "containers": {
+        "method": "GET",
+        "path": "/topology/containers",
+        "auth": "read",
+        "description": "Get all containers by VM",
+        "response": "cloud_control.topology.containers"
+      },
+
+      "databases": {
+        "method": "GET",
+        "path": "/topology/databases",
+        "auth": "read",
+        "description": "Get database allocations by VM",
+        "response": "cloud_control.topology.databaseAllocations"
+      },
+
+      "networks": {
+        "method": "GET",
+        "path": "/topology/networks",
+        "auth": "read",
+        "description": "Get Docker networks",
+        "response": "cloud_control.topology.dockerNetworks"
+      },
+
+      "summaries": {
+        "method": "GET",
+        "path": "/topology/summaries",
+        "auth": "read",
+        "description": "Get storage and container summaries",
+        "response": "cloud_control.topology.summaries"
+      }
+    },
+
+    "cost": {
+      "_description": "Cost and billing data (for cloud_control_cost.md)",
+      "_source": "cloud_control.cost",
+
+      "full": {
+        "method": "GET",
+        "path": "/cost",
+        "auth": "read",
+        "description": "Get complete cost data",
+        "response": "cloud_control.cost"
+      },
+
+      "summary": {
+        "method": "GET",
+        "path": "/cost/summary",
+        "auth": "read",
+        "description": "Get cost summary (this month, projected, YTD)",
+        "response": "cloud_control.cost.summary"
+      },
+
+      "breakdown": {
+        "method": "GET",
+        "path": "/cost/breakdown",
+        "auth": "read",
+        "description": "Get cost breakdown by provider/VM",
+        "response": "cloud_control.cost.infraBreakdown"
+      },
+
+      "freeTier": {
+        "method": "GET",
+        "path": "/cost/free-tier",
+        "auth": "read",
+        "description": "Get free tier utilization",
+        "response": "cloud_control.cost.freeTierUtilization"
+      },
+
+      "resourceUsage": {
+        "method": "GET",
+        "path": "/cost/resource-usage",
+        "auth": "read",
+        "description": "Get resource usage by VM",
+        "response": "cloud_control.cost.resourceUsageByVm"
+      },
+
+      "comparison": {
+        "method": "GET",
+        "path": "/cost/comparison",
+        "auth": "read",
+        "description": "Get market price comparison",
+        "response": "cloud_control.cost.marketComparison"
+      }
+    },
+
+    "monitor": {
+      "_description": "Runtime monitoring data (for cloud_control_monitor.md)",
+      "_source": "cloud_control.monitor",
+
+      "full": {
+        "method": "GET",
+        "path": "/monitor",
+        "auth": "read",
+        "description": "Get complete monitoring data",
+        "response": "cloud_control.monitor"
+      },
+
+      "summary": {
+        "method": "GET",
+        "path": "/monitor/summary",
+        "auth": "read",
+        "description": "Get monitoring summary (VMs online, endpoints healthy, etc.)",
+        "response": "cloud_control.monitor.summary"
+      },
+
+      "vmOverview": {
+        "method": "GET",
+        "path": "/monitor/vms",
+        "auth": "read",
+        "description": "Get VM overview with resource usage",
+        "response": "cloud_control.monitor.vmOverview"
+      },
+
+      "vmStatus": {
+        "method": "GET",
+        "path": "/monitor/vm-status",
+        "auth": "read",
+        "description": "Get live VM status (ping, SSH, latency)",
+        "response": "cloud_control.monitor.vmStatus"
+      },
+
+      "endpoints": {
+        "method": "GET",
+        "path": "/monitor/endpoints",
+        "auth": "read",
+        "description": "Get endpoint status (HTTP, SSL)",
+        "response": "cloud_control.monitor.endpointStatus"
+      },
+
+      "containers": {
+        "method": "GET",
+        "path": "/monitor/containers",
+        "auth": "read",
+        "description": "Get container status by VM",
+        "response": "cloud_control.monitor.containerStatus"
+      },
+
+      "serviceBreakdown": {
+        "method": "GET",
+        "path": "/monitor/service-breakdown",
+        "auth": "read",
+        "description": "Get service resource breakdown by VM",
+        "response": "cloud_control.monitor.serviceBreakdownByVm"
+      },
+
+      "audit": {
+        "method": "GET",
+        "path": "/monitor/audit",
+        "auth": "read",
+        "description": "Get recent audit events",
+        "query": {
+          "limit": {"type": "integer", "default": 10, "max": 100}
+        },
+        "response": "cloud_control.monitor.recentAuditEvents"
+      },
+
+      "auditMetrics": {
+        "method": "GET",
+        "path": "/monitor/audit/metrics",
+        "auth": "read",
+        "description": "Get audit metrics (total events, success rate, blocked)",
+        "response": "cloud_control.monitor.auditLogsMetrics"
+      },
+
+      "alerts": {
+        "method": "GET",
+        "path": "/monitor/alerts",
+        "auth": "read",
+        "description": "Get active alerts",
+        "response": "cloud_control.monitor.alerts"
+      },
+
+      "orchestrate": {
+        "method": "GET",
+        "path": "/monitor/orchestrate",
+        "auth": "read",
+        "description": "Get Dockge instances for container management",
+        "response": "cloud_control.monitor.orchestrate"
+      },
+
+      "refresh": {
+        "method": "POST",
+        "path": "/monitor/refresh",
+        "auth": "admin",
+        "description": "Trigger a full status refresh",
+        "response": {
+          "success": true,
+          "queued": true,
+          "estimatedSeconds": 30
+        }
+      }
+    },
+
+    "actions": {
+      "_description": "Administrative actions",
+
+      "refreshAll": {
+        "method": "POST",
+        "path": "/actions/refresh-all",
+        "auth": "admin",
+        "description": "Refresh all monitoring data (VMs, endpoints, containers)",
+        "response": {
+          "success": true,
+          "refreshed": ["vmStatus", "endpointStatus", "containerStatus"],
+          "timestamp": "2025-12-23T15:30:00Z"
+        }
+      },
+
+      "generateMd": {
+        "method": "POST",
+        "path": "/actions/generate-md",
+        "auth": "admin",
+        "description": "Regenerate cloud_control_*.md files from JSON",
+        "query": {
+          "target": {"type": "string", "enum": ["all", "topology", "cost", "monitor"], "default": "all"}
+        },
+        "response": {
+          "success": true,
+          "generated": ["cloud_control_topology.md", "cloud_control_cost.md", "cloud_control_monitor.md"]
+        }
+      },
+
+      "backup": {
+        "method": "POST",
+        "path": "/actions/backup",
+        "auth": "admin",
+        "description": "Backup architecture and control JSON files",
+        "response": {
+          "success": true,
+          "backupPath": "/backups/2025-12-23T15-30-00/",
+          "files": ["cloud_architecture.json", "cloud_control.json"]
+        }
+      }
+    },
+
+    "index": {
+      "_description": "API discovery and metadata",
+
+      "root": {
+        "method": "GET",
+        "path": "/",
+        "auth": "none",
+        "description": "API root - returns available endpoints",
+        "response": {
+          "name": "Cloud Infrastructure API",
+          "version": "1.0.0",
+          "docs": "/api/docs",
+          "health": "/health",
+          "endpoints": ["/architecture", "/vms", "/services", "/domains", "/topology", "/cost", "/monitor"]
+        }
+      },
+
+      "docs": {
+        "method": "GET",
+        "path": "/api/docs",
+        "auth": "none",
+        "description": "Get this API specification",
+        "response": "cloud_api.json (this file)"
+      },
+
+      "schema": {
+        "method": "GET",
+        "path": "/api/schema",
+        "auth": "none",
+        "description": "Get JSON schemas for request/response validation",
+        "response": {
+          "vm": {"$ref": "#/schemas/VirtualMachine"},
+          "service": {"$ref": "#/schemas/Service"},
+          "domain": {"$ref": "#/schemas/Domain"}
+        }
+      }
+    }
+  },
+
+  "schemas": {
+    "VirtualMachine": {
+      "type": "object",
+      "required": ["id", "name", "provider", "network"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^(oci|gcp)-[a-z]+-[a-z]+_[0-9]+$"},
+        "name": {"type": "string"},
+        "displayName": {"type": "string"},
+        "provider": {"type": "string", "enum": ["oracle", "gcloud"]},
+        "category": {"type": "string", "enum": ["services", "ml"]},
+        "instanceType": {"type": "string"},
+        "specs": {
+          "type": "object",
+          "properties": {
+            "cpu": {"type": "string"},
+            "ram": {"type": "string"},
+            "storage": {"type": "string"}
+          }
+        },
+        "network": {
+          "type": "object",
+          "properties": {
+            "publicIp": {"type": "string", "format": "ipv4"},
+            "dockerNetwork": {"type": "string"},
+            "dockerSubnet": {"type": "string"}
+          }
+        },
+        "availability": {"type": "string", "enum": ["24/7", "wake-on-demand"]},
+        "cost": {
+          "type": "object",
+          "properties": {
+            "monthly": {"type": "number"},
+            "currency": {"type": "string", "default": "USD"}
+          }
+        }
+      }
+    },
+
+    "Service": {
+      "type": "object",
+      "required": ["id", "displayName", "category", "vmId"],
+      "properties": {
+        "id": {"type": "string"},
+        "displayName": {"type": "string"},
+        "category": {"type": "string"},
+        "vmId": {"type": "string"},
+        "containers": {"type": "array", "items": {"type": "string"}},
+        "technology": {"type": "object"},
+        "urls": {"type": "object"},
+        "authRequired": {"type": "boolean", "default": false},
+        "resources": {"type": "object"}
+      }
+    },
+
+    "Domain": {
+      "type": "object",
+      "required": ["service", "ssl"],
+      "properties": {
+        "service": {"type": "string"},
+        "vmId": {"type": "string"},
+        "proxyVia": {"type": "string"},
+        "ssl": {"type": "boolean"},
+        "auth": {"type": "string", "enum": ["none", "authelia", "native"]}
+      }
+    },
+
+    "VmStatus": {
+      "type": "object",
+      "properties": {
+        "ip": {"type": "string", "format": "ipv4"},
+        "pingable": {"type": "boolean"},
+        "sshable": {"type": "boolean"},
+        "latencyMs": {"type": "integer"},
+        "lastCheck": {"type": "string", "format": "date-time"}
+      }
+    },
+
+    "EndpointStatus": {
+      "type": "object",
+      "properties": {
+        "url": {"type": "string", "format": "uri"},
+        "httpCode": {"type": "integer"},
+        "sslValid": {"type": "boolean"},
+        "sslExpiry": {"type": "string", "format": "date"},
+        "wakeOnDemand": {"type": "boolean"}
+      }
+    },
+
+    "ApiError": {
+      "type": "object",
+      "properties": {
+        "error": {"type": "string"},
+        "code": {"type": "string"},
+        "message": {"type": "string"},
+        "details": {"type": "object"}
+      }
+    }
+  },
+
+  "errors": {
+    "400": {"code": "BAD_REQUEST", "message": "Invalid request parameters"},
+    "401": {"code": "UNAUTHORIZED", "message": "Missing or invalid authentication token"},
+    "403": {"code": "FORBIDDEN", "message": "Insufficient permissions for this action"},
+    "404": {"code": "NOT_FOUND", "message": "Resource not found"},
+    "409": {"code": "CONFLICT", "message": "Resource state conflict (e.g., VM already running)"},
+    "429": {"code": "RATE_LIMITED", "message": "Too many requests, please slow down"},
+    "500": {"code": "INTERNAL_ERROR", "message": "Internal server error"},
+    "502": {"code": "UPSTREAM_ERROR", "message": "Cloud provider API error"},
+    "503": {"code": "SERVICE_UNAVAILABLE", "message": "Service temporarily unavailable"}
+  },
+
+  "rateLimits": {
+    "default": {"requests": 100, "window": "1m"},
+    "auth": {"requests": 10, "window": "1m"},
+    "actions": {"requests": 5, "window": "1m"}
+  },
+
+  "_index": {
+    "endpointCount": 46,
+    "categories": ["health", "architecture", "vms", "services", "domains", "topology", "cost", "monitor", "actions", "index"],
+    "authLevels": {
+      "none": ["health.ping", "health.ready", "architecture.version", "index.root", "index.docs"],
+      "read": ["Most GET endpoints"],
+      "admin": ["vms.start", "vms.stop", "services.restart", "monitor.refresh", "actions.*"]
+    },
+    "dataSources": {
+      "cloud_architecture.json": ["architecture.*", "vms.list", "vms.get", "services.list", "services.get", "domains.list", "domains.get"],
+      "cloud_control.json": ["topology.*", "cost.*", "monitor.*"]
+    }
+  }
+}

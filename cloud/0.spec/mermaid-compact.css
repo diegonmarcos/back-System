@@ -1,0 +1,150 @@
+/* ═══════════════════════════════════════════════════════════════
+   OBSIDIAN COMPACT - Mermaid & Code Blocks
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ───────────────────────────────────────────────────────────────
+   MERMAID DIAGRAMS
+   ─────────────────────────────────────────────────────────────── */
+
+/* Mermaid - Fit to Screen + Scroll on Hover */
+
+.mermaid {
+  font-size: 9px !important;
+  display: block;
+  position: relative;
+  max-height: 70vh;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* Fit entire diagram on screen */
+.mermaid svg {
+  max-width: 100% !important;
+  max-height: 70vh !important;
+  height: auto !important;
+  width: auto !important;
+  object-fit: contain;
+  transition: all 0.3s ease;
+}
+
+/* On hover: expand and allow scroll */
+.mermaid:hover {
+  max-height: 90vh;
+  overflow: auto;
+  cursor: move;
+  border: 1px solid var(--text-muted);
+  border-radius: 4px;
+  padding: 10px;
+  background: var(--background-primary);
+}
+
+.mermaid:hover svg {
+  max-width: none !important;
+  max-height: none !important;
+  transform: scale(1.5) !important;
+  transform-origin: top left !important;
+}
+
+/* Compact text */
+.mermaid * {
+  font-size: inherit;
+}
+
+.mermaid .node .label,
+.mermaid .nodeLabel,
+.mermaid .label {
+  font-size: 8px !important;
+  padding: 0 !important;
+}
+
+.mermaid .node rect,
+.mermaid .node polygon,
+.mermaid .node circle {
+  stroke-width: 0.5px !important;
+  rx: 2px !important;
+  ry: 2px !important;
+}
+
+
+.mermaid .cluster rect {
+  stroke-width: 0.5px !important;
+}
+
+/* Fix cluster label background */
+.mermaid .cluster-label,
+.mermaid .cluster-label .nodeLabel {
+  font-size: 9px !important;
+  background: none !important;
+  background-color: transparent !important;
+}
+
+.mermaid .cluster-label rect,
+.mermaid .cluster-label polygon {
+  fill: none !important;
+  stroke: none !important;
+}
+
+.mermaid .edgeLabel {
+  font-size: 7px !important;
+}
+
+.mermaid .flowchart-link {
+  stroke-width: 0.5px !important;
+}
+
+/* Smooth transitions */
+.mermaid svg * {
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out !important;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   CODE BLOCKS
+   ─────────────────────────────────────────────────────────────── */
+
+/* Tighter line height + padding */
+pre code {
+  line-height: 1.4 !important;
+  padding: 8px 12px !important;
+  white-space: pre !important;
+  overflow-x: auto !important;
+}
+
+/* Code block border accent */
+pre {
+  border-left: 3px solid var(--text-accent) !important;
+  border-radius: 0 4px 4px 0 !important;
+}
+
+/* Inline code styling */
+.markdown-preview-view code:not(pre code),
+.cm-inline-code {
+  background: var(--background-secondary) !important;
+  padding: 2px 5px !important;
+  border-radius: 3px !important;
+  font-size: 0.9em !important;
+}
+
+/* Smooth scrollbar */
+pre::-webkit-scrollbar {
+  height: 6px;
+}
+
+pre::-webkit-scrollbar-track {
+  background: var(--background-secondary);
+  border-radius: 3px;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 3px;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+  background: var(--text-accent);
+}
+
+/* Current line highlight */
+.cm-active.cm-line,
+.cm-activeLine {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
