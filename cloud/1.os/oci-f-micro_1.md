@@ -1,1 +1,0 @@
-../vps_oracle/vm-oci-f-micro_1/1.os/oci-f-micro_1.md

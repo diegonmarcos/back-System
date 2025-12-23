@@ -1,1 +1,0 @@
-../vps_oracle/vm-oci-p-flex_1/1.os/oci-p-flex_1.md

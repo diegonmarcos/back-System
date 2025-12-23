@@ -1,0 +1,263 @@
+{
+  "main": {
+    "id": "2df492102146cade",
+    "type": "split",
+    "children": [
+      {
+        "id": "334647458bcaf2a1",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "9ad6305c18093baf",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "0.spec/CLOUD_Handoff.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "CLOUD_Handoff"
+            }
+          },
+          {
+            "id": "bdf933e1bf8b34f0",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "0.spec/CLOUD_Product_Requirements(PRD).md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "CLOUD_Product_Requirements(PRD)"
+            }
+          },
+          {
+            "id": "979963a7969ef896",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "0.spec/CLOUD_Product_Requirements(PRD).md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "CLOUD_Product_Requirements(PRD)"
+            }
+          }
+        ],
+        "currentTab": 2
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "0eca78718f10122a",
+    "type": "split",
+    "children": [
+      {
+        "id": "f0fc76922e098cff",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "efbb5274a78f5851",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "1700c656ad3251a3",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "eeae175ec6229d9f",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "right": {
+    "id": "2bc14d5391d2dc98",
+    "type": "split",
+    "children": [
+      {
+        "id": "afbde9b6dad2ac21",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "dab42a91c23666f1",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "0.spec/MASTERPLAN_CLOUD.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for MASTERPLAN_CLOUD"
+            }
+          },
+          {
+            "id": "328c97151a9a2228",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "0.spec/MASTERPLAN_CLOUD.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from MASTERPLAN_CLOUD"
+            }
+          },
+          {
+            "id": "3863077eee73b3ae",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "37b2e9cb6852194e",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "e972835ef46a7441",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "0.spec/MASTERPLAN_CLOUD.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of MASTERPLAN_CLOUD"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
+      "obsidian-excalidraw-plugin:New drawing": false
+    }
+  },
+  "active": "979963a7969ef896",
+  "lastOpenFiles": [
+    "c_myhardware/local_SurfacePro8/migration_plan/migration-scripts/config/vscode-extensions.yaml",
+    "c_myhardware/local_SurfacePro8/migration_plan/migration-scripts/config/python-packages.yaml",
+    "c_myhardware/local_SurfacePro8/migration_plan/migration-scripts/config/flatpak-apps.yaml",
+    "c_myhardware/local_SurfacePro8/migration_plan/migration-scripts/config/fedora-packages.yaml",
+    "c_myhardware/local_SurfacePro8/migration_plan/migration-scripts/config/arch-packages.yaml",
+    "c_myhardware/local_SurfacePro8/migration_plan/shells/t_config.fish",
+    "c_myhardware/local_SurfacePro8/migration_plan/shells/t_.zshrc",
+    "c_myhardware/local_SurfacePro8/migration_plan/shells/t_ .bashrc",
+    "c_myhardware/local_SurfacePro8/migration_plan/migration-scripts/README.md",
+    "c_myhardware/local_SurfacePro8/migration_plan/migration-scripts/config",
+    "c_myhardware/local_SurfacePro8/migration_plan/migration-scripts/08-restore-data.sh",
+    "c_myhardware/local_SurfacePro8/migration_plan/migration-scripts/07-install-vscode-extensions.sh",
+    "c_myhardware/local_SurfacePro8/migration_plan/dep/comprehensive_dev_setup.md",
+    "c_myhardware/local_SurfacePro8/migration_plan/MIGRATION_PLAN.md",
+    "c_myhardware/local_SurfacePro8/2.app/gui-apps.md",
+    "c_myhardware/local_SurfacePro8/2.app/dev-tools.md",
+    "c_myhardware/local_SurfacePro8/2.app/cli-tools.md",
+    "c_myhardware/local_SurfacePro8/1.spec/surface-pro-8.md",
+    "Untitled.md",
+    "0.spec/Untitled 1.md",
+    "0.spec/CLOUD_Product_Requirements(PRD).md",
+    "0.spec/MASTERPLAN_CLOUD_product.canvas",
+    "0.spec/CLOUD_Handoff.md",
+    "0.spec/MASTERPLAN_AI.md",
+    "0.spec/Cloud_Portal.excalidraw.md",
+    "0.spec/Drawing 2025-12-16 21.10.50.excalidraw.md",
+    "0.spec/Cloud_Portal_v2.excalidraw.md",
+    "0.spec/Cloud_Portal_Dark.excalidraw.md",
+    "0.spec/Test_Dark.excalidraw.md",
+    "Excalidraw/Drawing 2025-12-16 21.08.08.excalidraw.md",
+    "Excalidraw/Drawing 2025-12-16 20.13.15.excalidraw.md",
+    "Excalidraw/Drawing 2025-12-16 20.11.38.excalidraw.md",
+    "0.spec/archive/Task_z_archive/Task_y_done_mail_Config/2025-12-08_Mail_Configuration_Log.md",
+    "0.spec/archive/Task_z_archive/Task_Vaultwarden/SPEC_VAULTWARDEN.md",
+    "0.spec/archive/Task_z_archive/Task_Vaultwarden/CONVERSATION_LOG.md",
+    "0.spec/archive/Task_z_archive/Task_Security2faOAuth20/PLAN_DualAuth_Security.md",
+    "0.spec/archive/Task_z_archive/Task_Security2faOAuth20/04_BACKUP_2FA_PLAN.md",
+    "a_solutions/api/src/flask-app/venv/lib/python3.12/site-packages/werkzeug/debug/shared/more.png",
+    "a_solutions/api/src/flask-app/venv/lib/python3.12/site-packages/werkzeug/debug/shared/less.png",
+    "a_solutions/api/src/flask-app/venv/lib/python3.12/site-packages/werkzeug/debug/shared/console.png",
+    "a_solutions/api/flask-app/venv/lib/python3.12/site-packages/werkzeug/debug/shared/more.png",
+    "a_solutions/api/flask-app/venv/lib/python3.12/site-packages/werkzeug/debug/shared/less.png",
+    "a_solutions/api/flask-app/venv/lib/python3.12/site-packages/werkzeug/debug/shared/console.png"
+  ]
+}

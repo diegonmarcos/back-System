@@ -1,0 +1,9 @@
+{
+  "baseFontSizeAction": true,
+  "baseFontSize": 10,
+  "enabledCssSnippets": [
+    "mermaid-compact"
+  ],
+  "theme": "obsidian",
+  "cssTheme": ""
+}

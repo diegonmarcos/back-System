@@ -1,1 +1,0 @@
-../vps_oracle/vm-oci-f-arm_1/1.os/oci-f-arm_1.md

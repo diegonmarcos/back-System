@@ -1286,7 +1286,6 @@ Service                | URL / Host                           | Notes
 NPM (Proxy Manager)    | http://34.55.55.234:81               | Email: me@diegonmarcos.com
 Authelia (2FA)         | https://auth.diegonmarcos.com        | SMTP via Gmail relay
 Matomo Analytics       | https://analytics.diegonmarcos.com   | Protected by Authelia
-n8n Automation         | https://n8n.diegonmarcos.com         | Protected by Authelia
 Cloudflare DNS         | https://dash.cloudflare.com          | Domain: diegonmarcos.com
 ```
 
