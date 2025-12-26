@@ -487,7 +487,7 @@ _wake_state = {
 _wake_lock = threading.Lock()
 
 # OCI instance details for wake-on-demand VM
-OCI_INSTANCE_ID = os.environ.get('OCI_WAKE_INSTANCE_ID', 'ocid1.instance.oc1.eu-marseille-1.anzwiljr5s34nfycnbimjtxr2zxutda5l67b6vgvb7ocfpjny3qbkx4hgfhq')
+OCI_INSTANCE_ID = os.environ.get('OCI_WAKE_INSTANCE_ID', 'ocid1.instance.oc1.eu-marseille-1.anwxeljruadvczachwpa3qrh7n25vfez3smidz4o7gpmtj4ga4d7zqlja5yq')
 
 # Lazy-loaded OCI clients
 _oci_compute_client = None
