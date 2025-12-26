@@ -644,3 +644,283 @@ def wake_status():
             'message': _wake_state['message'],
             'last_trigger': _wake_state['last_trigger']
         })
+
+
+# =============================================================================
+# VM Control Endpoints (start, stop, reset for all VMs)
+# =============================================================================
+
+# VM Instance IDs mapping
+VM_INSTANCE_IDS = {
+    'oci-p-flex_1': os.environ.get('OCI_WAKE_INSTANCE_ID', 'ocid1.instance.oc1.eu-marseille-1.anzwiljr5s34nfycnbimjtxr2zxutda5l67b6vgvb7ocfpjny3qbkx4hgfhq'),
+    'oci-f-micro_1': os.environ.get('OCI_MICRO1_INSTANCE_ID', ''),
+    'oci-f-micro_2': os.environ.get('OCI_MICRO2_INSTANCE_ID', ''),
+}
+
+# GCP VM mapping
+GCP_VMS = {
+    'gcp-f-micro_1': {'name': 'arch-1', 'zone': 'us-central1-a'}
+}
+
+
+def _get_oci_instance_state(instance_id: str) -> str:
+    """Get OCI instance lifecycle state."""
+    if not instance_id or not _init_oci():
+        return 'unknown'
+    try:
+        response = _oci_compute_client.get_instance(instance_id)
+        return response.data.lifecycle_state.upper()
+    except Exception as e:
+        logger.error(f"Failed to get OCI instance state: {e}")
+        return 'unknown'
+
+
+def _oci_instance_action(instance_id: str, action: str) -> tuple:
+    """Perform OCI instance action (START, STOP, SOFTRESET, RESET)."""
+    if not instance_id:
+        return False, 'Instance ID not configured'
+    if not _init_oci():
+        return False, 'OCI SDK not initialized'
+    try:
+        _oci_compute_client.instance_action(instance_id, action)
+        return True, f'{action} command sent'
+    except Exception as e:
+        return False, str(e)
+
+
+def _gcp_instance_action(vm_name: str, zone: str, action: str) -> tuple:
+    """Perform GCP instance action via gcloud CLI."""
+    import subprocess
+    try:
+        cmd = ['gcloud', 'compute', 'instances', action, vm_name, f'--zone={zone}', '--quiet']
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        if result.returncode == 0:
+            return True, f'{action} command sent'
+        return False, result.stderr or 'Command failed'
+    except Exception as e:
+        return False, str(e)
+
+
+def _gcp_instance_state(vm_name: str, zone: str) -> str:
+    """Get GCP instance state via gcloud CLI."""
+    import subprocess
+    try:
+        cmd = ['gcloud', 'compute', 'instances', 'describe', vm_name, f'--zone={zone}', '--format=value(status)']
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if result.returncode == 0:
+            return result.stdout.strip().upper()
+        return 'unknown'
+    except Exception as e:
+        logger.error(f"Failed to get GCP instance state: {e}")
+        return 'unknown'
+
+
+@api_bp.route('/vms/<vm_id>/start', methods=['POST'])
+def start_vm(vm_id: str):
+    """Start a VM."""
+    # Check if OCI VM
+    if vm_id in VM_INSTANCE_IDS:
+        instance_id = VM_INSTANCE_IDS[vm_id]
+        if not instance_id:
+            return jsonify({'error': f'Instance ID not configured for {vm_id}'}), 400
+
+        current_state = _get_oci_instance_state(instance_id)
+        if current_state == 'RUNNING':
+            return jsonify({'status': 'already_running', 'state': current_state})
+
+        success, msg = _oci_instance_action(instance_id, 'START')
+        if success:
+            return jsonify({'status': 'ok', 'action': 'started', 'message': msg})
+        return jsonify({'error': msg}), 500
+
+    # Check if GCP VM
+    if vm_id in GCP_VMS:
+        vm_info = GCP_VMS[vm_id]
+        current_state = _gcp_instance_state(vm_info['name'], vm_info['zone'])
+        if current_state == 'RUNNING':
+            return jsonify({'status': 'already_running', 'state': current_state})
+
+        success, msg = _gcp_instance_action(vm_info['name'], vm_info['zone'], 'start')
+        if success:
+            return jsonify({'status': 'ok', 'action': 'started', 'message': msg})
+        return jsonify({'error': msg}), 500
+
+    return jsonify({'error': f'Unknown VM: {vm_id}'}), 404
+
+
+@api_bp.route('/vms/<vm_id>/stop', methods=['POST'])
+def stop_vm(vm_id: str):
+    """Stop a VM."""
+    # Check if OCI VM
+    if vm_id in VM_INSTANCE_IDS:
+        instance_id = VM_INSTANCE_IDS[vm_id]
+        if not instance_id:
+            return jsonify({'error': f'Instance ID not configured for {vm_id}'}), 400
+
+        current_state = _get_oci_instance_state(instance_id)
+        if current_state == 'STOPPED':
+            return jsonify({'status': 'already_stopped', 'state': current_state})
+
+        success, msg = _oci_instance_action(instance_id, 'STOP')
+        if success:
+            return jsonify({'status': 'ok', 'action': 'stopped', 'message': msg})
+        return jsonify({'error': msg}), 500
+
+    # Check if GCP VM
+    if vm_id in GCP_VMS:
+        vm_info = GCP_VMS[vm_id]
+        current_state = _gcp_instance_state(vm_info['name'], vm_info['zone'])
+        if current_state in ('STOPPED', 'TERMINATED'):
+            return jsonify({'status': 'already_stopped', 'state': current_state})
+
+        success, msg = _gcp_instance_action(vm_info['name'], vm_info['zone'], 'stop')
+        if success:
+            return jsonify({'status': 'ok', 'action': 'stopped', 'message': msg})
+        return jsonify({'error': msg}), 500
+
+    return jsonify({'error': f'Unknown VM: {vm_id}'}), 404
+
+
+@api_bp.route('/vms/<vm_id>/reset', methods=['POST'])
+def reset_vm(vm_id: str):
+    """Reset a VM (reboot if running, start if stopped)."""
+    # Check if OCI VM
+    if vm_id in VM_INSTANCE_IDS:
+        instance_id = VM_INSTANCE_IDS[vm_id]
+        if not instance_id:
+            return jsonify({'error': f'Instance ID not configured for {vm_id}'}), 400
+
+        current_state = _get_oci_instance_state(instance_id)
+
+        if current_state == 'STOPPED':
+            success, msg = _oci_instance_action(instance_id, 'START')
+            action = 'started'
+        elif current_state == 'RUNNING':
+            success, msg = _oci_instance_action(instance_id, 'SOFTRESET')
+            action = 'rebooted'
+        else:
+            return jsonify({'error': f'Cannot reset VM in state: {current_state}'}), 400
+
+        if success:
+            return jsonify({'status': 'ok', 'action': action, 'message': msg})
+        return jsonify({'error': msg}), 500
+
+    # Check if GCP VM
+    if vm_id in GCP_VMS:
+        vm_info = GCP_VMS[vm_id]
+        current_state = _gcp_instance_state(vm_info['name'], vm_info['zone'])
+
+        if current_state in ('STOPPED', 'TERMINATED'):
+            success, msg = _gcp_instance_action(vm_info['name'], vm_info['zone'], 'start')
+            action = 'started'
+        elif current_state == 'RUNNING':
+            success, msg = _gcp_instance_action(vm_info['name'], vm_info['zone'], 'reset')
+            action = 'rebooted'
+        else:
+            return jsonify({'error': f'Cannot reset VM in state: {current_state}'}), 400
+
+        if success:
+            return jsonify({'status': 'ok', 'action': action, 'message': msg})
+        return jsonify({'error': msg}), 500
+
+    return jsonify({'error': f'Unknown VM: {vm_id}'}), 404
+
+
+# =============================================================================
+# Container Control Endpoints
+# =============================================================================
+
+# VM SSH connection details
+VM_SSH_CONFIG = {
+    'oci-p-flex_1': {'host': '84.235.234.87', 'user': 'ubuntu', 'key': '/app/config/id_rsa'},
+    'oci-f-micro_1': {'host': '130.110.251.193', 'user': 'ubuntu', 'key': '/app/config/id_rsa'},
+    'oci-f-micro_2': {'host': '129.151.228.66', 'user': 'ubuntu', 'key': '/app/config/id_rsa'},
+    'gcp-f-micro_1': {'host': '34.55.55.234', 'user': 'diego', 'key': '/app/config/gcp_key'},
+}
+
+
+def _ssh_command(vm_id: str, command: str) -> tuple:
+    """Execute command on VM via SSH."""
+    import subprocess
+
+    if vm_id not in VM_SSH_CONFIG:
+        return False, f'SSH not configured for {vm_id}'
+
+    config = VM_SSH_CONFIG[vm_id]
+    ssh_cmd = [
+        'ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'ConnectTimeout=10',
+        '-i', config['key'],
+        f"{config['user']}@{config['host']}",
+        command
+    ]
+
+    try:
+        result = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=30)
+        if result.returncode == 0:
+            return True, result.stdout.strip()
+        return False, result.stderr.strip() or 'Command failed'
+    except subprocess.TimeoutExpired:
+        return False, 'SSH timeout'
+    except Exception as e:
+        return False, str(e)
+
+
+@api_bp.route('/vms/<vm_id>/containers/<container_name>/restart', methods=['POST'])
+def restart_container(vm_id: str, container_name: str):
+    """Restart a Docker container on a VM."""
+    success, output = _ssh_command(vm_id, f'docker restart {container_name}')
+
+    if success:
+        return jsonify({
+            'status': 'ok',
+            'action': 'restarted',
+            'container': container_name,
+            'vm': vm_id,
+            'message': f'Container {container_name} restarted'
+        })
+
+    return jsonify({
+        'error': f'Failed to restart container: {output}',
+        'container': container_name,
+        'vm': vm_id
+    }), 500
+
+
+@api_bp.route('/vms/<vm_id>/containers/<container_name>/stop', methods=['POST'])
+def stop_container(vm_id: str, container_name: str):
+    """Stop a Docker container on a VM."""
+    success, output = _ssh_command(vm_id, f'docker stop {container_name}')
+
+    if success:
+        return jsonify({
+            'status': 'ok',
+            'action': 'stopped',
+            'container': container_name,
+            'vm': vm_id
+        })
+
+    return jsonify({
+        'error': f'Failed to stop container: {output}',
+        'container': container_name,
+        'vm': vm_id
+    }), 500
+
+
+@api_bp.route('/vms/<vm_id>/containers/<container_name>/start', methods=['POST'])
+def start_container(vm_id: str, container_name: str):
+    """Start a Docker container on a VM."""
+    success, output = _ssh_command(vm_id, f'docker start {container_name}')
+
+    if success:
+        return jsonify({
+            'status': 'ok',
+            'action': 'started',
+            'container': container_name,
+            'vm': vm_id
+        })
+
+    return jsonify({
+        'error': f'Failed to start container: {output}',
+        'container': container_name,
+        'vm': vm_id
+    }), 500
