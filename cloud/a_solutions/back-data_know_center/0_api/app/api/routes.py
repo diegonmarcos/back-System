@@ -515,7 +515,11 @@ def _init_oci():
             # Override key file path if specified
             if os.path.exists(key_file):
                 config['key_file'] = key_file
-            _oci_compute_client = oci.core.ComputeClient(config)
+            # Set request timeout to 30 seconds
+            _oci_compute_client = oci.core.ComputeClient(
+                config,
+                timeout=(10, 30)  # (connect_timeout, read_timeout)
+            )
             logger.info("OCI SDK initialized with config file")
             return True
         else:
