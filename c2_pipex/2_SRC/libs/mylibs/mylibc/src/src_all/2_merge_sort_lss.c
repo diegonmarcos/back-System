@@ -1,1 +1,0 @@
-../3_algos_sorting/1_sorting_ls/2_merge_sort_lss.c

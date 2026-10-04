@@ -1,1 +1,0 @@
-../1c_string_manip/1_tokenize_cat/1c_ft_snprintf.c

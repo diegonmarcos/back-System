@@ -1,1 +1,0 @@
-../1c_string_manip/4_data_is/1c_ft_isdigit.c

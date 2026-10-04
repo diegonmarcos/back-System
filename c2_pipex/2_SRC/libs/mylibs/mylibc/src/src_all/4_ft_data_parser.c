@@ -1,1 +1,0 @@
-../4__data_parser/4_ft_data_parser.c
