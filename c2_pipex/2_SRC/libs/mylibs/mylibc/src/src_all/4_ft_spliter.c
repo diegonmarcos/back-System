@@ -1,0 +1,1 @@
+../4__data_parser/2_trimmers/4_ft_spliter.c

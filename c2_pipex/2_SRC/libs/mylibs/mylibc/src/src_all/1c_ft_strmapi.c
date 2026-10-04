@@ -1,0 +1,1 @@
+../1c_string_manip/5_algos_others/1c_ft_strmapi.c
